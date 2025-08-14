@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://zenshe-spa.onrender.com/', // Only used in development
+        target: 'https://zenshe-spa.onrender.com', // Only used in development
         changeOrigin: true,
         secure: false,
       }
