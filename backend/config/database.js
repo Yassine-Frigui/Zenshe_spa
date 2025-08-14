@@ -17,11 +17,15 @@ const dbConfig = {
 const pool = mysql.createPool({
     ...dbConfig,
     waitForConnections: true,
-    connectionLimit: 5,         // Reduced for remote connections
+    connectionLimit: 10,
     queueLimit: 0,
+    acquireTimeout: 60000,      // 60 seconds to get connection
+    timeout: 60000,             // 60 seconds for queries
     idleTimeout: 300000,        // 5 minutes
     enableKeepAlive: true,
-    keepAliveInitialDelay: 0
+    keepAliveInitialDelay: 0,
+    reconnect: true,
+    multipleStatements: false
 });
 
 // Version promise du pool
@@ -64,13 +68,23 @@ const testConnection = async () => {
     }
 };
 
-// Fonction pour exécuter des requêtes
-const executeQuery = async (query, params = []) => {
+// Fonction pour exécuter des requêtes avec retry
+const executeQuery = async (query, params = [], retryCount = 0) => {
+    const maxRetries = 3;
+    
     try {
         const [rows] = await promisePool.execute(query, params);
         return rows;
     } catch (error) {
         console.error('Erreur lors de l\'exécution de la requête:', error);
+        
+        // Retry for connection reset errors
+        if ((error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') && retryCount < maxRetries) {
+            console.log(`Retrying query (attempt ${retryCount + 1}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+            return executeQuery(query, params, retryCount + 1);
+        }
+        
         throw error;
     }
 };

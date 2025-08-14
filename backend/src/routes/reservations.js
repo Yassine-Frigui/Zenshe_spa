@@ -768,8 +768,34 @@ router.get('/get-draft/:sessionId', async (req, res) => {
 
         // Extract JSON data from notes_client
         const notesData = draft[0].notes_client;
-        const jsonPart = notesData.split('|')[1];
-        const draftData = JSON.parse(jsonPart);
+        
+        if (!notesData) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Données du brouillon manquantes' 
+            });
+        }
+        
+        let draftData;
+        try {
+            const parts = notesData.split('|');
+            const jsonPart = parts.length > 1 ? parts[1] : notesData;
+            
+            if (!jsonPart || jsonPart === 'undefined') {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Données JSON du brouillon invalides' 
+                });
+            }
+            
+            draftData = JSON.parse(jsonPart);
+        } catch (parseError) {
+            console.error('Erreur de parsing JSON:', parseError);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Format de données invalide' 
+            });
+        }
         
         res.json({ 
             success: true, 
