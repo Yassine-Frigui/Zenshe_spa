@@ -2,7 +2,8 @@ import axios from 'axios'
 import i18n from '../i18n'
 
 // Configuration de base d'axios
-axios.defaults.baseURL = 'http://localhost:5000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+axios.defaults.baseURL = API_BASE_URL
 axios.defaults.withCredentials = true
 
 // Fonction pour obtenir la langue actuelle
