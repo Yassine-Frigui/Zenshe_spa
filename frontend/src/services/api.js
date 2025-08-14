@@ -2,7 +2,11 @@ import axios from 'axios'
 import i18n from '../i18n'
 
 // Configuration de base d'axios
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+// In production, use relative paths. In development, use environment variable
+const API_BASE_URL = import.meta.env.PROD 
+  ? '' // Production: use relative paths (/api/...)
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5000') // Development: use env var or fallback
+
 axios.defaults.baseURL = API_BASE_URL
 axios.defaults.withCredentials = true
 
