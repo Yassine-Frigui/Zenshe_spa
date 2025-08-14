@@ -216,13 +216,54 @@ export const adminAPI = {
 }
 
 // Intercepteur pour gérer les erreurs d'authentification
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't attempt refresh for the refresh endpoint itself
+    if (originalRequest.url?.includes('/api/auth/refresh')) {
+      return Promise.reject(error);
+    }
+    
+    // Only attempt refresh for admin routes and if we have a token
+    const hasAdminToken = localStorage.getItem('adminToken');
+    const isAdminRoute = originalRequest.url?.includes('/api/admin') || 
+                        originalRequest.url?.includes('/api/auth') ||
+                        originalRequest.url?.includes('/api/services') ||
+                        originalRequest.url?.includes('/api/clients') ||
+                        originalRequest.url?.includes('/api/inventaire');
+    
+    if (error.response?.status === 401 && !originalRequest._retry && hasAdminToken && isAdminRoute) {
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          return axios(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
       
       try {
         // Tentative de rafraîchissement du token
@@ -232,13 +273,17 @@ axios.interceptors.response.use(
         // Mettre à jour le token dans localStorage et les headers
         localStorage.setItem('adminToken', newToken);
         axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        
+        processQueue(null, newToken);
+        
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         
         // Relancer la requête originale avec le nouveau token
         return axios(originalRequest);
       } catch (refreshError) {
-        // Le refresh a échoué, rediriger vers la page de connexion
+        // Le refresh a échoué, nettoyer et rediriger
         console.error('Token refresh failed:', refreshError);
+        processQueue(refreshError, null);
         localStorage.removeItem('adminToken');
         delete axios.defaults.headers.common['Authorization'];
         
@@ -246,9 +291,13 @@ axios.interceptors.response.use(
         if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
           window.location.href = '/admin/login';
         }
+        
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
-    } else if (error.response?.status === 401) {
-      // Token expiré et retry déjà tentée, ou pas de retry possible
+    } else if (error.response?.status === 401 && hasAdminToken && isAdminRoute) {
+      // Token expiré et retry déjà tentée, nettoyer
       localStorage.removeItem('adminToken');
       delete axios.defaults.headers.common['Authorization'];
       
