@@ -6,6 +6,12 @@ class TelegramService {
         // Allow comma-separated chat IDs in env
         this.chatIds = (process.env.TELEGRAM_CHAT_ID || '').split(',').map(id => id.trim()).filter(Boolean);
         this.apiUrl = `https://api.telegram.org/bot${this.botToken}`;
+        
+        // Debug logging
+        console.log('🤖 TelegramService initialized:');
+        console.log('Bot Token:', this.botToken ? '✅ Configured' : '❌ Missing');
+        console.log('Chat IDs:', this.chatIds);
+        console.log('Number of chats:', this.chatIds.length);
     }
 
     /**
@@ -16,8 +22,13 @@ class TelegramService {
      */
     async sendMessage(message, options = {}, chatIdsOverride = null) {
         try {
+            console.log('📤 Sending Telegram message...');
+            
             if (!this.botToken || (!this.chatIds.length && !chatIdsOverride)) {
-                console.warn('Telegram bot token or chat ID(s) not configured');
+                console.warn('❌ Telegram bot token or chat ID(s) not configured');
+                console.log('Bot token exists:', !!this.botToken);
+                console.log('Default chat IDs:', this.chatIds);
+                console.log('Override chat IDs:', chatIdsOverride);
                 return false;
             }
 
@@ -30,12 +41,15 @@ class TelegramService {
             }
             if (!Array.isArray(chatIds)) chatIds = [chatIds];
             if (!chatIds.length) {
-                console.warn('No valid chat IDs provided');
+                console.warn('❌ No valid chat IDs provided');
                 return false;
             }
 
+            console.log(`📨 Sending to ${chatIds.length} chat(s):`, chatIds);
+
             let allOk = true;
             for (const chatId of chatIds) {
+                console.log(`📤 Sending to chat ${chatId}...`);
                 const payload = {
                     chat_id: chatId,
                     text: message,
@@ -46,19 +60,20 @@ class TelegramService {
                 try {
                     const response = await axios.post(`${this.apiUrl}/sendMessage`, payload);
                     if (response.data.ok) {
-                        console.log(`Telegram message sent successfully to chat ${chatId}`);
+                        console.log(`✅ Telegram message sent successfully to chat ${chatId}`);
                     } else {
-                        console.error('Telegram API error:', response.data);
+                        console.error(`❌ Telegram API error for chat ${chatId}:`, response.data);
                         allOk = false;
                     }
                 } catch (error) {
-                    console.error(`Error sending Telegram message to chat ${chatId}:`, error.message);
+                    console.error(`❌ Error sending Telegram message to chat ${chatId}:`, error.message);
                     allOk = false;
                 }
             }
+            console.log(`📊 Message sending result: ${allOk ? 'All successful' : 'Some failed'}`);
             return allOk;
         } catch (error) {
-            console.error('Error in sendMessage:', error.message);
+            console.error('❌ Error in sendMessage:', error.message);
             return false;
         }
     }
