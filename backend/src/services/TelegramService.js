@@ -3,41 +3,62 @@ const axios = require('axios');
 class TelegramService {
     constructor() {
         this.botToken = process.env.TELEGRAM_BOT_TOKEN;
-        this.chatId = process.env.TELEGRAM_CHAT_ID;
+        // Allow comma-separated chat IDs in env
+        this.chatIds = (process.env.TELEGRAM_CHAT_ID || '').split(',').map(id => id.trim()).filter(Boolean);
         this.apiUrl = `https://api.telegram.org/bot${this.botToken}`;
     }
 
     /**
-     * Send a message to the Telegram chat
+     * Send a message to one or more Telegram chats
      * @param {string} message - The message to send
      * @param {object} options - Additional options (parse_mode, etc.)
+     * @param {string|string[]} chatIdsOverride - Optional chat ID(s) to override default
      */
-    async sendMessage(message, options = {}) {
+    async sendMessage(message, options = {}, chatIdsOverride = null) {
         try {
-            if (!this.botToken || !this.chatId) {
-                console.warn('Telegram bot token or chat ID not configured');
+            if (!this.botToken || (!this.chatIds.length && !chatIdsOverride)) {
+                console.warn('Telegram bot token or chat ID(s) not configured');
                 return false;
             }
 
-            const payload = {
-                chat_id: this.chatId,
-                text: message,
-                parse_mode: options.parse_mode || 'HTML',
-                disable_web_page_preview: options.disable_preview || true,
-                ...options
-            };
-
-            const response = await axios.post(`${this.apiUrl}/sendMessage`, payload);
-            
-            if (response.data.ok) {
-                console.log('Telegram message sent successfully');
-                return true;
-            } else {
-                console.error('Telegram API error:', response.data);
+            // Accept a single chat ID, array, or use default
+            let chatIds = chatIdsOverride;
+            if (!chatIds) {
+                chatIds = this.chatIds;
+            } else if (typeof chatIds === 'string') {
+                chatIds = chatIds.split(',').map(id => id.trim()).filter(Boolean);
+            }
+            if (!Array.isArray(chatIds)) chatIds = [chatIds];
+            if (!chatIds.length) {
+                console.warn('No valid chat IDs provided');
                 return false;
             }
+
+            let allOk = true;
+            for (const chatId of chatIds) {
+                const payload = {
+                    chat_id: chatId,
+                    text: message,
+                    parse_mode: options.parse_mode || 'HTML',
+                    disable_web_page_preview: options.disable_preview || true,
+                    ...options
+                };
+                try {
+                    const response = await axios.post(`${this.apiUrl}/sendMessage`, payload);
+                    if (response.data.ok) {
+                        console.log(`Telegram message sent successfully to chat ${chatId}`);
+                    } else {
+                        console.error('Telegram API error:', response.data);
+                        allOk = false;
+                    }
+                } catch (error) {
+                    console.error(`Error sending Telegram message to chat ${chatId}:`, error.message);
+                    allOk = false;
+                }
+            }
+            return allOk;
         } catch (error) {
-            console.error('Error sending Telegram message:', error.message);
+            console.error('Error in sendMessage:', error.message);
             return false;
         }
     }
