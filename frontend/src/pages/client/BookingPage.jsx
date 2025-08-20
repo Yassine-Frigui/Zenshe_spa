@@ -5,6 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { FaCalendarAlt, FaClock, FaUser, FaPhone, FaEnvelope, FaCheck, FaStar, FaInfoCircle, FaSave } from 'react-icons/fa';
 import { publicAPI } from '../../services/api';
 import ReservationConfirmation from './ReservationConfirmation';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import * as Yup from 'yup';
 
 const BookingPage = () => {
   const { t, i18n } = useTranslation();
@@ -468,6 +472,17 @@ const BookingPage = () => {
     );
   }
 
+  // Validation schema for Formik
+  const BookingSchema = Yup.object().shape({
+    nom: Yup.string().required('Nom requis'),
+    prenom: Yup.string().required('Prénom requis'),
+    email: Yup.string().email('Email invalide').required('Email requis'),
+    telephone: Yup.string().required('Téléphone requis'),
+    date_reservation: Yup.date().required('Date requise'),
+    heure_reservation: Yup.string().required('Heure requise'),
+    notes: Yup.string(),
+  });
+
   return (
     <div className="booking-page">
       {/* Hero Section */}
@@ -533,304 +548,235 @@ const BookingPage = () => {
                     </div>
                   </div>
                   
-                  <form onSubmit={handleSubmit} className="booking-form">
-                    {/* Service Selection */}
-                    <motion.div
-                      className="mb-4"
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.6, duration: 0.6 }}
-                    >
-                      <label className="form-label fw-bold text-green">
-                        <FaStar className="me-2" />
-                        {t('booking.form.selectService')}
-                      </label>
-                      
-                      {servicesByCategory.length > 0 ? servicesByCategory.map((category) => (
-                        <div key={category.id} className="mb-4">
-                          <div className="category-header">
-                            {category.nom}
-                            <small className="ms-2 opacity-75">
-                              ({category.services.length} {category.services.length > 1 ? t('booking.form.services_count_plural') : t('booking.form.services_count')})
-                            </small>
-                          </div>
-                          <div className="row">
-                            {category.services.map((service) => (
-                              <div key={service.id} className="col-md-6 mb-3">
-                                <motion.div
-                                  className={`service-card ${
-                                    selectedService === service.id.toString() 
-                                      ? 'selected border-green' 
-                                      : 'border border-light'
-                                  }`}
-                                  onClick={() => handleServiceChange(service.id.toString())}
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                >
-                                  <div className="d-flex justify-content-between align-items-start">
-                                    <div className="flex-grow-1">
-                                      <h6 className="fw-bold text-green mb-1">
-                                        {service.nom}
-                                      </h6>
-                                      <p className="text-muted small mb-2">
-                                        {service.description}
-                                      </p>
-                                      <div className="d-flex align-items-center justify-content-between">
-                                        <div className="d-flex align-items-center">
-                                          <FaClock className="text-green me-1" size={12} />
-                                          <span className="small text-muted me-3">
-                                            {service.duree} {t('booking.form.duration')}
-                                          </span>
-                                          <span className="fw-bold text-green">
-                                            {service.prix}DT
-                                          </span>
-                                        </div>
-                                        <Link 
-                                          to={`/services/${service.id}`}
-                                          className="btn btn-sm btn-outline-green text-decoration-none"
-                                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <FaInfoCircle className="me-1" size={10} />
-                                          {t('booking.form.serviceDetails')}
-                                        </Link>
-                                      </div>
-                                    </div>
-                                    <div className={`form-check-input ms-2 ${
-                                      selectedService === service.id.toString() ? 'bg-green-500 border-green-500' : ''
-                                    }`}>
-                                      {selectedService === service.id.toString() && '✓'}
-                                    </div>
-                                  </div>
-                                </motion.div>
+                  <Formik
+                    enableReinitialize
+                    initialValues={formData}
+                    validationSchema={BookingSchema}
+                    onSubmit={handleSubmit}
+                  >
+                    {({ values, setFieldValue, isSubmitting }) => (
+                      <Form className="booking-form">
+                        {/* Service Selection */}
+                        <motion.div
+                          className="mb-4"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.6, duration: 0.6 }}
+                        >
+                          <label className="form-label fw-bold text-green">
+                            <FaStar className="me-2" />
+                            {t('booking.form.selectService')}
+                          </label>
+                          
+                          {servicesByCategory.length > 0 ? servicesByCategory.map((category) => (
+                            <div key={category.id} className="mb-4">
+                              <div className="category-header">
+                                {category.nom}
+                                <small className="ms-2 opacity-75">
+                                  ({category.services.length} {category.services.length > 1 ? t('booking.form.services_count_plural') : t('booking.form.services_count')})
+                                </small>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="text-center py-4">
-                          <p className="text-muted">Chargement des services...</p>
-                        </div>
-                      )}
-                    </motion.div>
-
-                    {/* Personal Information */}
-                    <motion.div
-                      className="mb-4"
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.8, duration: 0.6 }}
-                    >
-                      <h5 className="fw-bold text-green mb-3">
-                        <FaUser className="me-2" />
-                        {t('booking.form.personalInfo')}
-                      </h5>
-                      
-                      <div className="row">
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">{t('booking.form.firstName')}</label>
-                          <input
-                            type="text"
-                            className="form-control form-control-lg"
-                            name="prenom"
-                            value={formData.prenom}
-                            onChange={handleInputChange}
-                            required
-                            placeholder={t('booking.form.placeholders.firstName')}
-                          />
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">{t('booking.form.lastName')}</label>
-                          <input
-                            type="text"
-                            className="form-control form-control-lg"
-                            name="nom"
-                            value={formData.nom}
-                            onChange={handleInputChange}
-                            required
-                            placeholder={t('booking.form.placeholders.lastName')}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="row">
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">
-                            <FaEnvelope className="me-2" />
-                            {t('booking.form.email')}
-                          </label>
-                          <input
-                            type="email"
-                            className="form-control form-control-lg"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            required
-                            placeholder={t('booking.form.placeholders.email')}
-                          />
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">
-                            <FaPhone className="me-2" />
-                            {t('booking.form.phone')} 
-                            <small className="text-muted ms-2">{t('booking.form.phoneHelper')}</small>
-                          </label>
-                          <input
-                            type="tel"
-                            className="form-control form-control-lg"
-                            name="telephone"
-                            value={formData.telephone}
-                            onChange={handleInputChange}
-                            required
-                            placeholder={t('booking.form.placeholders.phone')}
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    {/* Date and Time Selection */}
-                    <motion.div
-                      className="mb-4"
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 1.0, duration: 0.6 }}
-                    >
-                      <h5 className="fw-bold text-green mb-3">
-                        <FaCalendarAlt className="me-2" />
-                        {t('booking.form.dateTime.title')}
-                      </h5>
-                      
-                      <div className="row">
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">{t('booking.form.dateTime.date')}</label>
-                          <input
-                            type="date"
-                            className="form-control form-control-lg"
-                            name="date_reservation"
-                            value={formData.date_reservation}
-                            onChange={(e) => handleDateChange(e.target.value)}
-                            min={getMinDate()}
-                            required
-                          />
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">{t('booking.form.dateTime.time')}</label>
-                          <select
-                            className="form-select form-select-lg"
-                            name="heure_reservation"
-                            value={formData.heure_reservation}
-                            onChange={handleInputChange}
-                            required
-                            disabled={!formData.date_reservation}
-                          >
-                            <option value="">{t('booking.form.dateTime.selectTime')}</option>
-                            {availableSlots.map((slot) => (
-                              <option key={slot} value={slot}>
-                                {slot}
-                              </option>
-                            ))}
-                          </select>
-                          {formData.date_reservation && availableSlots.length === 0 && (
-                            <div className="text-muted small mt-1">
-                              {t('booking.form.dateTime.noAvailableSlots')}
+                              <div className="row">
+                                {category.services.map((service) => (
+                                  <div key={service.id} className="col-md-6 mb-3">
+                                    <motion.div
+                                      className={`service-card ${
+                                        selectedService === service.id.toString() 
+                                          ? 'selected border-green' 
+                                          : 'border border-light'
+                                      }`}
+                                      onClick={() => handleServiceChange(service.id.toString())}
+                                      whileHover={{ scale: 1.02 }}
+                                      whileTap={{ scale: 0.98 }}
+                                    >
+                                      <div className="d-flex justify-content-between align-items-start">
+                                        <div className="flex-grow-1">
+                                          <h6 className="fw-bold text-green mb-1">
+                                            {service.nom}
+                                          </h6>
+                                          <p className="text-muted small mb-2">
+                                            {service.description}
+                                          </p>
+                                          <div className="d-flex align-items-center justify-content-between">
+                                            <div className="d-flex align-items-center">
+                                              <FaClock className="text-green me-1" size={12} />
+                                              <span className="small text-muted me-3">
+                                                {service.duree} {t('booking.form.duration')}
+                                              </span>
+                                              <span className="fw-bold text-green">
+                                                {service.prix}DT
+                                              </span>
+                                            </div>
+                                            <Link 
+                                              to={`/services/${service.id}`}
+                                              className="btn btn-sm btn-outline-green text-decoration-none"
+                                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <FaInfoCircle className="me-1" size={10} />
+                                              {t('booking.form.serviceDetails')}
+                                            </Link>
+                                          </div>
+                                        </div>
+                                        <div className={`form-check-input ms-2 ${
+                                          selectedService === service.id.toString() ? 'bg-green-500 border-green-500' : ''
+                                        }`}>
+                                          {selectedService === service.id.toString() && '✓'}
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )) : (
+                            <div className="text-center py-4">
+                              <p className="text-muted">Chargement des services...</p>
                             </div>
                           )}
-                        </div>
-                      </div>
-                    </motion.div>
+                        </motion.div>
 
-                    {/* Notes */}
-                    <motion.div
-                      className="mb-4"
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 1.2, duration: 0.6 }}
-                    >
-                      <label className="form-label">{t('booking.form.notes.label')}</label>
-                      <textarea
-                        className="form-control"
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleInputChange}
-                        rows="3"
-                        placeholder={t('booking.form.notes.placeholder')}
-                      />
-                    </motion.div>
-
-                    {/* Summary */}
-                    {selectedServiceData && (
-                      <motion.div
-                        className="alert alert-light border-green-200 bg-green-50 mb-4"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <h6 className="fw-bold text-green mb-2">{t('booking.form.summary.title')}</h6>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <strong>{selectedServiceData.nom}</strong>
-                            <div className="small text-muted">
-                              {t('booking.form.summary.duration')}: {selectedServiceData.duree} {t('booking.form.summary.minutes')}
+                        {/* Personal Information */}
+                        <div className="mb-4">
+                          <h5 className="fw-bold text-green mb-3">
+                            <FaUser className="me-2" />
+                            {t('booking.form.personalInfo')}
+                          </h5>
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.firstName')}</label>
+                              <Field
+                                type="text"
+                                name="prenom"
+                                className="form-control form-control-lg"
+                                placeholder={t('booking.form.placeholders.firstName')}
+                              />
+                              <ErrorMessage name="prenom" component="div" className="text-danger small" />
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.lastName')}</label>
+                              <Field
+                                type="text"
+                                name="nom"
+                                className="form-control form-control-lg"
+                                placeholder={t('booking.form.placeholders.lastName')}
+                              />
+                              <ErrorMessage name="nom" component="div" className="text-danger small" />
                             </div>
                           </div>
-                          <div className="text-end">
-                            <strong className="text-pink-600 fs-5">
-                              {selectedServiceData.prix}DT
-                            </strong>
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">
+                                <FaEnvelope className="me-2" />
+                                {t('booking.form.email')}
+                              </label>
+                              <Field
+                                type="email"
+                                name="email"
+                                className="form-control form-control-lg"
+                                placeholder={t('booking.form.placeholders.email')}
+                              />
+                              <ErrorMessage name="email" component="div" className="text-danger small" />
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">
+                                <FaPhone className="me-2" />
+                                {t('booking.form.phone')}
+                                <small className="text-muted ms-2">{t('booking.form.phoneHelper')}</small>
+                              </label>
+                              <Field
+                                type="tel"
+                                name="telephone"
+                                className="form-control form-control-lg"
+                                placeholder={t('booking.form.placeholders.phone')}
+                              />
+                              <ErrorMessage name="telephone" component="div" className="text-danger small" />
+                            </div>
                           </div>
                         </div>
-                        {formData.date_reservation && formData.heure_reservation && (
-                          <div className="mt-2 pt-2 border-top border-pink-200">
-                            <strong>{t('booking.form.summary.appointment')}:</strong> {' '}
-                            {new Date(formData.date_reservation).toLocaleDateString(i18n.language === 'ar' ? 'ar-TN' : i18n.language === 'en' ? 'en-US' : 'fr-FR', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })} à {formData.heure_reservation}
+
+                        {/* Date and Time Selection */}
+                        <div className="mb-4">
+                          <h5 className="fw-bold text-green mb-3">
+                            <FaCalendarAlt className="me-2" />
+                            {t('booking.form.dateTime.title')}
+                          </h5>
+                          
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.dateTime.date')}</label>
+                              <DatePicker
+                                selected={values.date_reservation ? new Date(values.date_reservation) : null}
+                                onChange={date => setFieldValue('date_reservation', date)}
+                                minDate={new Date(getMinDate())}
+                                className="form-control form-control-lg"
+                                dateFormat="yyyy-MM-dd"
+                                name="date_reservation"
+                                required
+                              />
+                              <ErrorMessage name="date_reservation" component="div" className="text-danger small" />
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.dateTime.time')}</label>
+                              <Field
+                                as="select"
+                                name="heure_reservation"
+                                className="form-select form-select-lg"
+                                disabled={!values.date_reservation}
+                              >
+                                <option value="">{t('booking.form.dateTime.selectTime')}</option>
+                                {availableSlots.map((slot) => (
+                                  <option key={slot} value={slot}>
+                                    {slot}
+                                  </option>
+                                ))}
+                              </Field>
+                              <ErrorMessage name="heure_reservation" component="div" className="text-danger small" />
+                              {values.date_reservation && availableSlots.length === 0 && (
+                                <div className="text-muted small mt-1">
+                                  {t('booking.form.dateTime.noAvailableSlots')}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </motion.div>
-                    )}
+                        </div>
 
-                    {/* Error Message */}
-                    {error && (
-                      <motion.div
-                        className="alert alert-danger"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        {error}
-                      </motion.div>
-                    )}
+                        {/* Notes */}
+                        <div className="mb-4">
+                          <label className="form-label">{t('booking.form.notes.label')}</label>
+                          <Field
+                            as="textarea"
+                            name="notes"
+                            className="form-control"
+                            rows="3"
+                            placeholder={t('booking.form.notes.placeholder')}
+                          />
+                          <ErrorMessage name="notes" component="div" className="text-danger small" />
+                        </div>
 
-                    {/* Submit Button */}
-                    <motion.div
-                      className="text-center"
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 1.4, duration: 0.6 }}
-                    >
-                      <button
-                        type="submit"
-                        className="btn btn-green text-white btn-lg px-5"
-                        disabled={loading || !selectedService || !formData.date_reservation || !formData.heure_reservation}
-                      >
-                        {loading ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-2" />
-                            {t('booking.form.submitting')}
-                          </>
-                        ) : (
-                          <>
-                            <FaCheck className="me-2" />
-                            {t('booking.form.submit')}
-                          </>
-                        )}
-                      </button>
-                    </motion.div>
-                  </form>
+                        {/* Submit Button */}
+                        <div className="text-center">
+                          <button
+                            type="submit"
+                            className="btn btn-green text-white btn-lg px-5"
+                            disabled={isSubmitting || !selectedService || !values.date_reservation || !values.heure_reservation}
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-2" />
+                                {t('booking.form.submitting')}
+                              </>
+                            ) : (
+                              <>
+                                <FaCheck className="me-2" />
+                                {t('booking.form.submit')}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </Form>
+                    )}
+                  </Formik>
                 </div>
               </motion.div>
             </div>

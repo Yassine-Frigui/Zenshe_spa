@@ -10,3 +10,4 @@ frontend/.env
 backend/.env
 .DS_Store
 *.log
+gitinstructions.txt
