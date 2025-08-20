@@ -492,7 +492,7 @@ const BookingPage = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         style={{
-          background: 'linear-gradient(135deg,rgb(46, 77, 60) 0%,  rgb(46, 77, 67) 50%,rgb(46, 77, 77) 100%)',
+          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
           minHeight: '40vh'
         }}
       >
@@ -639,89 +639,80 @@ const BookingPage = () => {
                         {/* Personal Information */}
                         <div className="mb-4">
                           <h5 className="fw-bold text-green mb-3">
-                            <FaUser className="me-2" />
-                            {t('booking.form.personalInfo')}
-                          </h5>
-                          <div className="row">
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label">{t('booking.form.firstName')}</label>
-                              <Field
-                                type="text"
-                                name="prenom"
-                                className="form-control form-control-lg"
-                                placeholder={t('booking.form.placeholders.firstName')}
-                              />
-                              <ErrorMessage name="prenom" component="div" className="text-danger small" />
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label">{t('booking.form.lastName')}</label>
-                              <Field
-                                type="text"
-                                name="nom"
-                                className="form-control form-control-lg"
-                                placeholder={t('booking.form.placeholders.lastName')}
-                              />
-                              <ErrorMessage name="nom" component="div" className="text-danger small" />
-                            </div>
-                          </div>
-                          <div className="row">
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label">
-                                <FaEnvelope className="me-2" />
-                                {t('booking.form.email')}
-                              </label>
-                              <Field
-                                type="email"
-                                name="email"
-                                className="form-control form-control-lg"
-                                placeholder={t('booking.form.placeholders.email')}
-                              />
-                              <ErrorMessage name="email" component="div" className="text-danger small" />
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label">
-                                <FaPhone className="me-2" />
-                                {t('booking.form.phone')}
-                                <small className="text-muted ms-2">{t('booking.form.phoneHelper')}</small>
-                              </label>
-                              <Field
-                                type="tel"
-                                name="telephone"
-                                className="form-control form-control-lg"
-                                placeholder={t('booking.form.placeholders.phone')}
-                              />
-                              <ErrorMessage name="telephone" component="div" className="text-danger small" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Date and Time Selection */}
-                        <div className="mb-4">
-                          <h5 className="fw-bold text-green mb-3">
                             <FaCalendarAlt className="me-2" />
                             {t('booking.form.dateTime.title')}
                           </h5>
-                          
-                          <div className="row">
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label">{t('booking.form.dateTime.date')}</label>
+                          <div className="row mb-1" style={{ width: '100%' }}>
+                            <div className="col-md-6 d-flex align-items-center" style={{ minWidth: '280px', maxWidth: '390px' }}>
+                              <label className="form-label mb-0" style={{ fontWeight: 600 }}>
+                                {t('booking.form.dateTime.date')} 
+                              </label>
+                            </div>
+                            <div className="col-md-6 d-flex align-items-center" style={{ minWidth: '180px', maxWidth: '260px' }}>
+                              <label className="form-label mb-0" style={{ fontWeight: 600 }}>
+                                {t('booking.form.dateTime.time')} 
+                              </label>
+                            </div>
+                          </div>
+                          <div className="row" style={{ width: '100%' }}>
+                            <div className="col-md-6" style={{ minWidth: '280px', maxWidth: '390px' }}>
                               <DatePicker
                                 selected={values.date_reservation ? new Date(values.date_reservation) : null}
-                                onChange={date => setFieldValue('date_reservation', date)}
+                                onChange={date => {
+                                  setFieldValue('date_reservation', date);
+                                  handleDateChange(date);
+                                }}
                                 minDate={new Date(getMinDate())}
-                                className="form-control form-control-lg"
                                 dateFormat="yyyy-MM-dd"
                                 name="date_reservation"
                                 required
+                                customInput={
+                                  <button
+                                    type="button"
+                                    className="form-control form-control-lg d-flex align-items-center justify-content-between px-3"
+                                    style={{
+                                      cursor: 'pointer',
+                                      background: '#fff',
+                                      border: '1px solid #ced4da',
+                                      borderRadius: '0.5rem',
+                                      minHeight: '48px',
+                                      padding: '0.5rem 1rem',
+                                      fontSize: '1.25rem',
+                                      lineHeight: 1.5,
+                                      boxSizing: 'border-box',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      width: '100%'
+                                    }}
+                                  >
+                                    <span className="d-flex align-items-center" style={{ color: values.date_reservation ? '#222' : '#888' }}>
+                                      <FaCalendarAlt className="me-2" />
+                                      {values.date_reservation
+                                        ? new Date(values.date_reservation).toLocaleDateString(i18n.language || 'fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+                                        : t('booking.form.dateTime.datePlaceholder') || 'Sélectionner une date'}
+                                    </span>
+                                    <span style={{ color: '#bbb', fontSize: '1.2em', marginLeft: '0.5em' }}>&#8250;</span>
+                                  </button>
+                                }
                               />
                               <ErrorMessage name="date_reservation" component="div" className="text-danger small" />
                             </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label">{t('booking.form.dateTime.time')}</label>
+                            <div className="col-md-6" style={{ minWidth: '180px', maxWidth: '260px' }}>
                               <Field
                                 as="select"
                                 name="heure_reservation"
                                 className="form-select form-select-lg"
+                                style={{
+                                  minHeight: '48px',
+                                  padding: '0.5rem 1rem',
+                                  fontSize: '1.25rem',
+                                  lineHeight: 1.5,
+                                  boxSizing: 'border-box',
+                                  borderRadius: '0.5rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  width: '100%'
+                                }}
                                 disabled={!values.date_reservation}
                               >
                                 <option value="">{t('booking.form.dateTime.selectTime')}</option>

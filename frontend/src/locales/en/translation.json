@@ -194,7 +194,6 @@
       "lastName": "Last name *",
       "email": "Email *",
       "phone": "Phone *",
-      "phoneHelper": "(minimum required for auto-save)",
       "placeholders": {
         "firstName": "Your first name",
         "lastName": "Your last name",
@@ -202,11 +201,12 @@
         "phone": "06 12 34 56 78"
       },
       "dateTime": {
-        "title": "Date and time",
-        "date": "Date *",
-        "time": "Time *",
-        "selectTime": "Select a time",
-        "noAvailableSlots": "No available slots for this date"
+  "title": "Date and time",
+  "date": "Date *",
+  "time": "Time *",
+  "selectTime": "Select a time",
+  "noAvailableSlots": "No available slots for this date",
+  "datePlaceholder": "Select a date"
       },
       "notes": {
         "label": "Special notes (optional)",

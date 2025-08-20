@@ -194,7 +194,6 @@
       "lastName": "Nom *",
       "email": "Email *",
       "phone": "Téléphone *",
-      "phoneHelper": "(minimum requis pour sauvegarde automatique)",
       "placeholders": {
         "firstName": "Votre prénom",
         "lastName": "Votre nom",
@@ -202,11 +201,12 @@
         "phone": "06 12 34 56 78"
       },
       "dateTime": {
-        "title": "Date et heure",
-        "date": "Date *",
-        "time": "Heure *",
-        "selectTime": "Choisir un horaire",
-        "noAvailableSlots": "Aucun horaire disponible pour cette date"
+  "title": "Date et heure",
+  "date": "Date *",
+  "time": "Heure *",
+  "selectTime": "Choisir un horaire",
+  "noAvailableSlots": "Aucun horaire disponible pour cette date",
+  "datePlaceholder": "Sélectionner une date"
       },
       "notes": {
         "label": "Notes spéciales (optionnel)",

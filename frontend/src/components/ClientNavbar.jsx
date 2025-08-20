@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Navbar, Nav, Container } from 'react-bootstrap'
+import { Navbar, Nav, Container, Dropdown } from 'react-bootstrap'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
@@ -94,52 +94,34 @@ Zen she spa
               </Nav.Link>
             ))}
 
-            {/* Auth links: show Login/Signup if not authenticated, Profile/Logout if authenticated */}
-            {!isAuthenticated ? (
-              <>
-                <Nav.Link
-                  as={Link}
-                  to="/client/login"
-                  className={`text-white mx-2 fw-500 ${location.pathname === '/client/login' ? 'active' : ''}`}
-                  onClick={() => setExpanded(false)}
-                >
-                  <FaSignInAlt className="me-2" />
-                  {t('navigation.login')}
-                </Nav.Link>
-                <Nav.Link
-                  as={Link}
-                  to="/client/signup"
-                  className={`text-white mx-2 fw-500 ${location.pathname === '/client/signup' ? 'active' : ''}`}
-                  onClick={() => setExpanded(false)}
-                >
-                  <FaUserPlus className="me-2" />
-                  {t('navigation.signup')}
-                </Nav.Link>
-              </>
-            ) : (
-              <>
-                <Nav.Link
-                  as={Link}
-                  to="/profile"
-                  className={`text-white mx-2 fw-500 ${location.pathname === '/profile' ? 'active' : ''}`}
-                >
-                  <FaUser className="me-2" />
-                  {t('navigation.profile')}
-                </Nav.Link>
-                <Nav.Link
-                  as={Link}
-                  to="#"
-                  className="text-white mx-2 fw-500"
-                  onClick={async () => {
-                    await logout();
-                    setExpanded(false);
-                  }}
-                >
-                  <FaSignOutAlt className="me-2" />
-                  {t('navigation.logout')}
-                </Nav.Link>
-              </>
-            )}
+            {/* User Dropdown for Auth/Profile */}
+            <Dropdown align="end" as={Nav.Item} className="mx-2">
+              <Dropdown.Toggle as={Nav.Link} className="text-white d-flex align-items-center px-2" style={{ background: 'none', border: 'none' }}>
+                <FaUser size={22} />
+              </Dropdown.Toggle>
+              <Dropdown.Menu align="end" className="shadow">
+                {!isAuthenticated ? (
+                  <>
+                    <Dropdown.Item as={Link} to="/client/login" onClick={() => setExpanded(false)}>
+                      <FaSignInAlt className="me-2" /> {t('navigation.login')}
+                    </Dropdown.Item>
+                    <Dropdown.Item as={Link} to="/client/signup" onClick={() => setExpanded(false)}>
+                      <FaUserPlus className="me-2" /> {t('navigation.signup')}
+                    </Dropdown.Item>
+                  </>
+                ) : (
+                  <>
+                    <Dropdown.Item as={Link} to="/profile" onClick={() => setExpanded(false)}>
+                      <FaUser className="me-2" /> {t('navigation.profile')}
+                    </Dropdown.Item>
+                    <Dropdown.Divider />
+                    <Dropdown.Item as="button" onClick={async () => { await logout(); setExpanded(false); }}>
+                      <FaSignOutAlt className="me-2" /> {t('navigation.logout')}
+                    </Dropdown.Item>
+                  </>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
 
             {/* Language Switcher */}
             <LanguageSwitcher />

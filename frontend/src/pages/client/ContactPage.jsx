@@ -126,9 +126,8 @@ const ContactPage = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         style={{
-          background: 'linear-gradient(135deg, rgb(46, 77, 46) 0%,rgb(46, 77, 66) 50%,rgb(46, 77, 76)100%)',
-          minHeight: '50vh'
-        }}
+          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
+      }}
       >
         <div className="container">
           <div className="row align-items-center">

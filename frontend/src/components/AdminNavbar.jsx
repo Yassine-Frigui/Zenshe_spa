@@ -10,7 +10,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
-const AdminNavbar = ({ sidebarCollapsed }) => {
+const AdminNavbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const { user, logout } = useAuth();
@@ -29,14 +29,13 @@ const AdminNavbar = ({ sidebarCollapsed }) => {
 
   return (
     <nav 
-      className="admin-navbar bg-white border-bottom shadow-sm py-2 px-3"
+      className="admin-navbar bg-white border-bottom shadow-sm py-2 px-3 d-none d-lg-block"
       style={{
-        marginLeft: sidebarCollapsed ? '70px' : '250px',
-        transition: 'margin-left 0.3s ease',
+        marginLeft: '70px', // ALWAYS 70px - never changes
         position: 'fixed',
         top: 0,
         right: 0,
-        left: sidebarCollapsed ? '70px' : '250px',
+        left: '70px', // ALWAYS 70px - never changes
         zIndex: 999,
         height: '60px'
       }}
@@ -189,6 +188,25 @@ const AdminNavbar = ({ sidebarCollapsed }) => {
         
         .notification-item:hover {
           background-color: #f8f9fa !important;
+        }
+
+        @media (max-width: 991.98px) {
+          .admin-navbar {
+            margin-left: 0 !important;
+            left: 0 !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+        }
+
+        @media (max-width: 576px) {
+          .navbar-search {
+            display: none !important;
+          }
+          
+          .admin-navbar .d-flex {
+            justify-content: flex-end !important;
+          }
         }
       `}</style>
     </nav>

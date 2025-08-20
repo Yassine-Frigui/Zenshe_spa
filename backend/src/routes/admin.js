@@ -585,4 +585,153 @@ router.post('/telegram/daily-summary', requireRole('admin'), async (req, res) =>
     }
 });
 
+// Statistics endpoint for comprehensive business analytics
+router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res) => {
+    try {
+        const { period = '30' } = req.query; // Default to 30 days
+        const days = parseInt(period);
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+        const thisMonth = new Date().toISOString().slice(0, 7);
+        
+        // Overview statistics
+        const overviewQueries = [
+            `SELECT COUNT(*) as total_clients FROM clients WHERE actif = TRUE`,
+            `SELECT COUNT(*) as total_reservations FROM reservations WHERE date_reservation >= '${startDateStr}' AND reservation_status != 'draft'`,
+            `SELECT SUM(prix_final) as total_revenue FROM reservations WHERE date_reservation >= '${startDateStr}' AND statut = 'terminee'`,
+            `SELECT COUNT(*) as total_services FROM services WHERE actif = TRUE`
+        ];
+        
+        const overviewResults = await Promise.all(
+            overviewQueries.map(query => executeQuery(query))
+        );
+        
+        // Revenue trends (last 7 days)
+        const revenueTrendQuery = `
+            SELECT 
+                date_reservation as date,
+                SUM(prix_final) as revenue,
+                COUNT(*) as bookings
+            FROM reservations 
+            WHERE date_reservation >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                AND statut = 'terminee'
+            GROUP BY date_reservation
+            ORDER BY date_reservation ASC
+        `;
+        
+        // Popular services
+        const popularServicesQuery = `
+            SELECT 
+                s.nom_service as name,
+                COUNT(r.id) as bookings,
+                SUM(r.prix_final) as revenue
+            FROM services s
+            LEFT JOIN reservations r ON s.id = r.service_id
+            WHERE r.date_reservation >= '${startDateStr}'
+                AND r.reservation_status != 'draft'
+            GROUP BY s.id, s.nom_service
+            ORDER BY bookings DESC
+            LIMIT 5
+        `;
+        
+        // Monthly comparison
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        const lastMonthStr = lastMonth.toISOString().slice(0, 7);
+        
+        const monthlyComparisonQuery = `
+            SELECT 
+                DATE_FORMAT(date_reservation, '%Y-%m') as month,
+                COUNT(*) as bookings,
+                SUM(prix_final) as revenue
+            FROM reservations 
+            WHERE DATE_FORMAT(date_reservation, '%Y-%m') IN ('${thisMonth}', '${lastMonthStr}')
+                AND statut = 'terminee'
+            GROUP BY DATE_FORMAT(date_reservation, '%Y-%m')
+            ORDER BY month DESC
+        `;
+        
+        // Client growth
+        const clientGrowthQuery = `
+            SELECT 
+                DATE(date_inscription) as date,
+                COUNT(*) as new_clients
+            FROM clients 
+            WHERE date_inscription >= '${startDateStr}'
+            GROUP BY DATE(date_inscription)
+            ORDER BY date ASC
+        `;
+        
+        // Execute all queries
+        const [revenueTrend, popularServices, monthlyComparison, clientGrowth] = await Promise.all([
+            executeQuery(revenueTrendQuery),
+            executeQuery(popularServicesQuery),
+            executeQuery(monthlyComparisonQuery),
+            executeQuery(clientGrowthQuery)
+        ]);
+        
+        // Calculate growth percentages
+        const currentMonth = monthlyComparison.find(m => m.month === thisMonth) || { bookings: 0, revenue: 0 };
+        const previousMonth = monthlyComparison.find(m => m.month === lastMonthStr) || { bookings: 0, revenue: 0 };
+        
+        const bookingGrowth = previousMonth.bookings > 0 
+            ? ((currentMonth.bookings - previousMonth.bookings) / previousMonth.bookings * 100).toFixed(1)
+            : 0;
+            
+        const revenueGrowth = previousMonth.revenue > 0 
+            ? ((currentMonth.revenue - previousMonth.revenue) / previousMonth.revenue * 100).toFixed(1)
+            : 0;
+        
+        res.json({
+            success: true,
+            data: {
+                overview: {
+                    totalClients: overviewResults[0][0]?.total_clients || 0,
+                    totalReservations: overviewResults[1][0]?.total_reservations || 0,
+                    totalRevenue: overviewResults[2][0]?.total_revenue || 0,
+                    totalServices: overviewResults[3][0]?.total_services || 0,
+                    bookingGrowth: parseFloat(bookingGrowth),
+                    revenueGrowth: parseFloat(revenueGrowth)
+                },
+                revenueTrend: revenueTrend.map(item => ({
+                    date: item.date,
+                    revenue: parseFloat(item.revenue || 0),
+                    bookings: item.bookings || 0
+                })),
+                popularServices: popularServices.map(service => ({
+                    name: service.name,
+                    bookings: service.bookings || 0,
+                    revenue: parseFloat(service.revenue || 0)
+                })),
+                clientGrowth: clientGrowth.map(item => ({
+                    date: item.date,
+                    newClients: item.new_clients || 0
+                })),
+                monthlyComparison: {
+                    current: {
+                        month: thisMonth,
+                        bookings: currentMonth.bookings || 0,
+                        revenue: parseFloat(currentMonth.revenue || 0)
+                    },
+                    previous: {
+                        month: lastMonthStr,
+                        bookings: previousMonth.bookings || 0,
+                        revenue: parseFloat(previousMonth.revenue || 0)
+                    }
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Erreur lors de la récupération des statistiques:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des statistiques',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

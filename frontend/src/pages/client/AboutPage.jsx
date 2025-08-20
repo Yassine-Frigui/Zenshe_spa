@@ -69,10 +69,16 @@ const AboutPage = () => {
   }
 
   return (
-    <div className="about-page">
+    <div className="about-page"
+    >
       {/* Hero Section */}
-      <section className="hero-section bg-gradient-green text-white py-5" style={{ marginTop: '76px' }}>
+      <section className="hero-section  text-white py-5" 
+      style={{
+          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
+      }}
+      >
         <Container>
+          
           <Row className="align-items-center">
             <Col lg={6}>
               <motion.div

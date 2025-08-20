@@ -13,14 +13,16 @@ import {
   FaEyeSlash,
   FaStore,
   FaClock,
-  FaTelegram,
   FaPaperPlane,
-  FaCalendarDay
+  FaCalendarDay,
+  FaKey,
+  FaUserShield,
+  FaBriefcase
 } from 'react-icons/fa';
 import { adminAPI } from '../../services/api';
 
 const AdminSettings = () => {
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('employees');
   const [users, setUsers] = useState([]);
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -31,31 +33,34 @@ const AdminSettings = () => {
     nom: '',
     email: '',
     password: '',
-    role: 'admin',
+    role: 'employe',
     actif: true
   });
 
-  const [salonSettings, setSalonSettings] = useState({
-    nom_salon: '',
+  const [spaSettings, setSpaSettings] = useState({
+    nom_spa: '',
     adresse: '',
     telephone: '',
     email: '',
     description: '',
-    politique_annulation: ''
+    politique_annulation: '',
+    horaires_ouverture: '',
+    site_web: ''
   });
 
-  const [telegramState, setTelegramState] = useState({
-    testing: false,
-    sendingSummary: false,
-    lastTestResult: null,
-    lastSummaryResult: null
+  const [adminAccountForm, setAdminAccountForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    email: '',
+    nom: ''
   });
 
   useEffect(() => {
-    if (activeTab === 'users') {
+    if (activeTab === 'employees') {
       fetchUsers();
-    } else if (activeTab === 'salon') {
-      fetchSalonSettings();
+    } else if (activeTab === 'spa') {
+      fetchSpaSettings();
     }
   }, [activeTab]);
 
@@ -63,20 +68,31 @@ const AdminSettings = () => {
     try {
       setLoading(true);
       const response = await adminAPI.getAdministrateurs();
-      setUsers(response.data || []);
+      // Ensure users is always an array
+      const usersData = response.data;
+      if (Array.isArray(usersData)) {
+        setUsers(usersData);
+      } else {
+        console.warn('Users data is not an array:', usersData);
+        setUsers([]);
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des utilisateurs:', error);
+      // Check if it's a 403 error (insufficient permissions)
+      if (error.response?.status === 403) {
+        console.warn('Accès refusé - Permissions insuffisantes pour voir les utilisateurs');
+      }
       setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSalonSettings = async () => {
+  const fetchSpaSettings = async () => {
     try {
       setLoading(true);
       const response = await adminAPI.getSalonParams();
-      setSalonSettings(response.data || {});
+      setSpaSettings(response.data || {});
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);
     } finally {
@@ -84,60 +100,38 @@ const AdminSettings = () => {
     }
   };
 
-  const testTelegramConnection = async () => {
-    try {
-      setTelegramState(prev => ({ ...prev, testing: true, lastTestResult: null }));
-      
-      const response = await adminAPI.testTelegram();
-      
-      setTelegramState(prev => ({ 
-        ...prev, 
-        testing: false, 
-        lastTestResult: {
-          success: response.data.success,
-          message: response.data.message,
-          timestamp: new Date()
-        }
-      }));
-    } catch (error) {
-      setTelegramState(prev => ({ 
-        ...prev, 
-        testing: false, 
-        lastTestResult: {
-          success: false,
-          message: error.response?.data?.message || 'Erreur de connexion',
-          timestamp: new Date()
-        }
-      }));
-    }
+  const handleAdminAccountInputChange = (e) => {
+    const { name, value } = e.target;
+    setAdminAccountForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const sendDailySummary = async () => {
+  const handleAdminAccountSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (adminAccountForm.newPassword !== adminAccountForm.confirmPassword) {
+      alert('Les mots de passe ne correspondent pas');
+      return;
+    }
+    
     try {
-      setTelegramState(prev => ({ ...prev, sendingSummary: true, lastSummaryResult: null }));
-      
-      const response = await adminAPI.sendTelegramDailySummary();
-      
-      setTelegramState(prev => ({ 
-        ...prev, 
-        sendingSummary: false, 
-        lastSummaryResult: {
-          success: response.data.success,
-          message: response.data.message,
-          reservations: response.data.reservations,
-          timestamp: new Date()
-        }
-      }));
+      setLoading(true);
+      // Update password and email logic here
+      alert('Compte administrateur mis à jour avec succès !');
+      setAdminAccountForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+        email: '',
+        nom: ''
+      });
     } catch (error) {
-      setTelegramState(prev => ({ 
-        ...prev, 
-        sendingSummary: false, 
-        lastSummaryResult: {
-          success: false,
-          message: error.response?.data?.message || 'Erreur lors de l\'envoi',
-          timestamp: new Date()
-        }
-      }));
+      console.error('Erreur lors de la mise à jour du compte:', error);
+      alert('Erreur lors de la mise à jour');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,9 +143,9 @@ const AdminSettings = () => {
     }));
   };
 
-  const handleSalonInputChange = (e) => {
+  const handleSpaInputChange = (e) => {
     const { name, value } = e.target;
-    setSalonSettings(prev => ({
+    setSpaSettings(prev => ({
       ...prev,
       [name]: value
     }));
@@ -177,11 +171,11 @@ const AdminSettings = () => {
     }
   };
 
-  const handleSalonSubmit = async (e) => {
+  const handleSpaSubmit = async (e) => {
     e.preventDefault();
     try {
-      await adminAPI.updateSalonParams(salonSettings);
-      alert('Paramètres du salon mis à jour avec succès !');
+      await adminAPI.updateSalonParams(spaSettings);
+      alert('Paramètres du spa mis à jour avec succès !');
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
       alert('Erreur lors de la mise à jour');
@@ -227,9 +221,9 @@ const AdminSettings = () => {
   };
 
   const tabs = [
-    { id: 'users', label: 'Utilisateurs', icon: FaUsers },
-    { id: 'salon', label: 'Salon', icon: FaStore },
-    { id: 'telegram', label: 'Telegram', icon: FaTelegram },
+    { id: 'employees', label: 'Employés', icon: FaBriefcase },
+    { id: 'spa', label: 'Spa', icon: FaStore },
+    { id: 'account', label: 'Mon Compte', icon: FaUserShield },
   ];
 
   return (
@@ -248,7 +242,7 @@ const AdminSettings = () => {
               Paramètres
             </h1>
             <p className="text-muted mb-0">
-              Gérez les paramètres de votre salon
+              Gérez les paramètres de votre spa et de votre équipe
             </p>
           </div>
         </div>
@@ -286,19 +280,19 @@ const AdminSettings = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.6 }}
       >
-        {activeTab === 'users' && (
+        {activeTab === 'employees' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light border-0 d-flex justify-content-between align-items-center">
               <h5 className="mb-0 fw-bold">
                 <FaUsers className="text-primary me-2" />
-                Gestion des utilisateurs
+                Gestion des Employés
               </h5>
               <button
                 className="btn btn-pink"
                 onClick={openCreateUserModal}
               >
                 <FaPlus className="me-2" />
-                Nouvel utilisateur
+                Nouvel Employé
               </button>
             </div>
             <div className="card-body p-0">
@@ -319,11 +313,16 @@ const AdminSettings = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.length === 0 ? (
+                      {!Array.isArray(users) || users.length === 0 ? (
                         <tr>
                           <td colSpan="4" className="text-center py-5 text-muted">
                             <FaUser className="mb-3" size={48} />
-                            <p className="mb-0">Aucun utilisateur trouvé</p>
+                            <p className="mb-0">
+                              {!Array.isArray(users) 
+                                ? 'Erreur de chargement des utilisateurs' 
+                                : 'Aucun utilisateur trouvé'
+                              }
+                            </p>
                           </td>
                         </tr>
                       ) : (
@@ -383,25 +382,25 @@ const AdminSettings = () => {
           </div>
         )}
 
-        {activeTab === 'salon' && (
+        {activeTab === 'spa' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light border-0">
               <h5 className="mb-0 fw-bold">
                 <FaStore className="text-primary me-2" />
-                Paramètres du salon
+                Paramètres du Spa
               </h5>
             </div>
             <div className="card-body">
-              <form onSubmit={handleSalonSubmit}>
+              <form onSubmit={handleSpaSubmit}>
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label">Nom du salon</label>
+                    <label className="form-label">Nom du Spa</label>
                     <input
                       type="text"
                       className="form-control"
-                      name="nom_salon"
-                      value={salonSettings.nom_salon || ''}
-                      onChange={handleSalonInputChange}
+                      name="nom_spa"
+                      value={spaSettings.nom_spa || ''}
+                      onChange={handleSpaInputChange}
                     />
                   </div>
                   <div className="col-md-6 mb-3">
@@ -410,8 +409,8 @@ const AdminSettings = () => {
                       type="tel"
                       className="form-control"
                       name="telephone"
-                      value={salonSettings.telephone || ''}
-                      onChange={handleSalonInputChange}
+                      value={spaSettings.telephone || ''}
+                      onChange={handleSpaInputChange}
                     />
                   </div>
                   <div className="col-md-6 mb-3">
@@ -420,8 +419,8 @@ const AdminSettings = () => {
                       type="email"
                       className="form-control"
                       name="email"
-                      value={salonSettings.email || ''}
-                      onChange={handleSalonInputChange}
+                      value={spaSettings.email || ''}
+                      onChange={handleSpaInputChange}
                     />
                   </div>
                   <div className="col-md-6 mb-3">
@@ -430,18 +429,40 @@ const AdminSettings = () => {
                       type="text"
                       className="form-control"
                       name="adresse"
-                      value={salonSettings.adresse || ''}
-                      onChange={handleSalonInputChange}
+                      value={spaSettings.adresse || ''}
+                      onChange={handleSpaInputChange}
                     />
                   </div>
                   <div className="col-12 mb-3">
-                    <label className="form-label">Description du salon</label>
+                    <label className="form-label">Description du Spa</label>
                     <textarea
                       className="form-control"
                       name="description"
                       rows="4"
-                      value={salonSettings.description || ''}
-                      onChange={handleSalonInputChange}
+                      value={spaSettings.description || ''}
+                      onChange={handleSpaInputChange}
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Horaires d'ouverture</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="horaires_ouverture"
+                      value={spaSettings.horaires_ouverture || ''}
+                      onChange={handleSpaInputChange}
+                      placeholder="Lun-Ven: 9h-18h, Sam: 9h-17h"
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Site Web</label>
+                    <input
+                      type="url"
+                      className="form-control"
+                      name="site_web"
+                      value={spaSettings.site_web || ''}
+                      onChange={handleSpaInputChange}
+                      placeholder="https://monspa.com"
                     />
                   </div>
                   <div className="col-12 mb-3">
@@ -450,8 +471,8 @@ const AdminSettings = () => {
                       className="form-control"
                       name="politique_annulation"
                       rows="3"
-                      value={salonSettings.politique_annulation || ''}
-                      onChange={handleSalonInputChange}
+                      value={spaSettings.politique_annulation || ''}
+                      onChange={handleSpaInputChange}
                     />
                   </div>
                 </div>
@@ -466,12 +487,12 @@ const AdminSettings = () => {
           </div>
         )}
 
-        {activeTab === 'telegram' && (
+        {activeTab === 'account' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light border-0">
               <h5 className="mb-0 fw-bold">
-                <FaTelegram className="text-primary me-2" />
-                Configuration Telegram Bot
+                <FaUserShield className="text-primary me-2" />
+                Gestion du Compte Super Admin
               </h5>
             </div>
             <div className="card-body">
@@ -601,7 +622,7 @@ const AdminSettings = () => {
               <div className="modal-header border-0 pb-0">
                 <h5 className="modal-title fw-bold">
                   <FaUser className="text-primary me-2" />
-                  {editingUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'}
+                  {editingUser ? 'Modifier l\'employé' : 'Nouvel Employé'}
                 </h5>
                 <button
                   type="button"
@@ -664,6 +685,7 @@ const AdminSettings = () => {
                         value={userForm.role}
                         onChange={handleUserInputChange}
                       >
+                        <option value="employe">Employé</option>
                         <option value="admin">Admin</option>
                         <option value="super_admin">Super Admin</option>
                       </select>

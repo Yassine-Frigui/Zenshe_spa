@@ -282,9 +282,26 @@ const AdminClients = () => {
                               </span>
                             </div>
                             <div>
-                              <strong className="text-dark">
-                                {client.prenom} {client.nom}
-                              </strong>
+                              <div className="d-flex align-items-center gap-2">
+                                <strong className="text-dark">
+                                  {client.prenom} {client.nom}
+                                </strong>
+                                <motion.button
+                                  className="btn btn-outline-primary"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => openModal(client)}
+                                  title="Voir détails"
+                                  style={{ 
+                                    fontSize: '10px', 
+                                    padding: '2px 6px',
+                                    minWidth: 'auto',
+                                    height: '20px'
+                                  }}
+                                >
+                                  <FaEye size={10} />
+                                </motion.button>
+                              </div>
                               <div className="small text-muted">
                                 {calculateAge(client.date_naissance)} ans
                               </div>
@@ -346,14 +363,6 @@ const AdminClients = () => {
                               title="Réserver"
                             >
                               <FaCalendarAlt size={12} />
-                            </motion.button>
-                            <motion.button
-                              className="btn btn-sm btn-outline-secondary"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              title="Modifier"
-                            >
-                              <FaEdit size={12} />
                             </motion.button>
                             <motion.button
                               className="btn btn-sm btn-outline-danger"

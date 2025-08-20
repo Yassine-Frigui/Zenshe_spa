@@ -312,12 +312,29 @@ const AdminReservations = () => {
                       >
                         <td className="px-4 py-3">
                           <div>
-                            <strong className="text-dark">
-                              {reservation.is_draft ? (
-                                <span className="badge bg-warning text-dark me-2">DRAFT</span>
-                              ) : null}
-                              {reservation.client.prenom} {reservation.client.nom}
-                            </strong>
+                            <div className="d-flex align-items-center gap-2">
+                              <strong className="text-dark">
+                                {reservation.is_draft ? (
+                                  <span className="badge bg-warning text-dark me-2">DRAFT</span>
+                                ) : null}
+                                {reservation.client.prenom} {reservation.client.nom}
+                              </strong>
+                              <motion.button
+                                className="btn btn-outline-primary"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => openModal(reservation)}
+                                title="Voir détails"
+                                style={{ 
+                                  fontSize: '10px', 
+                                  padding: '2px 6px',
+                                  minWidth: 'auto',
+                                  height: '20px'
+                                }}
+                              >
+                                <FaEye size={10} />
+                              </motion.button>
+                            </div>
                             <div className="small text-muted">
                               {reservation.client.telephone}
                             </div>

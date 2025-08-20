@@ -199,6 +199,9 @@ export const adminAPI = {
   getStockAlerts: () => axios.get('/api/inventaire/alertes/stock'),
   getInventaireStats: () => axios.get('/api/inventaire/stats/general'),
 
+  // Statistiques
+  getStatistics: (dateRange = 'month') => axios.get(`/api/admin/statistics?range=${dateRange}`),
+
   // Paramètres spa
   getSalonParams: () => axios.get('/api/admin/salon/parametres'),
   updateSalonParams: (data) => axios.put('/api/admin/salon/parametres', data),
@@ -208,11 +211,7 @@ export const adminAPI = {
   createAdministrateur: (data) => axios.post('/api/admin/utilisateurs', data),
   updateAdministrateur: (id, data) => axios.put(`/api/admin/utilisateurs/${id}`, data),
   toggleAdminStatus: (id) => axios.patch(`/api/admin/utilisateurs/${id}/toggle`),
-  deleteAdministrateur: (id) => axios.delete(`/api/admin/utilisateurs/${id}`),
-
-  // Telegram
-  testTelegram: () => axios.post('/api/admin/telegram/test'),
-  sendTelegramDailySummary: () => axios.post('/api/admin/telegram/daily-summary')
+  deleteAdministrateur: (id) => axios.delete(`/api/admin/utilisateurs/${id}`)
 }
 
 // Intercepteur pour gérer les erreurs d'authentification

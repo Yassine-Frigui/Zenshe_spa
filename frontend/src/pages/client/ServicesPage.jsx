@@ -73,7 +73,11 @@ const ServicesPage = () => {
   return (
     <div className="services-page" style={{ marginTop: '76px' }}>
       {/* Header */}
-      <section className="py-5 bg-gradient-green text-white">
+      <section className="py-5 text-white"
+      style={{
+          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
+      }}
+      >
         <Container>
           <Row className="text-center">
             <Col>
