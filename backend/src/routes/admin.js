@@ -145,7 +145,7 @@ router.patch('/reservations/:id/statut', async (req, res) => {
         const { id } = req.params;
         const { statut, notes_admin } = req.body;
         
-        const validStatuts = ['en_attente', 'confirmee', 'en_cours', 'terminee', 'annulee', 'no_show'];
+        const validStatuts = ['draft', 'en_attente', 'confirmee', 'en_cours', 'terminee', 'annulee', 'absent'];
         if (!validStatuts.includes(statut)) {
             return res.status(400).json({ message: 'Statut invalide' });
         }
@@ -196,6 +196,63 @@ router.post('/reservations/convert-draft/:id', async (req, res) => {
         });
     } catch (error) {
         console.error('Erreur lors de la conversion du brouillon:', error);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
+});
+
+// Update reservation details (client info, etc.)
+router.put('/reservations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { client_nom, client_prenom, client_telephone, client_email, notes_admin } = req.body;
+        
+        // Build update query for reservation client details
+        const updateFields = [];
+        const updateValues = [];
+        
+        if (client_nom !== undefined) {
+            updateFields.push('client_nom = ?');
+            updateValues.push(client_nom);
+        }
+        if (client_prenom !== undefined) {
+            updateFields.push('client_prenom = ?');
+            updateValues.push(client_prenom);
+        }
+        if (client_telephone !== undefined) {
+            updateFields.push('client_telephone = ?');
+            updateValues.push(client_telephone);
+        }
+        if (client_email !== undefined) {
+            updateFields.push('client_email = ?');
+            updateValues.push(client_email);
+        }
+        if (notes_admin !== undefined) {
+            updateFields.push('notes_admin = ?');
+            updateValues.push(notes_admin);
+        }
+        
+        if (updateFields.length === 0) {
+            return res.status(400).json({ message: 'Aucune donnée à mettre à jour' });
+        }
+        
+        updateValues.push(id);
+        
+        const updateQuery = `
+            UPDATE reservations 
+            SET ${updateFields.join(', ')}, date_modification = NOW()
+            WHERE id = ?
+        `;
+        
+        await executeQuery(updateQuery, updateValues);
+        
+        const updatedReservation = await ReservationModel.getReservationById(id);
+        
+        res.json({
+            message: 'Réservation mise à jour avec succès',
+            reservation: updatedReservation
+        });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de la réservation:', error);
         res.status(500).json({ message: 'Erreur interne du serveur' });
     }
 });

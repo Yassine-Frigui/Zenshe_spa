@@ -13,7 +13,10 @@ import {
   FaCheck,
   FaTimes,
   FaClock,
-  FaCalendarCheck
+  FaCalendarCheck,
+  FaSave,
+  FaUser,
+  FaClipboardCheck
 } from 'react-icons/fa';
 import { adminAPI } from '../../services/api';
 
@@ -25,7 +28,17 @@ const AdminReservations = () => {
   const [statusFilter, setStatusFilter] = useState('tous');
   const [dateFilter, setDateFilter] = useState('tous');
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    statut: '',
+    client_nom: '',
+    client_prenom: '',
+    client_telephone: '',
+    client_email: '',
+    notes_admin: ''
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchReservations();
@@ -122,23 +135,105 @@ const AdminReservations = () => {
 
   const getStatusBadge = (statut) => {
     const statusConfig = {
-      'en_attente': { bg: 'warning', text: 'En attente' },
-      'confirmee': { bg: 'success', text: 'Confirmée' },
-      'en_cours': { bg: 'primary', text: 'En cours' },
-      'terminee': { bg: 'info', text: 'Terminée' },
-      'annulee': { bg: 'danger', text: 'Annulée' },
-      'no_show': { bg: 'secondary', text: 'Absent' },
-      'draft': { bg: 'light text-dark', text: 'Brouillon' }
+      'draft': { bg: 'light text-dark', text: 'Brouillon', icon: FaEdit },
+      'en_attente': { bg: 'warning', text: 'En attente', icon: FaClock },
+      'confirmee': { bg: 'success', text: 'Confirmée', icon: FaCheck },
+      'en_cours': { bg: 'primary', text: 'En cours', icon: FaClipboardCheck },
+      'terminee': { bg: 'info', text: 'Terminée', icon: FaCalendarCheck },
+      'annulee': { bg: 'danger', text: 'Annulée', icon: FaTimes },
+      'absent': { bg: 'secondary', text: 'Absent', icon: FaUser }
     };
     
-    const config = statusConfig[statut] || { bg: 'secondary', text: 'Inconnu' };
-    return <span className={`badge bg-${config.bg}`}>{config.text}</span>;
+    const config = statusConfig[statut] || { bg: 'secondary', text: 'Inconnu', icon: FaEdit };
+    const IconComponent = config.icon;
+    
+    return (
+      <span className={`badge bg-${config.bg} d-flex align-items-center gap-1`}>
+        <IconComponent size={12} />
+        {config.text}
+      </span>
+    );
   };
 
-  const handleStatusChange = (reservationId, newStatus) => {
-    setReservations(prev => prev.map(res => 
-      res.id === reservationId ? { ...res, statut: newStatus } : res
-    ));
+  const handleStatusChange = async (reservationId, newStatus) => {
+    try {
+      setIsUpdating(true);
+      await adminAPI.updateReservationStatus(reservationId, newStatus);
+      
+      // Update local state
+      setReservations(prev => prev.map(res => 
+        res.id === reservationId ? { ...res, statut: newStatus } : res
+      ));
+      
+      // Show success message
+      alert('Statut mis à jour avec succès !');
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+      alert('Erreur lors de la mise à jour du statut');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const openEditModal = (reservation) => {
+    setSelectedReservation(reservation);
+    setEditFormData({
+      statut: reservation.statut,
+      client_nom: reservation.client.nom,
+      client_prenom: reservation.client.prenom,
+      client_telephone: reservation.client.telephone,
+      client_email: reservation.client.email,
+      notes_admin: reservation.notes_admin || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedReservation) return;
+
+    try {
+      setIsUpdating(true);
+      
+      // Update reservation status and details
+      await adminAPI.updateReservationStatus(
+        selectedReservation.id, 
+        editFormData.statut, 
+        editFormData.notes_admin
+      );
+
+      // Update client details if provided
+      if (editFormData.client_nom || editFormData.client_prenom || 
+          editFormData.client_telephone || editFormData.client_email) {
+        await adminAPI.updateReservation(selectedReservation.id, {
+          client_nom: editFormData.client_nom,
+          client_prenom: editFormData.client_prenom,
+          client_telephone: editFormData.client_telephone,
+          client_email: editFormData.client_email
+        });
+      }
+
+      // Refresh reservations
+      await fetchReservations();
+      
+      // Close modal and show success
+      setShowEditModal(false);
+      alert('Réservation mise à jour avec succès !');
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      alert('Erreur lors de la mise à jour de la réservation');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleConvertDraft = async (reservationId) => {
@@ -247,7 +342,7 @@ const AdminReservations = () => {
                   <option value="en_cours">En cours</option>
                   <option value="terminee">Terminée</option>
                   <option value="annulee">Annulée</option>
-                  <option value="no_show">Absent</option>
+                  <option value="absent">Absent</option>
                 </select>
               </div>
               <div className="col-md-3">
@@ -371,7 +466,7 @@ const AdminReservations = () => {
                           </span>
                         </td>
                         <td className="py-3">
-                          <div className="d-flex gap-1">
+                          <div className="d-flex gap-1 flex-wrap">
                             <motion.button
                               className="btn btn-sm btn-outline-primary"
                               whileHover={{ scale: 1.05 }}
@@ -381,6 +476,17 @@ const AdminReservations = () => {
                             >
                               <FaEye size={12} />
                             </motion.button>
+
+                            <motion.button
+                              className="btn btn-sm btn-outline-warning"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => openEditModal(reservation)}
+                              title="Modifier statut et détails"
+                              disabled={isUpdating}
+                            >
+                              <FaEdit size={12} />
+                            </motion.button>
                             
                             {reservation.is_draft ? (
                               <motion.button
@@ -389,6 +495,7 @@ const AdminReservations = () => {
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleConvertDraft(reservation.id)}
                                 title="Convertir en réservation"
+                                disabled={isUpdating}
                               >
                                 <FaCalendarCheck size={12} />
                               </motion.button>
@@ -399,20 +506,22 @@ const AdminReservations = () => {
                                     className="btn btn-sm btn-outline-success"
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleStatusChange(reservation.id, 'confirmé')}
+                                    onClick={() => handleStatusChange(reservation.id, 'confirmee')}
                                     title="Confirmer"
+                                    disabled={isUpdating}
                                   >
                                     <FaCheck size={12} />
                                   </motion.button>
                                 )}
                                 
-                                {reservation.statut !== 'terminé' && reservation.statut !== 'annulé' && (
+                                {['en_attente', 'confirmee'].includes(reservation.statut) && (
                                   <motion.button
-                                    className="btn btn-sm btn-outline-warning"
+                                    className="btn btn-sm btn-outline-danger"
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleStatusChange(reservation.id, 'annulé')}
+                                    onClick={() => handleStatusChange(reservation.id, 'annulee')}
                                     title="Annuler"
+                                    disabled={isUpdating}
                                   >
                                     <FaTimes size={12} />
                                   </motion.button>
@@ -421,7 +530,7 @@ const AdminReservations = () => {
                             )}
                             
                             <motion.button
-                              className="btn btn-sm btn-outline-success"
+                              className="btn btn-sm btn-outline-info"
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               title="Appeler"
@@ -430,11 +539,12 @@ const AdminReservations = () => {
                             </motion.button>
                             
                             <motion.button
-                              className="btn btn-sm btn-outline-danger"
+                              className="btn btn-sm btn-outline-secondary"
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => handleDelete(reservation.id)}
                               title="Supprimer"
+                              disabled={isUpdating}
                             >
                               <FaTrash size={12} />
                             </motion.button>
@@ -514,9 +624,18 @@ const AdminReservations = () => {
                     
                     {selectedReservation.notes && (
                       <>
-                        <h6 className="fw-bold text-primary mb-3">Notes</h6>
-                        <div className="bg-light p-3 rounded">
+                        <h6 className="fw-bold text-primary mb-3">Notes client</h6>
+                        <div className="bg-light p-3 rounded mb-3">
                           {selectedReservation.notes}
+                        </div>
+                      </>
+                    )}
+                    
+                    {selectedReservation.notes_admin && (
+                      <>
+                        <h6 className="fw-bold text-warning mb-3">Notes administrateur</h6>
+                        <div className="bg-warning bg-opacity-10 p-3 rounded">
+                          {selectedReservation.notes_admin}
                         </div>
                       </>
                     )}
@@ -533,7 +652,13 @@ const AdminReservations = () => {
                     <FaEnvelope className="me-2" />
                     Email
                   </button>
-                  <button className="btn btn-outline-secondary">
+                  <button 
+                    className="btn btn-outline-warning"
+                    onClick={() => {
+                      setShowModal(false);
+                      openEditModal(selectedReservation);
+                    }}
+                  >
                     <FaEdit className="me-2" />
                     Modifier
                   </button>
@@ -545,6 +670,188 @@ const AdminReservations = () => {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedReservation && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <motion.div
+              className="modal-content"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">
+                  <FaEdit className="text-warning me-2" />
+                  Modifier la réservation #{selectedReservation.id}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={isUpdating}
+                />
+              </div>
+              
+              <form onSubmit={handleEditSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    {/* Status Section */}
+                    <div className="col-md-6">
+                      <h6 className="fw-bold text-primary mb-3">
+                        <FaClipboardCheck className="me-2" />
+                        Statut de la réservation
+                      </h6>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Statut actuel</label>
+                        <div className="mb-2">
+                          {getStatusBadge(selectedReservation.statut)}
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Nouveau statut</label>
+                        <select
+                          className="form-select"
+                          value={editFormData.statut}
+                          onChange={(e) => handleInputChange('statut', e.target.value)}
+                          required
+                        >
+                          <option value="draft">Brouillon</option>
+                          <option value="en_attente">En attente</option>
+                          <option value="confirmee">Confirmée</option>
+                          <option value="en_cours">En cours</option>
+                          <option value="terminee">Terminée</option>
+                          <option value="annulee">Annulée</option>
+                          <option value="absent">Absent (No-show)</option>
+                        </select>
+                        <div className="form-text">
+                          Sélectionnez le nouveau statut pour cette réservation
+                        </div>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Notes administrateur</label>
+                        <textarea
+                          className="form-control"
+                          rows="3"
+                          value={editFormData.notes_admin}
+                          onChange={(e) => handleInputChange('notes_admin', e.target.value)}
+                          placeholder="Ajoutez des notes sur cette modification..."
+                        />
+                      </div>
+                    </div>
+
+                    {/* Client Details Section */}
+                    <div className="col-md-6">
+                      <h6 className="fw-bold text-primary mb-3">
+                        <FaUser className="me-2" />
+                        Détails du client
+                      </h6>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Prénom</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={editFormData.client_prenom}
+                          onChange={(e) => handleInputChange('client_prenom', e.target.value)}
+                          placeholder="Prénom du client"
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Nom</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={editFormData.client_nom}
+                          onChange={(e) => handleInputChange('client_nom', e.target.value)}
+                          placeholder="Nom du client"
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Téléphone</label>
+                        <input
+                          type="tel"
+                          className="form-control"
+                          value={editFormData.client_telephone}
+                          onChange={(e) => handleInputChange('client_telephone', e.target.value)}
+                          placeholder="Numéro de téléphone"
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Email</label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          value={editFormData.client_email}
+                          onChange={(e) => handleInputChange('client_email', e.target.value)}
+                          placeholder="Adresse email"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Service Info (Read-only) */}
+                  <div className="row mt-4">
+                    <div className="col-12">
+                      <h6 className="fw-bold text-primary mb-3">Informations de la réservation</h6>
+                      <div className="bg-light p-3 rounded">
+                        <div className="row">
+                          <div className="col-md-4">
+                            <strong>Service:</strong> {selectedReservation.service.nom}
+                          </div>
+                          <div className="col-md-4">
+                            <strong>Date:</strong> {new Date(selectedReservation.date_reservation).toLocaleDateString('fr-FR')}
+                          </div>
+                          <div className="col-md-4">
+                            <strong>Heure:</strong> {selectedReservation.heure_reservation}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="modal-footer border-0">
+                  <div className="d-flex gap-2 w-100">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowEditModal(false)}
+                      disabled={isUpdating}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary d-flex align-items-center gap-2"
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? (
+                        <>
+                          <div className="spinner-border spinner-border-sm" role="status" />
+                          Mise à jour...
+                        </>
+                      ) : (
+                        <>
+                          <FaSave />
+                          Sauvegarder les modifications
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
             </motion.div>
           </div>
         </div>
