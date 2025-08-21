@@ -675,28 +675,26 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
                 COUNT(CASE WHEN statut = 'terminee' THEN 1 END) as bookings_completed,
                 
                 -- Potential Revenue (confirmed but not completed yet)
-                SUM(CASE WHEN statut = 'confirmee' THEN prix_final ELSE 0 END) as revenue_potential,
-                COUNT(CASE WHEN statut = 'confirmee' THEN 1 END) as bookings_confirmed,
+                SUM(CASE WHEN statut IN ('confirmee', 'en_cours') THEN prix_final ELSE 0 END) as revenue_potential,
+                COUNT(CASE WHEN statut IN ('confirmee', 'en_cours') THEN 1 END) as bookings_confirmed,
                 
                 -- Lost Revenue (cancelled or no-show)
-                SUM(CASE WHEN statut IN ('annulee', 'absent') THEN prix_final ELSE 0 END) as revenue_lost,
-                COUNT(CASE WHEN statut IN ('annulee', 'absent') THEN 1 END) as bookings_lost,
+                SUM(CASE WHEN statut IN ('annulee', 'no_show') THEN prix_final ELSE 0 END) as revenue_lost,
+                COUNT(CASE WHEN statut IN ('annulee', 'no_show') THEN 1 END) as bookings_lost,
                 
-                -- Draft to Confirmed Conversions (admin intervention)
-                COUNT(CASE WHEN statut = 'confirmee' AND reservation_status = 'confirmed' 
-                          AND notes_admin IS NOT NULL AND notes_admin != '' THEN 1 END) as admin_conversions,
-                SUM(CASE WHEN statut = 'confirmee' AND reservation_status = 'confirmed' 
-                        AND notes_admin IS NOT NULL AND notes_admin != '' THEN prix_final ELSE 0 END) as admin_conversion_value,
+                -- Manual Conversions (draft to confirmed - admin intervention)
+                COUNT(CASE WHEN statut != 'draft' AND reservation_status = 'confirmed' THEN 1 END) as admin_conversions,
+                SUM(CASE WHEN statut != 'draft' AND reservation_status = 'confirmed' THEN prix_final ELSE 0 END) as admin_conversion_value,
                 
                 -- Total Draft Impact (all drafts created)
                 (SELECT COUNT(*) FROM reservations 
                  WHERE date_creation >= '${startDateStr}' 
-                 AND (statut = 'draft' OR (statut != 'draft' AND notes_admin IS NOT NULL))) as total_drafts_created,
+                 AND statut = 'draft') as total_drafts_created,
                 
                 -- Draft Conversion Rate
                 (SELECT COUNT(*) FROM reservations 
                  WHERE date_creation >= '${startDateStr}' 
-                 AND statut != 'draft' AND notes_admin IS NOT NULL) as drafts_converted_to_bookings
+                 AND statut != 'draft' AND reservation_status IN ('confirmed', 'reserved')) as drafts_converted_to_bookings
                  
             FROM reservations 
             WHERE date_reservation >= '${startDateStr}' 
@@ -706,13 +704,13 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         // 2. Admin Intervention Impact Analysis
         const adminInterventionQuery = `
             SELECT 
-                -- Reservations manually handled by admin (had notes)
-                COUNT(CASE WHEN notes_admin IS NOT NULL AND notes_admin != '' THEN 1 END) as admin_touched_reservations,
-                AVG(CASE WHEN notes_admin IS NOT NULL AND notes_admin != '' THEN prix_final END) as avg_value_admin_handled,
+                -- Reservations manually confirmed by admin
+                COUNT(CASE WHEN reservation_status = 'confirmed' AND statut != 'draft' THEN 1 END) as admin_touched_reservations,
+                AVG(CASE WHEN reservation_status = 'confirmed' THEN prix_final END) as avg_value_admin_handled,
                 
-                -- Success rate of admin interventions
-                COUNT(CASE WHEN notes_admin IS NOT NULL AND statut = 'terminee' THEN 1 END) as admin_successful_completions,
-                COUNT(CASE WHEN notes_admin IS NOT NULL AND statut IN ('annulee', 'absent') THEN 1 END) as admin_failed_conversions,
+                -- Success rate of confirmed reservations
+                COUNT(CASE WHEN reservation_status = 'confirmed' AND statut = 'terminee' THEN 1 END) as admin_successful_completions,
+                COUNT(CASE WHEN reservation_status = 'confirmed' AND statut IN ('annulee', 'no_show') THEN 1 END) as admin_failed_conversions,
                 
                 -- Draft system effectiveness
                 (SELECT COUNT(*) FROM reservations 
@@ -729,8 +727,8 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
                      AND r2.date_creation < r1.date_creation
                  )) as draft_converted_customers,
                 
-                -- Revenue rescued by admin intervention
-                SUM(CASE WHEN notes_admin IS NOT NULL AND statut = 'terminee' THEN prix_final ELSE 0 END) as revenue_rescued_by_admin
+                -- Revenue from confirmed reservations (admin interventions)
+                SUM(CASE WHEN reservation_status = 'confirmed' AND statut = 'terminee' THEN prix_final ELSE 0 END) as revenue_rescued_by_admin
                 
             FROM reservations 
             WHERE date_reservation >= '${startDateStr}'
@@ -768,7 +766,7 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
                 -- Total drafts created (shows lead generation)
                 COUNT(*) as total_drafts,
                 
-                -- Drafts that became confirmed bookings
+                -- Drafts that became confirmed bookings (based on phone number matching)
                 SUM(CASE WHEN converted_reservation.id IS NOT NULL THEN 1 ELSE 0 END) as drafts_converted,
                 
                 -- Average time from draft to conversion
@@ -787,6 +785,7 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
             LEFT JOIN reservations converted_reservation ON (
                 draft_res.client_telephone = converted_reservation.client_telephone
                 AND converted_reservation.statut != 'draft'
+                AND converted_reservation.reservation_status IN ('reserved', 'confirmed')
                 AND converted_reservation.date_creation > draft_res.date_creation
                 AND converted_reservation.date_creation <= DATE_ADD(draft_res.date_creation, INTERVAL 30 DAY)
             )
@@ -814,7 +813,7 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
                 (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM reservations WHERE date_reservation >= '${startDateStr}' AND reservation_status != 'draft')) as percentage
             FROM reservations 
             WHERE date_reservation >= '${startDateStr}' 
-                AND statut IN ('annulee', 'absent')
+                AND statut IN ('annulee', 'no_show')
             GROUP BY statut
         `;
 
@@ -831,16 +830,17 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         // Revenue by Service Type
         const revenueByServiceQuery = `
             SELECT 
-                s.nom_service as service_name,
-                s.category,
+                s.nom as service_name,
+                cs.nom as category,
                 COUNT(r.id) as bookings,
                 SUM(r.prix_final) as revenue,
                 AVG(r.prix_final) as avg_price
             FROM services s
+            LEFT JOIN categories_services cs ON s.categorie_id = cs.id
             LEFT JOIN reservations r ON s.id = r.service_id
             WHERE r.date_reservation >= '${startDateStr}'
                 AND r.statut = 'terminee'
-            GROUP BY s.id, s.nom_service, s.category
+            GROUP BY s.id, s.nom, cs.nom
             ORDER BY revenue DESC
         `;
 
@@ -914,21 +914,21 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         const seasonalTrendsQuery = `
             SELECT 
                 MONTH(date_reservation) as month,
-                s.nom_service,
+                s.nom as nom_service,
                 COUNT(r.id) as bookings
             FROM reservations r
             JOIN services s ON r.service_id = s.id
             WHERE YEAR(date_reservation) = YEAR(CURDATE())
                 AND r.statut = 'terminee'
-            GROUP BY MONTH(date_reservation), s.id, s.nom_service
+            GROUP BY MONTH(date_reservation), s.id, s.nom
             ORDER BY month, bookings DESC
         `;
 
         // Common Service Combinations (requires additional table or analysis)
         const serviceCombinationsQuery = `
             SELECT 
-                s1.nom_service as service1,
-                s2.nom_service as service2,
+                s1.nom as service1,
+                s2.nom as service2,
                 COUNT(*) as combination_count
             FROM reservations r1
             JOIN reservations r2 ON r1.client_id = r2.client_id 
@@ -939,7 +939,7 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
             WHERE r1.date_reservation >= '${startDateStr}'
                 AND r1.statut = 'terminee'
                 AND r2.statut = 'terminee'
-            GROUP BY s1.id, s2.id, s1.nom_service, s2.nom_service
+            GROUP BY s1.id, s2.id, s1.nom, s2.nom
             ORDER BY combination_count DESC
             LIMIT 10
         `;
@@ -1028,14 +1028,14 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         
         const popularServicesQuery = `
             SELECT 
-                s.nom_service as name,
+                s.nom as name,
                 COUNT(r.id) as bookings,
                 SUM(r.prix_final) as revenue
             FROM services s
             LEFT JOIN reservations r ON s.id = r.service_id
             WHERE r.date_reservation >= '${startDateStr}'
                 AND r.reservation_status != 'draft'
-            GROUP BY s.id, s.nom_service
+            GROUP BY s.id, s.nom
             ORDER BY bookings DESC
             LIMIT 5
         `;
@@ -1054,11 +1054,11 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         
         const clientGrowthQuery = `
             SELECT 
-                DATE(date_inscription) as date,
+                DATE(date_creation) as date,
                 COUNT(*) as new_clients
             FROM clients 
-            WHERE date_inscription >= '${startDateStr}'
-            GROUP BY DATE(date_inscription)
+            WHERE date_creation >= '${startDateStr}'
+            GROUP BY DATE(date_creation)
             ORDER BY date ASC
         `;
         
