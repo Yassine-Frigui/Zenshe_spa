@@ -37,12 +37,18 @@ const HomePage = () => {
         publicAPI.getSpaInfo()
       ])
 
-      setPopularServices(popularRes.data)
-      setNewServices(newRes.data.services || newRes.data)
-      setAvis(avisRes.data.avis)
-      setSpaInfo(spaRes.data)
+      // Handle different response formats
+      setPopularServices(Array.isArray(popularRes.data) ? popularRes.data : popularRes.data?.data || [])
+      setNewServices(newRes.data.services || newRes.data || [])
+      setAvis(avisRes.data.avis || [])
+      setSpaInfo(spaRes.data || {})
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error)
+      // Set default empty arrays to prevent map errors
+      setPopularServices([])
+      setNewServices([])
+      setAvis([])
+      setSpaInfo({})
     } finally {
       setLoading(false)
     }
@@ -198,9 +204,9 @@ const HomePage = () => {
               {t('home.featuredServicesDesc', 'Découvrez pourquoi nos clients adorent ces soins')}
             </p>
           </motion.div>
-          {console.log(popularServices)}
+          {console.log('Popular Services:', popularServices, Array.isArray(popularServices))}
           <Row className="g-4">
-            {popularServices.map((service, index) => (
+            {Array.isArray(popularServices) && popularServices.map((service, index) => (
               <Col md={6} lg={3} key={service.id}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -271,7 +277,7 @@ const HomePage = () => {
             </motion.div>
 
             <Row className="g-4">
-              {newServices.map((service, index) => (
+              {Array.isArray(newServices) && newServices.map((service, index) => (
                 <Col lg={4} key={service.id}>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -410,7 +416,7 @@ const HomePage = () => {
             </motion.div>
 
             <Row className="g-4">
-              {avis.slice(0, 3).map((avis, index) => (
+              {Array.isArray(avis) && avis.slice(0, 3).map((avis, index) => (
                 <Col lg={4} key={index}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
