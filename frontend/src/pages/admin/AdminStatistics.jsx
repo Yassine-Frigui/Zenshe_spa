@@ -193,6 +193,239 @@ const AdminStatistics = () => {
         </div>
       </motion.div>
 
+      {/* Enhanced Financial Overview */}
+      <div className="row">
+        <div className="col-12 mb-4">
+          <motion.div
+            className="card border-0 shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            <div className="card-header bg-light border-0">
+              <h5 className="mb-0 fw-bold">
+                <FaMoneyBillWave className="text-success me-2" />
+                Aperçu Financier Détaillé
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                {/* Revenue Completed */}
+                <div className="col-md-3 mb-3">
+                  <div className="text-center p-3 bg-success bg-opacity-10 rounded">
+                    <FaCheckCircle className="text-success mb-2" size={32} />
+                    <div className="h4 fw-bold text-success">
+                      {stats.financialOverview?.revenueCompleted?.toFixed(0) || 0} DT
+                    </div>
+                    <div className="small text-muted">Revenus Réalisés</div>
+                    <div className="small text-success">
+                      {stats.financialOverview?.bookingsCompleted || 0} services terminés
+                    </div>
+                  </div>
+                </div>
+
+                {/* Revenue Potential */}
+                <div className="col-md-3 mb-3">
+                  <div className="text-center p-3 bg-primary bg-opacity-10 rounded">
+                    <FaClock className="text-primary mb-2" size={32} />
+                    <div className="h4 fw-bold text-primary">
+                      {stats.financialOverview?.revenuePotential?.toFixed(0) || 0} DT
+                    </div>
+                    <div className="small text-muted">Revenus Attendus</div>
+                    <div className="small text-primary">
+                      {stats.financialOverview?.bookingsConfirmed || 0} réservations confirmées
+                    </div>
+                  </div>
+                </div>
+
+                {/* Revenue Lost */}
+                <div className="col-md-3 mb-3">
+                  <div className="text-center p-3 bg-danger bg-opacity-10 rounded">
+                    <FaTimesCircle className="text-danger mb-2" size={32} />
+                    <div className="h4 fw-bold text-danger">
+                      {stats.financialOverview?.revenueLost?.toFixed(0) || 0} DT
+                    </div>
+                    <div className="small text-muted">Revenus Perdus</div>
+                    <div className="small text-danger">
+                      {stats.financialOverview?.bookingsLost || 0} annulations/absences
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Potential */}
+                <div className="col-md-3 mb-3">
+                  <div className="text-center p-3 bg-warning bg-opacity-10 rounded">
+                    <FaTrophy className="text-warning mb-2" size={32} />
+                    <div className="h4 fw-bold text-warning">
+                      {stats.financialOverview?.totalPotentialRevenue?.toFixed(0) || 0} DT
+                    </div>
+                    <div className="small text-muted">Potentiel Total</div>
+                    <div className="small text-warning">
+                      {((stats.financialOverview?.revenueCompleted || 0) / 
+                        (stats.financialOverview?.totalPotentialRevenue || 1) * 100).toFixed(1)}% réalisé
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Performance Bar */}
+              <div className="mt-4">
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="small fw-bold">Performance Financière</span>
+                  <span className="small text-muted">
+                    {((stats.financialOverview?.revenueCompleted || 0) / 
+                      (stats.financialOverview?.totalPotentialRevenue || 1) * 100).toFixed(1)}% du potentiel
+                  </span>
+                </div>
+                <div className="progress" style={{ height: '10px' }}>
+                  <div 
+                    className="progress-bar bg-success" 
+                    style={{ 
+                      width: `${(stats.financialOverview?.revenueCompleted || 0) / 
+                               (stats.financialOverview?.totalPotentialRevenue || 1) * 100}%` 
+                    }}
+                  ></div>
+                  <div 
+                    className="progress-bar bg-primary" 
+                    style={{ 
+                      width: `${(stats.financialOverview?.revenuePotential || 0) / 
+                               (stats.financialOverview?.totalPotentialRevenue || 1) * 100}%` 
+                    }}
+                  ></div>
+                  <div 
+                    className="progress-bar bg-danger" 
+                    style={{ 
+                      width: `${(stats.financialOverview?.revenueLost || 0) / 
+                               (stats.financialOverview?.totalPotentialRevenue || 1) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+                <div className="d-flex justify-content-between mt-2 small">
+                  <span className="text-success">Réalisé</span>
+                  <span className="text-primary">En attente</span>
+                  <span className="text-danger">Perdu</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Admin Impact & Draft System Performance */}
+      <div className="row">
+        <div className="col-md-6 mb-4">
+          <motion.div
+            className="card border-0 shadow-sm h-100"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            <div className="card-header bg-light border-0">
+              <h5 className="mb-0 fw-bold">
+                <FaUserCheck className="text-primary me-2" />
+                Impact des Interventions Admin
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                <div className="col-6 mb-3">
+                  <div className="text-center">
+                    <div className="h4 fw-bold text-primary">
+                      {stats.adminImpact?.totalInterventions || 0}
+                    </div>
+                    <div className="small text-muted">Interventions</div>
+                  </div>
+                </div>
+                <div className="col-6 mb-3">
+                  <div className="text-center">
+                    <div className="h4 fw-bold text-success">
+                      {stats.adminImpact?.adminSuccessRate || 0}%
+                    </div>
+                    <div className="small text-muted">Taux de succès</div>
+                  </div>
+                </div>
+                <div className="col-12 mb-3">
+                  <div className="text-center p-2 bg-success bg-opacity-10 rounded">
+                    <div className="fw-bold text-success">
+                      {stats.adminImpact?.revenueRescuedByAdmin?.toFixed(0) || 0} DT
+                    </div>
+                    <div className="small text-muted">Revenus sauvés par intervention</div>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="small text-center">
+                    <div className="fw-bold text-success">{stats.adminImpact?.successfulCompletions || 0}</div>
+                    <div className="text-muted">Succès</div>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="small text-center">
+                    <div className="fw-bold text-danger">{stats.adminImpact?.failedConversions || 0}</div>
+                    <div className="text-muted">Échecs</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="col-md-6 mb-4">
+          <motion.div
+            className="card border-0 shadow-sm h-100"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <div className="card-header bg-light border-0">
+              <h5 className="mb-0 fw-bold">
+                <FaUserPlus className="text-info me-2" />
+                Performance du Système de Brouillons
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                <div className="col-6 mb-3">
+                  <div className="text-center">
+                    <div className="h4 fw-bold text-info">
+                      {stats.draftSystemPerformance?.totalDraftsCreated || 0}
+                    </div>
+                    <div className="small text-muted">Brouillons créés</div>
+                  </div>
+                </div>
+                <div className="col-6 mb-3">
+                  <div className="text-center">
+                    <div className="h4 fw-bold text-success">
+                      {stats.draftSystemPerformance?.conversionRate?.toFixed(1) || 0}%
+                    </div>
+                    <div className="small text-muted">Taux de conversion</div>
+                  </div>
+                </div>
+                <div className="col-12 mb-3">
+                  <div className="text-center p-2 bg-info bg-opacity-10 rounded">
+                    <div className="fw-bold text-info">
+                      {stats.draftSystemPerformance?.convertedDraftValue?.toFixed(0) || 0} DT
+                    </div>
+                    <div className="small text-muted">Revenus générés par les brouillons</div>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="small text-center">
+                    <div className="fw-bold text-success">{stats.draftSystemPerformance?.draftsConverted || 0}</div>
+                    <div className="text-muted">Convertis</div>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="small text-center">
+                    <div className="fw-bold text-warning">{stats.draftSystemPerformance?.currentDrafts || 0}</div>
+                    <div className="text-muted">En attente</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
       {/* Overview Cards */}
       <motion.div
         className="row mb-4"

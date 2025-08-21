@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000', // Only used in development
+        target: 'rightly-wise-tadpole.ngrok-free.app', // Only used in development
         changeOrigin: true,
         secure: false,
       }

@@ -665,8 +665,135 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
             overviewQueries.map(query => executeQuery(query))
         );
 
-        // === A. CRUCIAL METRICS ===
+        // === A. CRUCIAL METRICS - ENHANCED FINANCIAL TRACKING ===
         
+        // 1. Financial Revenue Analysis - Actual vs Potential vs Lost
+        const revenueAnalysisQuery = `
+            SELECT 
+                -- Actual Revenue (completed)
+                SUM(CASE WHEN statut = 'terminee' THEN prix_final ELSE 0 END) as revenue_completed,
+                COUNT(CASE WHEN statut = 'terminee' THEN 1 END) as bookings_completed,
+                
+                -- Potential Revenue (confirmed but not completed yet)
+                SUM(CASE WHEN statut = 'confirmee' THEN prix_final ELSE 0 END) as revenue_potential,
+                COUNT(CASE WHEN statut = 'confirmee' THEN 1 END) as bookings_confirmed,
+                
+                -- Lost Revenue (cancelled or no-show)
+                SUM(CASE WHEN statut IN ('annulee', 'absent') THEN prix_final ELSE 0 END) as revenue_lost,
+                COUNT(CASE WHEN statut IN ('annulee', 'absent') THEN 1 END) as bookings_lost,
+                
+                -- Draft to Confirmed Conversions (admin intervention)
+                COUNT(CASE WHEN statut = 'confirmee' AND reservation_status = 'confirmed' 
+                          AND notes_admin IS NOT NULL AND notes_admin != '' THEN 1 END) as admin_conversions,
+                SUM(CASE WHEN statut = 'confirmee' AND reservation_status = 'confirmed' 
+                        AND notes_admin IS NOT NULL AND notes_admin != '' THEN prix_final ELSE 0 END) as admin_conversion_value,
+                
+                -- Total Draft Impact (all drafts created)
+                (SELECT COUNT(*) FROM reservations 
+                 WHERE date_creation >= '${startDateStr}' 
+                 AND (statut = 'draft' OR (statut != 'draft' AND notes_admin IS NOT NULL))) as total_drafts_created,
+                
+                -- Draft Conversion Rate
+                (SELECT COUNT(*) FROM reservations 
+                 WHERE date_creation >= '${startDateStr}' 
+                 AND statut != 'draft' AND notes_admin IS NOT NULL) as drafts_converted_to_bookings
+                 
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}' 
+                AND reservation_status != 'draft'
+        `;
+
+        // 2. Admin Intervention Impact Analysis
+        const adminInterventionQuery = `
+            SELECT 
+                -- Reservations manually handled by admin (had notes)
+                COUNT(CASE WHEN notes_admin IS NOT NULL AND notes_admin != '' THEN 1 END) as admin_touched_reservations,
+                AVG(CASE WHEN notes_admin IS NOT NULL AND notes_admin != '' THEN prix_final END) as avg_value_admin_handled,
+                
+                -- Success rate of admin interventions
+                COUNT(CASE WHEN notes_admin IS NOT NULL AND statut = 'terminee' THEN 1 END) as admin_successful_completions,
+                COUNT(CASE WHEN notes_admin IS NOT NULL AND statut IN ('annulee', 'absent') THEN 1 END) as admin_failed_conversions,
+                
+                -- Draft system effectiveness
+                (SELECT COUNT(*) FROM reservations 
+                 WHERE statut = 'draft' 
+                 AND date_creation >= '${startDateStr}') as current_drafts,
+                
+                (SELECT COUNT(*) FROM reservations r1
+                 WHERE r1.date_creation >= '${startDateStr}'
+                 AND r1.statut != 'draft' 
+                 AND EXISTS (
+                     SELECT 1 FROM reservations r2 
+                     WHERE r2.client_telephone = r1.client_telephone 
+                     AND r2.statut = 'draft' 
+                     AND r2.date_creation < r1.date_creation
+                 )) as draft_converted_customers,
+                
+                -- Revenue rescued by admin intervention
+                SUM(CASE WHEN notes_admin IS NOT NULL AND statut = 'terminee' THEN prix_final ELSE 0 END) as revenue_rescued_by_admin
+                
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}'
+        `;
+
+        // 3. Status Breakdown with Financial Impact
+        const statusBreakdownQuery = `
+            SELECT 
+                statut,
+                COUNT(*) as count,
+                SUM(prix_final) as total_value,
+                AVG(prix_final) as avg_value,
+                -- Percentage of total bookings
+                (COUNT(*) * 100.0 / (
+                    SELECT COUNT(*) FROM reservations 
+                    WHERE date_reservation >= '${startDateStr}' 
+                    AND reservation_status != 'draft'
+                )) as percentage_of_total,
+                -- Percentage of total potential revenue
+                (SUM(prix_final) * 100.0 / (
+                    SELECT SUM(prix_final) FROM reservations 
+                    WHERE date_reservation >= '${startDateStr}' 
+                    AND reservation_status != 'draft'
+                )) as percentage_of_revenue
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}' 
+                AND reservation_status != 'draft'
+            GROUP BY statut
+            ORDER BY total_value DESC
+        `;
+
+        // 4. Draft System Performance Metrics
+        const draftSystemMetricsQuery = `
+            SELECT 
+                -- Total drafts created (shows lead generation)
+                COUNT(*) as total_drafts,
+                
+                -- Drafts that became confirmed bookings
+                SUM(CASE WHEN converted_reservation.id IS NOT NULL THEN 1 ELSE 0 END) as drafts_converted,
+                
+                -- Average time from draft to conversion
+                AVG(CASE WHEN converted_reservation.id IS NOT NULL 
+                    THEN TIMESTAMPDIFF(HOUR, draft_res.date_creation, converted_reservation.date_creation) 
+                    END) as avg_conversion_time_hours,
+                
+                -- Total value of converted drafts
+                SUM(CASE WHEN converted_reservation.id IS NOT NULL 
+                    THEN converted_reservation.prix_final ELSE 0 END) as converted_draft_value,
+                
+                -- Conversion rate
+                (SUM(CASE WHEN converted_reservation.id IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as conversion_rate
+                
+            FROM reservations draft_res
+            LEFT JOIN reservations converted_reservation ON (
+                draft_res.client_telephone = converted_reservation.client_telephone
+                AND converted_reservation.statut != 'draft'
+                AND converted_reservation.date_creation > draft_res.date_creation
+                AND converted_reservation.date_creation <= DATE_ADD(draft_res.date_creation, INTERVAL 30 DAY)
+            )
+            WHERE draft_res.statut = 'draft'
+                AND draft_res.date_creation >= '${startDateStr}'
+        `;
+
         // 1. Reservation Metrics - Peak/Off-Peak Hours
         const peakHoursQuery = `
             SELECT 
@@ -863,10 +990,15 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
 
         // Execute all new queries
         const [
+            revenueAnalysis, adminIntervention, statusBreakdown, draftSystemMetrics,
             peakHours, cancellationStats, avgSpend, revenueByService,
             clientAnalysis, retention, vipClients, seasonalTrends,
             serviceCombinations, bookingBehavior, utilizationHeatmap, clv
         ] = await Promise.all([
+            executeQuery(revenueAnalysisQuery),
+            executeQuery(adminInterventionQuery),
+            executeQuery(statusBreakdownQuery),
+            executeQuery(draftSystemMetricsQuery),
             executeQuery(peakHoursQuery),
             executeQuery(cancellationStatsQuery),
             executeQuery(avgSpendQuery),
@@ -966,7 +1098,76 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
                     avgSpendPerClient: avgSpend[0]?.avg_spend || 0
                 },
 
-                // A. CRUCIAL METRICS
+                // === ENHANCED FINANCIAL TRACKING ===
+                financialOverview: {
+                    // Actual money earned
+                    revenueCompleted: parseFloat(revenueAnalysis[0]?.revenue_completed || 0),
+                    bookingsCompleted: revenueAnalysis[0]?.bookings_completed || 0,
+                    
+                    // Money expected from confirmed bookings
+                    revenuePotential: parseFloat(revenueAnalysis[0]?.revenue_potential || 0),
+                    bookingsConfirmed: revenueAnalysis[0]?.bookings_confirmed || 0,
+                    
+                    // Money lost from cancellations/no-shows
+                    revenueLost: parseFloat(revenueAnalysis[0]?.revenue_lost || 0),
+                    bookingsLost: revenueAnalysis[0]?.bookings_lost || 0,
+                    
+                    // Admin intervention value
+                    adminConversions: revenueAnalysis[0]?.admin_conversions || 0,
+                    adminConversionValue: parseFloat(revenueAnalysis[0]?.admin_conversion_value || 0),
+                    
+                    // Total potential if everything was completed
+                    totalPotentialRevenue: parseFloat(
+                        (revenueAnalysis[0]?.revenue_completed || 0) + 
+                        (revenueAnalysis[0]?.revenue_potential || 0) + 
+                        (revenueAnalysis[0]?.revenue_lost || 0)
+                    )
+                },
+
+                // === ADMIN IMPACT TRACKING ===
+                adminImpact: {
+                    totalInterventions: adminIntervention[0]?.admin_touched_reservations || 0,
+                    avgValueAdminHandled: parseFloat(adminIntervention[0]?.avg_value_admin_handled || 0),
+                    successfulCompletions: adminIntervention[0]?.admin_successful_completions || 0,
+                    failedConversions: adminIntervention[0]?.admin_failed_conversions || 0,
+                    revenueRescuedByAdmin: parseFloat(adminIntervention[0]?.revenue_rescued_by_admin || 0),
+                    
+                    // Success rate of admin interventions
+                    adminSuccessRate: adminIntervention[0]?.admin_touched_reservations > 0 
+                        ? ((adminIntervention[0]?.admin_successful_completions || 0) / 
+                           adminIntervention[0]?.admin_touched_reservations * 100).toFixed(1)
+                        : 0
+                },
+
+                // === DRAFT SYSTEM PERFORMANCE ===
+                draftSystemPerformance: {
+                    totalDraftsCreated: draftSystemMetrics[0]?.total_drafts || 0,
+                    draftsConverted: draftSystemMetrics[0]?.drafts_converted || 0,
+                    conversionRate: parseFloat(draftSystemMetrics[0]?.conversion_rate || 0),
+                    avgConversionTimeHours: parseFloat(draftSystemMetrics[0]?.avg_conversion_time_hours || 0),
+                    convertedDraftValue: parseFloat(draftSystemMetrics[0]?.converted_draft_value || 0),
+                    currentDrafts: adminIntervention[0]?.current_drafts || 0,
+                    
+                    // How much revenue was generated from draft leads
+                    draftGeneratedRevenue: parseFloat(draftSystemMetrics[0]?.converted_draft_value || 0),
+                    
+                    // ROI of draft system (assuming minimal cost)
+                    draftROI: draftSystemMetrics[0]?.total_drafts > 0 
+                        ? (parseFloat(draftSystemMetrics[0]?.converted_draft_value || 0) / draftSystemMetrics[0]?.total_drafts).toFixed(2)
+                        : 0
+                },
+
+                // === STATUS BREAKDOWN WITH FINANCIAL IMPACT ===
+                statusBreakdown: statusBreakdown.map(status => ({
+                    status: status.statut,
+                    count: status.count,
+                    totalValue: parseFloat(status.total_value || 0),
+                    avgValue: parseFloat(status.avg_value || 0),
+                    percentageOfTotal: parseFloat(status.percentage_of_total || 0),
+                    percentageOfRevenue: parseFloat(status.percentage_of_revenue || 0)
+                })),
+
+                // A. CRUCIAL METRICS (existing structure maintained)
                 reservationMetrics: {
                     peakHours: peakHours.map(h => ({
                         hour: h.hour,
@@ -1075,6 +1276,67 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
                         bookings: previousMonth.bookings || 0,
                         revenue: parseFloat(previousMonth.revenue || 0)
                     }
+                },
+
+                // === SEASONAL TRENDS WITH MONTHLY BOOKINGS ===
+                seasonalTrends: {
+                    monthlyBookings: (() => {
+                        const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 
+                                       'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+                        const currentYear = new Date().getFullYear();
+                        const currentMonth = new Date().getMonth();
+                        
+                        // Get last 12 months of data
+                        const monthlyData = [];
+                        for (let i = 11; i >= 0; i--) {
+                            const date = new Date();
+                            date.setMonth(currentMonth - i);
+                            const monthNum = date.getMonth() + 1;
+                            const year = date.getFullYear();
+                            
+                            // Find bookings for this month from seasonal trends data
+                            const monthBookings = seasonalTrends
+                                .filter(t => t.month === monthNum)
+                                .reduce((sum, t) => sum + t.bookings, 0);
+                            
+                            monthlyData.push({
+                                month: months[date.getMonth()],
+                                bookings: monthBookings,
+                                year: year
+                            });
+                        }
+                        return monthlyData;
+                    })(),
+                    
+                    peakSeason: (() => {
+                        // Find the month with most bookings
+                        const monthlyTotals = {};
+                        seasonalTrends.forEach(t => {
+                            const monthName = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 
+                                             'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'][t.month - 1];
+                            monthlyTotals[monthName] = (monthlyTotals[monthName] || 0) + t.bookings;
+                        });
+                        
+                        const peakMonth = Object.keys(monthlyTotals).reduce((a, b) => 
+                            monthlyTotals[a] > monthlyTotals[b] ? a : b, Object.keys(monthlyTotals)[0]
+                        );
+                        
+                        return {
+                            month: peakMonth || 'N/A',
+                            bookings: monthlyTotals[peakMonth] || 0
+                        };
+                    })(),
+                    
+                    growthRate: (() => {
+                        // Calculate month-over-month average growth
+                        const recentMonths = revenueTrend.slice(-60); // Last 60 days
+                        if (recentMonths.length < 2) return 0;
+                        
+                        const oldRevenue = recentMonths.slice(0, 30).reduce((sum, day) => sum + day.revenue, 0);
+                        const newRevenue = recentMonths.slice(-30).reduce((sum, day) => sum + day.revenue, 0);
+                        
+                        return oldRevenue > 0 ? ((newRevenue - oldRevenue) / oldRevenue * 100) : 0;
+                    })()
                 }
             }
         });
