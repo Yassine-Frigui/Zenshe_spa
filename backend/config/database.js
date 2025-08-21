@@ -6,8 +6,8 @@ const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'zenshe_spa',
-    port: parseInt(process.env.DB_PORT) || 3306,
+    database: process.env.DB_NAME || 'zenshespa_database',
+    port: parseInt(process.env.DB_PORT) || 4306,
     charset: 'utf8mb4',
     connectTimeout: 30000,      // 30 seconds for remote connections
     ssl: process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false

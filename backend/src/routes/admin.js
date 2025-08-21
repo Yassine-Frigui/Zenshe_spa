@@ -664,8 +664,224 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         const overviewResults = await Promise.all(
             overviewQueries.map(query => executeQuery(query))
         );
+
+        // === A. CRUCIAL METRICS ===
         
-        // Revenue trends (last 7 days)
+        // 1. Reservation Metrics - Peak/Off-Peak Hours
+        const peakHoursQuery = `
+            SELECT 
+                HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s')) as hour,
+                COUNT(*) as bookings
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}' 
+                AND reservation_status != 'draft'
+            GROUP BY HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s'))
+            ORDER BY bookings DESC
+        `;
+
+        // Cancellations vs No-Shows
+        const cancellationStatsQuery = `
+            SELECT 
+                statut,
+                COUNT(*) as count,
+                (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM reservations WHERE date_reservation >= '${startDateStr}' AND reservation_status != 'draft')) as percentage
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}' 
+                AND statut IN ('annulee', 'absent')
+            GROUP BY statut
+        `;
+
+        // 2. Revenue Metrics - Average Spend per Client
+        const avgSpendQuery = `
+            SELECT 
+                AVG(prix_final) as avg_spend,
+                COUNT(DISTINCT client_id) as unique_clients
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}' 
+                AND statut = 'terminee'
+        `;
+
+        // Revenue by Service Type
+        const revenueByServiceQuery = `
+            SELECT 
+                s.nom_service as service_name,
+                s.category,
+                COUNT(r.id) as bookings,
+                SUM(r.prix_final) as revenue,
+                AVG(r.prix_final) as avg_price
+            FROM services s
+            LEFT JOIN reservations r ON s.id = r.service_id
+            WHERE r.date_reservation >= '${startDateStr}'
+                AND r.statut = 'terminee'
+            GROUP BY s.id, s.nom_service, s.category
+            ORDER BY revenue DESC
+        `;
+
+        // 3. Client Management - New vs Returning Clients
+        const clientAnalysisQuery = `
+            SELECT 
+                SUM(CASE WHEN client_reservations.reservation_count = 1 THEN 1 ELSE 0 END) as new_clients,
+                SUM(CASE WHEN client_reservations.reservation_count > 1 THEN 1 ELSE 0 END) as returning_clients
+            FROM (
+                SELECT 
+                    client_id,
+                    COUNT(*) as reservation_count
+                FROM reservations 
+                WHERE date_reservation >= '${startDateStr}' 
+                    AND statut = 'terminee'
+                GROUP BY client_id
+            ) as client_reservations
+        `;
+
+        // Client Retention Rates (30, 60, 90 days)
+        const retentionQuery = `
+            SELECT 
+                '30_days' as period,
+                COUNT(DISTINCT r2.client_id) as returned_clients,
+                COUNT(DISTINCT r1.client_id) as total_clients
+            FROM reservations r1
+            LEFT JOIN reservations r2 ON r1.client_id = r2.client_id 
+                AND r2.date_reservation BETWEEN r1.date_reservation 
+                AND DATE_ADD(r1.date_reservation, INTERVAL 30 DAY)
+                AND r2.id != r1.id
+            WHERE r1.date_reservation >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)
+                AND r1.statut = 'terminee'
+            
+            UNION ALL
+            
+            SELECT 
+                '60_days' as period,
+                COUNT(DISTINCT r2.client_id) as returned_clients,
+                COUNT(DISTINCT r1.client_id) as total_clients
+            FROM reservations r1
+            LEFT JOIN reservations r2 ON r1.client_id = r2.client_id 
+                AND r2.date_reservation BETWEEN r1.date_reservation 
+                AND DATE_ADD(r1.date_reservation, INTERVAL 60 DAY)
+                AND r2.id != r1.id
+            WHERE r1.date_reservation >= DATE_SUB(CURDATE(), INTERVAL 120 DAY)
+                AND r1.statut = 'terminee'
+        `;
+
+        // VIP/Loyal Customers
+        const vipClientsQuery = `
+            SELECT 
+                c.nom,
+                c.prenom,
+                c.email,
+                COUNT(r.id) as total_visits,
+                SUM(r.prix_final) as total_spent,
+                AVG(r.prix_final) as avg_spend,
+                MAX(r.date_reservation) as last_visit
+            FROM clients c
+            JOIN reservations r ON c.id = r.client_id
+            WHERE r.statut = 'terminee'
+            GROUP BY c.id, c.nom, c.prenom, c.email
+            HAVING total_visits >= 3 OR total_spent >= 500
+            ORDER BY total_spent DESC
+            LIMIT 10
+        `;
+
+        // === B. INTERESTING METRICS ===
+
+        // 4. Service Popularity & Trends - Seasonal Variations
+        const seasonalTrendsQuery = `
+            SELECT 
+                MONTH(date_reservation) as month,
+                s.nom_service,
+                COUNT(r.id) as bookings
+            FROM reservations r
+            JOIN services s ON r.service_id = s.id
+            WHERE YEAR(date_reservation) = YEAR(CURDATE())
+                AND r.statut = 'terminee'
+            GROUP BY MONTH(date_reservation), s.id, s.nom_service
+            ORDER BY month, bookings DESC
+        `;
+
+        // Common Service Combinations (requires additional table or analysis)
+        const serviceCombinationsQuery = `
+            SELECT 
+                s1.nom_service as service1,
+                s2.nom_service as service2,
+                COUNT(*) as combination_count
+            FROM reservations r1
+            JOIN reservations r2 ON r1.client_id = r2.client_id 
+                AND r1.date_reservation = r2.date_reservation
+                AND r1.id < r2.id
+            JOIN services s1 ON r1.service_id = s1.id
+            JOIN services s2 ON r2.service_id = s2.id
+            WHERE r1.date_reservation >= '${startDateStr}'
+                AND r1.statut = 'terminee'
+                AND r2.statut = 'terminee'
+            GROUP BY s1.id, s2.id, s1.nom_service, s2.nom_service
+            ORDER BY combination_count DESC
+            LIMIT 10
+        `;
+
+        // 5. Client Insights - Booking Behavior
+        const bookingBehaviorQuery = `
+            SELECT 
+                AVG(DATEDIFF(date_reservation, date_creation)) as avg_lead_time,
+                COUNT(CASE WHEN DATEDIFF(date_reservation, date_creation) <= 1 THEN 1 END) as same_day_bookings,
+                COUNT(CASE WHEN DATEDIFF(date_reservation, date_creation) BETWEEN 2 AND 7 THEN 1 END) as week_advance_bookings,
+                COUNT(CASE WHEN DATEDIFF(date_reservation, date_creation) > 7 THEN 1 END) as long_advance_bookings
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}'
+                AND reservation_status != 'draft'
+        `;
+
+        // 6. Spa Utilization - Busiest Times Heatmap
+        const utilizationHeatmapQuery = `
+            SELECT 
+                DAYOFWEEK(date_reservation) as day_of_week,
+                HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s')) as hour,
+                COUNT(*) as booking_count
+            FROM reservations 
+            WHERE date_reservation >= '${startDateStr}'
+                AND reservation_status != 'draft'
+            GROUP BY DAYOFWEEK(date_reservation), HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s'))
+            ORDER BY day_of_week, hour
+        `;
+
+        // 7. Financial Insights - Client Lifetime Value
+        const clvQuery = `
+            SELECT 
+                AVG(client_totals.total_spent) as avg_clv,
+                AVG(client_totals.total_visits) as avg_visits_per_client,
+                AVG(client_totals.days_as_client) as avg_client_lifespan
+            FROM (
+                SELECT 
+                    c.id,
+                    SUM(r.prix_final) as total_spent,
+                    COUNT(r.id) as total_visits,
+                    DATEDIFF(MAX(r.date_reservation), MIN(r.date_reservation)) as days_as_client
+                FROM clients c
+                JOIN reservations r ON c.id = r.client_id
+                WHERE r.statut = 'terminee'
+                GROUP BY c.id
+            ) as client_totals
+        `;
+
+        // Execute all new queries
+        const [
+            peakHours, cancellationStats, avgSpend, revenueByService,
+            clientAnalysis, retention, vipClients, seasonalTrends,
+            serviceCombinations, bookingBehavior, utilizationHeatmap, clv
+        ] = await Promise.all([
+            executeQuery(peakHoursQuery),
+            executeQuery(cancellationStatsQuery),
+            executeQuery(avgSpendQuery),
+            executeQuery(revenueByServiceQuery),
+            executeQuery(clientAnalysisQuery),
+            executeQuery(retentionQuery),
+            executeQuery(vipClientsQuery),
+            executeQuery(seasonalTrendsQuery),
+            executeQuery(serviceCombinationsQuery),
+            executeQuery(bookingBehaviorQuery),
+            executeQuery(utilizationHeatmapQuery),
+            executeQuery(clvQuery)
+        ]);
+
+        // Execute existing queries
         const revenueTrendQuery = `
             SELECT 
                 date_reservation as date,
@@ -678,7 +894,6 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
             ORDER BY date_reservation ASC
         `;
         
-        // Popular services
         const popularServicesQuery = `
             SELECT 
                 s.nom_service as name,
@@ -693,24 +908,18 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
             LIMIT 5
         `;
         
-        // Monthly comparison
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
-        const lastMonthStr = lastMonth.toISOString().slice(0, 7);
-        
         const monthlyComparisonQuery = `
             SELECT 
                 DATE_FORMAT(date_reservation, '%Y-%m') as month,
                 COUNT(*) as bookings,
                 SUM(prix_final) as revenue
             FROM reservations 
-            WHERE DATE_FORMAT(date_reservation, '%Y-%m') IN ('${thisMonth}', '${lastMonthStr}')
+            WHERE DATE_FORMAT(date_reservation, '%Y-%m') IN ('${thisMonth}', '${new Date().toISOString().slice(0, 7)}')
                 AND statut = 'terminee'
             GROUP BY DATE_FORMAT(date_reservation, '%Y-%m')
             ORDER BY month DESC
         `;
         
-        // Client growth
         const clientGrowthQuery = `
             SELECT 
                 DATE(date_inscription) as date,
@@ -721,7 +930,6 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
             ORDER BY date ASC
         `;
         
-        // Execute all queries
         const [revenueTrend, popularServices, monthlyComparison, clientGrowth] = await Promise.all([
             executeQuery(revenueTrendQuery),
             executeQuery(popularServicesQuery),
@@ -731,6 +939,9 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         
         // Calculate growth percentages
         const currentMonth = monthlyComparison.find(m => m.month === thisMonth) || { bookings: 0, revenue: 0 };
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        const lastMonthStr = lastMonth.toISOString().slice(0, 7);
         const previousMonth = monthlyComparison.find(m => m.month === lastMonthStr) || { bookings: 0, revenue: 0 };
         
         const bookingGrowth = previousMonth.bookings > 0 
@@ -744,23 +955,110 @@ router.get('/statistics', requireRole(['super_admin', 'admin']), async (req, res
         res.json({
             success: true,
             data: {
+                // Basic Overview
                 overview: {
                     totalClients: overviewResults[0][0]?.total_clients || 0,
                     totalReservations: overviewResults[1][0]?.total_reservations || 0,
                     totalRevenue: overviewResults[2][0]?.total_revenue || 0,
                     totalServices: overviewResults[3][0]?.total_services || 0,
                     bookingGrowth: parseFloat(bookingGrowth),
-                    revenueGrowth: parseFloat(revenueGrowth)
+                    revenueGrowth: parseFloat(revenueGrowth),
+                    avgSpendPerClient: avgSpend[0]?.avg_spend || 0
                 },
+
+                // A. CRUCIAL METRICS
+                reservationMetrics: {
+                    peakHours: peakHours.map(h => ({
+                        hour: h.hour,
+                        bookings: h.bookings
+                    })),
+                    cancellationStats: cancellationStats.map(c => ({
+                        status: c.statut,
+                        count: c.count,
+                        percentage: parseFloat(c.percentage || 0)
+                    }))
+                },
+
+                revenueMetrics: {
+                    totalRevenue: overviewResults[2][0]?.total_revenue || 0,
+                    avgSpendPerClient: avgSpend[0]?.avg_spend || 0,
+                    revenueByService: revenueByService.map(s => ({
+                        serviceName: s.service_name,
+                        category: s.category,
+                        bookings: s.bookings || 0,
+                        revenue: parseFloat(s.revenue || 0),
+                        avgPrice: parseFloat(s.avg_price || 0)
+                    }))
+                },
+
+                clientManagement: {
+                    newVsReturning: {
+                        newClients: clientAnalysis[0]?.new_clients || 0,
+                        returningClients: clientAnalysis[0]?.returning_clients || 0
+                    },
+                    retentionRates: retention.map(r => ({
+                        period: r.period,
+                        rate: r.total_clients > 0 ? (r.returned_clients / r.total_clients * 100).toFixed(1) : 0
+                    })),
+                    vipClients: vipClients.map(c => ({
+                        name: `${c.prenom} ${c.nom}`,
+                        email: c.email,
+                        totalVisits: c.total_visits,
+                        totalSpent: parseFloat(c.total_spent),
+                        avgSpend: parseFloat(c.avg_spend),
+                        lastVisit: c.last_visit
+                    }))
+                },
+
+                // B. INTERESTING METRICS
+                serviceInsights: {
+                    popularServices: popularServices.map(service => ({
+                        name: service.name,
+                        bookings: service.bookings || 0,
+                        revenue: parseFloat(service.revenue || 0)
+                    })),
+                    seasonalTrends: seasonalTrends.map(t => ({
+                        month: t.month,
+                        serviceName: t.nom_service,
+                        bookings: t.bookings
+                    })),
+                    serviceCombinations: serviceCombinations.map(c => ({
+                        service1: c.service1,
+                        service2: c.service2,
+                        count: c.combination_count
+                    }))
+                },
+
+                clientInsights: {
+                    bookingBehavior: {
+                        avgLeadTime: parseFloat(bookingBehavior[0]?.avg_lead_time || 0),
+                        sameDayBookings: bookingBehavior[0]?.same_day_bookings || 0,
+                        weekAdvanceBookings: bookingBehavior[0]?.week_advance_bookings || 0,
+                        longAdvanceBookings: bookingBehavior[0]?.long_advance_bookings || 0
+                    }
+                },
+
+                spaUtilization: {
+                    utilizationHeatmap: utilizationHeatmap.map(u => ({
+                        dayOfWeek: u.day_of_week,
+                        hour: u.hour,
+                        bookingCount: u.booking_count
+                    }))
+                },
+
+                financialInsights: {
+                    clientLifetimeValue: {
+                        avgCLV: parseFloat(clv[0]?.avg_clv || 0),
+                        avgVisitsPerClient: parseFloat(clv[0]?.avg_visits_per_client || 0),
+                        avgClientLifespan: parseFloat(clv[0]?.avg_client_lifespan || 0)
+                    }
+                },
+
+                // Existing data for compatibility
                 revenueTrend: revenueTrend.map(item => ({
                     date: item.date,
                     revenue: parseFloat(item.revenue || 0),
                     bookings: item.bookings || 0
-                })),
-                popularServices: popularServices.map(service => ({
-                    name: service.name,
-                    bookings: service.bookings || 0,
-                    revenue: parseFloat(service.revenue || 0)
                 })),
                 clientGrowth: clientGrowth.map(item => ({
                     date: item.date,
