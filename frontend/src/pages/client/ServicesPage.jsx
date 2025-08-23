@@ -33,10 +33,12 @@ const ServicesPage = () => {
         publicAPI.getCategories()
       ])
 
-      setServices(servicesRes.data.services || servicesRes.data)
-      setCategories(categoriesRes.data)
+      setServices(servicesRes.data.services || servicesRes.data || [])
+      setCategories(categoriesRes.data || [])
     } catch (error) {
       console.error('Error loading services:', error)
+      setServices([])
+      setCategories([])
     } finally {
       setLoading(false)
     }
@@ -130,7 +132,7 @@ const ServicesPage = () => {
                     </Nav.Link>
                   </Nav.Item>
                   
-                  {categories.map((category) => {
+                  {Array.isArray(categories) && categories.map((category) => {
                     const categoryServices = services.filter(s => s.categorie_id === category.id)
                     return (
                       <Nav.Item key={category.id} className="mb-2">

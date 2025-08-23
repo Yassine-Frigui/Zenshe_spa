@@ -102,11 +102,12 @@ const BookingPage = () => {
         publicAPI.getCategories()
       ]);
 
-      setServices(servicesRes.data.services || servicesRes.data);
-      setCategories(categoriesRes.data);
+      setServices(servicesRes.data.services || servicesRes.data || []);
+      setCategories(categoriesRes.data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des services:', error);
       setServices([]); // Set empty array on error
+      setCategories([]); // Set empty array on error
     }
   };
 
@@ -254,7 +255,7 @@ const BookingPage = () => {
     : null;
 
   // Group services by category
-  const servicesByCategory = categories.map(category => {
+  const servicesByCategory = Array.isArray(categories) ? categories.map(category => {
     // Get services that directly belong to this category (base services and addons)
     const directServices = services.filter(service => service.categorie_id === category.id);
     
@@ -272,7 +273,7 @@ const BookingPage = () => {
       ...category,
       services: allCategoryServices
     };
-  }).filter(category => category.services.length > 0);
+  }).filter(category => category.services.length > 0) : [];
   
   // Add uncategorized services (if any) to a special category
   const uncategorizedServices = services.filter(service => 
