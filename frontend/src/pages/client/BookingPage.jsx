@@ -257,15 +257,15 @@ const BookingPage = () => {
   // Group services by category
   const servicesByCategory = Array.isArray(categories) ? categories.map(category => {
     // Get services that directly belong to this category (base services and addons)
-    const directServices = services.filter(service => service.categorie_id === category.id);
+    const directServices = Array.isArray(services) ? services.filter(service => service.categorie_id === category.id) : [];
     
     // Get variant and package services that belong to services in this category
-    const relatedServices = services.filter(service => {
+    const relatedServices = Array.isArray(services) ? services.filter(service => {
       if (!service.parent_service_id || service.categorie_id) return false; // Avoid double counting
       // Find the parent service and check if it belongs to this category
       const parentService = services.find(s => s.id === service.parent_service_id);
       return parentService && parentService.categorie_id === category.id;
-    });
+    }) : [];
     
     const allCategoryServices = [...directServices, ...relatedServices];
     
@@ -276,11 +276,11 @@ const BookingPage = () => {
   }).filter(category => category.services.length > 0) : [];
   
   // Add uncategorized services (if any) to a special category
-  const uncategorizedServices = services.filter(service => 
+  const uncategorizedServices = Array.isArray(services) ? services.filter(service => 
     !service.categorie_id && 
     !service.parent_service_id && 
     service.service_type !== 'addon'
-  );
+  ) : [];
   
   if (uncategorizedServices.length > 0) {
     servicesByCategory.push({

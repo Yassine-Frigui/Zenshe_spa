@@ -37,9 +37,9 @@ const HomePage = () => {
         publicAPI.getSpaInfo()
       ])
 
-      setPopularServices(popularRes.data || [])
-      setNewServices(newRes.data.services || newRes.data || [])
-      setAvis(avisRes.data.avis || [])
+      setPopularServices(Array.isArray(popularRes.data) ? popularRes.data : [])
+      setNewServices(Array.isArray(newRes.data.services) ? newRes.data.services : Array.isArray(newRes.data) ? newRes.data : [])
+      setAvis(Array.isArray(avisRes.data.avis) ? avisRes.data.avis : [])
       setSpaInfo(spaRes.data || {})
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error)

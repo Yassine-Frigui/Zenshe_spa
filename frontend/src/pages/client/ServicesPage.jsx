@@ -45,8 +45,8 @@ const ServicesPage = () => {
   }
 
   const filteredServices = selectedCategory === 'all' 
-    ? services 
-    : services.filter(service => service.categorie_id === parseInt(selectedCategory))
+    ? (Array.isArray(services) ? services : [])
+    : (Array.isArray(services) ? services.filter(service => service.categorie_id === parseInt(selectedCategory)) : [])
 
   const getServiceIcon = (categoryName) => {
     const icons = {
@@ -127,13 +127,13 @@ const ServicesPage = () => {
                       <FaStar className="me-2" />
                       {t('services.allServices')}
                       <Badge className="ms-2" bg="light" text="dark">
-                        {services.length}
+                        {Array.isArray(services) ? services.length : 0}
                       </Badge>
                     </Nav.Link>
                   </Nav.Item>
                   
                   {Array.isArray(categories) && categories.map((category) => {
-                    const categoryServices = services.filter(s => s.categorie_id === category.id)
+                    const categoryServices = Array.isArray(services) ? services.filter(s => s.categorie_id === category.id) : []
                     return (
                       <Nav.Item key={category.id} className="mb-2">
                         <Nav.Link

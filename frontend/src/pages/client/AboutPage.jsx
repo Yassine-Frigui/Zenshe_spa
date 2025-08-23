@@ -19,9 +19,10 @@ const AboutPage = () => {
   const fetchTestimonials = async () => {
     try {
       const response = await publicAPI.getAvis(1, 12)
-      setTestimonials(response.data.avis)
+      setTestimonials(Array.isArray(response.data.avis) ? response.data.avis : [])
     } catch (error) {
       console.error('Erreur lors du chargement des témoignages:', error)
+      setTestimonials([])
     } finally {
       setLoading(false)
     }
@@ -56,8 +57,10 @@ const AboutPage = () => {
 
   // Group testimonials by 3 for carousel slides
   const groupedTestimonials = []
-  for (let i = 0; i < testimonials.length; i += 3) {
-    groupedTestimonials.push(testimonials.slice(i, i + 3))
+  if (Array.isArray(testimonials) && testimonials.length > 0) {
+    for (let i = 0; i < testimonials.length; i += 3) {
+      groupedTestimonials.push(testimonials.slice(i, i + 3))
+    }
   }
 
   if (loading) {
