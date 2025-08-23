@@ -8,6 +8,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 axios.defaults.baseURL = API_BASE_URL
 axios.defaults.withCredentials = true
 
+// Add ngrok warning bypass header
+axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true'
+
 // Fonction pour obtenir la langue actuelle
 const getCurrentLanguage = () => {
   return i18n.language || 'fr';

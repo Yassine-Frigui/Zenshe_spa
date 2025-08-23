@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
     origin: [
         process.env.FRONTEND_URL || 'http://localhost:3000',
-        process.env.NGROK_DOMAIN || 'rightly-wise-tadpole.ngrok-free.app',
+        'https://rightly-wise-tadpole.ngrok-free.app',
         'https://zenshespa.netlify.app',
         'http://localhost:3000',
         'http://127.0.0.1:3000'
@@ -41,6 +41,12 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Add ngrok warning bypass
+app.use((req, res, next) => {
+    res.set('ngrok-skip-browser-warning', 'true');
+    next();
+});
 
 // Servir les fichiers statiques (images, uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
