@@ -182,7 +182,7 @@ const ClientFooter = () => {
         </Row>
       </Container>
 
-      <style jsx>{`
+      <style>{`
         footer a:hover {
           color: #8fbbb8 !important;
           transition: color 0.3s ease;

@@ -282,16 +282,69 @@ class ReservationModel {
 
     // Update reservation status
     static async updateReservationStatus(id, statut, notes_admin = null) {
-        let query = 'UPDATE reservations SET statut = ?';
-        let params = [statut, id];
+        console.log(`🔄 Updating reservation ${id} from status to ${statut}`);
         
-        if (notes_admin) {
-            query += ', notes_admin = ?';
-            params = [statut, notes_admin, id];
+        // Get current reservation details first
+        const reservationQuery = 'SELECT * FROM reservations WHERE id = ?';
+        const reservationResult = await executeQuery(reservationQuery, [id]);
+        
+        if (!reservationResult.length) {
+            throw new Error('Reservation not found');
         }
         
-        query += ' WHERE id = ?';
-        return await executeQuery(query, params);
+        const reservation = reservationResult[0];
+        console.log(`📋 Current reservation:`, {
+            id: reservation.id,
+            current_statut: reservation.statut,
+            service_id: reservation.service_id,
+            prix_final: reservation.prix_final,
+            prix_service: reservation.prix_service
+        });
+        
+        let updateFields = ['statut = ?'];
+        let params = [statut];
+        
+        // If changing from draft/en_attente to confirmee/terminee, recalculate price
+        const shouldRecalculatePrice = (reservation.statut === 'draft' || reservation.statut === 'en_attente') && 
+            (statut === 'confirmee' || statut === 'terminee') && 
+            (reservation.prix_final === 0 || reservation.prix_final === null || parseFloat(reservation.prix_final) === 0);
+            
+        console.log(`💰 Should recalculate price? ${shouldRecalculatePrice}`);
+        console.log(`   - Current status: ${reservation.statut}, New status: ${statut}`);
+        console.log(`   - Current prix_final: ${reservation.prix_final} (type: ${typeof reservation.prix_final})`);
+        
+        if (shouldRecalculatePrice) {
+            // Get service price
+            const serviceQuery = 'SELECT prix FROM services WHERE id = ?';
+            const serviceResult = await executeQuery(serviceQuery, [reservation.service_id]);
+            
+            console.log(`🔍 Service query result:`, serviceResult);
+            
+            if (serviceResult.length > 0) {
+                const servicePrice = serviceResult[0].prix;
+                console.log(`💵 Service price found: ${servicePrice} (type: ${typeof servicePrice})`);
+                updateFields.push('prix_service = ?', 'prix_final = ?');
+                params.push(servicePrice, servicePrice);
+                console.log(`📝 Will update with fields: ${updateFields.join(', ')}`);
+                console.log(`📝 Parameters: ${JSON.stringify(params)}`);
+            }
+        }
+        
+        if (notes_admin) {
+            updateFields.push('notes_admin = ?');
+            params.push(notes_admin);
+        }
+        
+        params.push(id);
+        
+        const query = `UPDATE reservations SET ${updateFields.join(', ')} WHERE id = ?`;
+        console.log(`🚀 Executing query: ${query}`);
+        console.log(`🚀 With params: ${JSON.stringify(params)}`);
+        
+        const result = await executeQuery(query, params);
+        console.log(`✅ Update result:`, result);
+        
+        return result;
     }
 
     // Update full reservation

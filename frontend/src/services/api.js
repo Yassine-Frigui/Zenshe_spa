@@ -201,6 +201,7 @@ export const adminAPI = {
 
   // Statistiques
   getStatistics: (dateRange = 'month') => axios.get(`/api/admin/statistics?range=${dateRange}`),
+  getDraftPerformance: (period = '30') => axios.get(`/api/admin/statistics/draft-performance?period=${period}`),
 
   // Paramètres spa
   getSalonParams: () => axios.get('/api/admin/salon/parametres'),

@@ -23,6 +23,7 @@ import { adminAPI } from '../../services/api';
 const AdminReservations = () => {
   const [reservations, setReservations] = useState([]);
   const [filteredReservations, setFilteredReservations] = useState([]);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('tous');
@@ -32,6 +33,7 @@ const AdminReservations = () => {
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [editFormData, setEditFormData] = useState({
     statut: '',
+    service_id: '',
     client_nom: '',
     client_prenom: '',
     client_telephone: '',
@@ -42,11 +44,21 @@ const AdminReservations = () => {
 
   useEffect(() => {
     fetchReservations();
+    fetchServices();
   }, [dateFilter, statusFilter]);
 
   useEffect(() => {
     filterReservations();
   }, [reservations, searchTerm]);
+
+  const fetchServices = async () => {
+    try {
+      const response = await adminAPI.getServicesAdmin();
+      setServices(response.data || []);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des services:', error);
+    }
+  };
 
   const fetchReservations = async () => {
     try {
@@ -180,6 +192,7 @@ const AdminReservations = () => {
     setSelectedReservation(reservation);
     setEditFormData({
       statut: reservation.statut,
+      service_id: reservation.service_id || '',
       client_nom: reservation.client.nom,
       client_prenom: reservation.client.prenom,
       client_telephone: reservation.client.telephone,
@@ -203,15 +216,18 @@ const AdminReservations = () => {
         editFormData.notes_admin
       );
 
-      // Update client details if provided
-      if (editFormData.client_nom || editFormData.client_prenom || 
-          editFormData.client_telephone || editFormData.client_email) {
-        await adminAPI.updateReservation(selectedReservation.id, {
-          client_nom: editFormData.client_nom,
-          client_prenom: editFormData.client_prenom,
-          client_telephone: editFormData.client_telephone,
-          client_email: editFormData.client_email
-        });
+      // Update client details and service if provided
+      const updateData = {};
+      if (editFormData.client_nom) updateData.client_nom = editFormData.client_nom;
+      if (editFormData.client_prenom) updateData.client_prenom = editFormData.client_prenom;
+      if (editFormData.client_telephone) updateData.client_telephone = editFormData.client_telephone;
+      if (editFormData.client_email) updateData.client_email = editFormData.client_email;
+      if (editFormData.service_id && editFormData.service_id !== selectedReservation.service_id) {
+        updateData.service_id = editFormData.service_id;
+      }
+      
+      if (Object.keys(updateData).length > 0) {
+        await adminAPI.updateReservation(selectedReservation.id, updateData);
       }
 
       // Refresh reservations
@@ -745,6 +761,25 @@ const AdminReservations = () => {
                           onChange={(e) => handleInputChange('notes_admin', e.target.value)}
                           placeholder="Ajoutez des notes sur cette modification..."
                         />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Service</label>
+                        <select
+                          className="form-select"
+                          value={editFormData.service_id}
+                          onChange={(e) => handleInputChange('service_id', e.target.value)}
+                        >
+                          <option value="">Sélectionner un service</option>
+                          {services.map(service => (
+                            <option key={service.id} value={service.id}>
+                              {service.nom} - {service.prix}DT ({service.duree}min)
+                            </option>
+                          ))}
+                        </select>
+                        <div className="form-text">
+                          Modifier le service associé à cette réservation
+                        </div>
                       </div>
                     </div>
 

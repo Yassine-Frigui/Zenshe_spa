@@ -17,6 +17,7 @@ const inventaireRoutes = require('./routes/inventaire');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 const membershipRoutes = require('./routes/memberships');
+const statisticsRoutes = require('./routes/statistics');
 
 // Import de la configuration de base de données
 const { testConnection } = require('../config/database');
@@ -60,6 +61,8 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/inventaire', inventaireRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/statistics', statisticsRoutes);
+console.log('📊 Statistics routes mounted at /api/admin/statistics');
 app.use('/api/public', publicRoutes);
 app.use('/api/memberships', membershipRoutes);
 

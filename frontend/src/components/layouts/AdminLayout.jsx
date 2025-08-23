@@ -22,7 +22,7 @@ const AdminLayout = () => {
         </main>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @media (max-width: 991.98px) {
           .admin-main {
             margin-left: 70px !important; /* Account for thin strip */

@@ -200,13 +200,13 @@ router.post('/reservations/convert-draft/:id', async (req, res) => {
     }
 });
 
-// Update reservation details (client info, service, etc.)
+// Update reservation details (client info, etc.)
 router.put('/reservations/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { client_nom, client_prenom, client_telephone, client_email, notes_admin, service_id } = req.body;
+        const { client_nom, client_prenom, client_telephone, client_email, notes_admin } = req.body;
         
-        // Build update query for reservation details
+        // Build update query for reservation client details
         const updateFields = [];
         const updateValues = [];
         
@@ -229,19 +229,6 @@ router.put('/reservations/:id', async (req, res) => {
         if (notes_admin !== undefined) {
             updateFields.push('notes_admin = ?');
             updateValues.push(notes_admin);
-        }
-        
-        // Handle service change and price recalculation
-        if (service_id !== undefined) {
-            // Get new service price
-            const service = await executeQuery('SELECT prix FROM services WHERE id = ?', [service_id]);
-            if (service.length > 0) {
-                const servicePrice = service[0].prix;
-                updateFields.push('service_id = ?', 'prix_service = ?', 'prix_final = ?');
-                updateValues.push(service_id, servicePrice, servicePrice);
-            } else {
-                return res.status(404).json({ message: 'Service non trouvé' });
-            }
         }
         
         if (updateFields.length === 0) {

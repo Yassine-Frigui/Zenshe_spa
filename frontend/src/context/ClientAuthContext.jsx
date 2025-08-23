@@ -33,7 +33,10 @@ export const ClientAuthProvider = ({ children }) => {
                 setIsAuthenticated(false);
             }
         } catch (error) {
-            console.log('Not authenticated');
+            // Don't log 401 errors as they are expected when not authenticated
+            if (error.response?.status !== 401) {
+                console.error('Auth check error:', error);
+            }
             setClient(null);
             setIsAuthenticated(false);
         } finally {

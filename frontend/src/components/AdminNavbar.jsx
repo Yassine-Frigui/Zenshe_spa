@@ -181,7 +181,7 @@ const AdminNavbar = () => {
         />
       )}
 
-      <style jsx>{`
+      <style>{`
         .dropdown-item:hover {
           background-color: #f8f9fa;
         }

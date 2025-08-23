@@ -86,8 +86,11 @@ const BookingPage = () => {
         setTimeout(() => setAutoSaveStatus(''), 3000);
       }
     } catch (error) {
-      // No existing draft, which is fine
-      console.log('Nouvelle session - aucun brouillon existant');
+      // 404 is expected when no draft exists - this is normal for new sessions
+      if (error.response?.status !== 404) {
+        console.error('Erreur lors du chargement du brouillon:', error);
+      }
+      // For 404 or any other error, just continue with empty form - no need to show error to user
     }
   };
 
@@ -548,25 +551,18 @@ const BookingPage = () => {
                     </div>
                   </div>
                   
-                  <Formik
-                    enableReinitialize
-                    initialValues={formData}
-                    validationSchema={BookingSchema}
-                    onSubmit={handleSubmit}
-                  >
-                    {({ values, setFieldValue, isSubmitting }) => (
-                      <Form className="booking-form">
-                        {/* Service Selection */}
-                        <motion.div
-                          className="mb-4"
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.6, duration: 0.6 }}
-                        >
-                          <label className="form-label fw-bold text-green">
-                            <FaStar className="me-2" />
-                            {t('booking.form.selectService')}
-                          </label>
+                  <form onSubmit={handleSubmit} className="booking-form">
+                    {/* Service Selection */}
+                    <motion.div
+                      className="mb-4"
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.6, duration: 0.6 }}
+                    >
+                      <label className="form-label fw-bold text-green">
+                        <FaStar className="me-2" />
+                        {t('booking.form.selectService')}
+                      </label>
                           
                           {servicesByCategory.length > 0 ? servicesByCategory.map((category) => (
                             <div key={category.id} className="mb-4">
@@ -637,83 +633,106 @@ const BookingPage = () => {
                         </motion.div>
 
                         {/* Personal Information */}
-                        <div className="mb-4">
+                        <motion.div
+                          className="mb-4"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.8, duration: 0.6 }}
+                        >
+                          <h5 className="fw-bold text-green mb-3">
+                            <FaUser className="me-2" />
+                            {t('booking.form.personalInfo')}
+                          </h5>
+                          
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.firstName')}</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-lg"
+                                name="prenom"
+                                value={formData.prenom}
+                                onChange={handleInputChange}
+                                placeholder={t('booking.form.placeholders.firstName')}
+                              />
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.lastName')}</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-lg"
+                                name="nom"
+                                value={formData.nom}
+                                onChange={handleInputChange}
+                                placeholder={t('booking.form.placeholders.lastName')}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">
+                                <FaEnvelope className="me-2" />
+                                {t('booking.form.email')}
+                              </label>
+                              <input
+                                type="email"
+                                className="form-control form-control-lg"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                placeholder={t('booking.form.placeholders.email')}
+                              />
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">
+                                <FaPhone className="me-2" />
+                                {t('booking.form.phone')} 
+                              </label>
+                              <input
+                                type="tel"
+                                className="form-control form-control-lg"
+                                name="telephone"
+                                value={formData.telephone}
+                                onChange={handleInputChange}
+                                placeholder={t('booking.form.placeholders.phone')}
+                              />
+                            </div>
+                          </div>
+                        </motion.div>
+
+                        {/* Date & Time Selection */}
+                        <motion.div
+                          className="mb-4"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 1.0, duration: 0.6 }}
+                        >
                           <h5 className="fw-bold text-green mb-3">
                             <FaCalendarAlt className="me-2" />
                             {t('booking.form.dateTime.title')}
                           </h5>
-                          <div className="row mb-1" style={{ width: '100%' }}>
-                            <div className="col-md-6 d-flex align-items-center" style={{ minWidth: '280px', maxWidth: '390px' }}>
-                              <label className="form-label mb-0" style={{ fontWeight: 600 }}>
-                                {t('booking.form.dateTime.date')} 
-                              </label>
-                            </div>
-                            <div className="col-md-6 d-flex align-items-center" style={{ minWidth: '180px', maxWidth: '260px' }}>
-                              <label className="form-label mb-0" style={{ fontWeight: 600 }}>
-                                {t('booking.form.dateTime.time')} 
-                              </label>
-                            </div>
-                          </div>
-                          <div className="row" style={{ width: '100%' }}>
-                            <div className="col-md-6" style={{ minWidth: '280px', maxWidth: '390px' }}>
-                              <DatePicker
-                                selected={values.date_reservation ? new Date(values.date_reservation) : null}
-                                onChange={date => {
-                                  setFieldValue('date_reservation', date);
-                                  handleDateChange(date);
-                                }}
-                                minDate={new Date(getMinDate())}
-                                dateFormat="yyyy-MM-dd"
+                          
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.dateTime.date')}</label>
+                              <input
+                                type="date"
+                                className="form-control form-control-lg"
                                 name="date_reservation"
-                                required
-                                customInput={
-                                  <button
-                                    type="button"
-                                    className="form-control form-control-lg d-flex align-items-center justify-content-between px-3"
-                                    style={{
-                                      cursor: 'pointer',
-                                      background: '#fff',
-                                      border: '1px solid #ced4da',
-                                      borderRadius: '0.5rem',
-                                      minHeight: '48px',
-                                      padding: '0.5rem 1rem',
-                                      fontSize: '1.25rem',
-                                      lineHeight: 1.5,
-                                      boxSizing: 'border-box',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      width: '100%'
-                                    }}
-                                  >
-                                    <span className="d-flex align-items-center" style={{ color: values.date_reservation ? '#222' : '#888' }}>
-                                      <FaCalendarAlt className="me-2" />
-                                      {values.date_reservation
-                                        ? new Date(values.date_reservation).toLocaleDateString(i18n.language || 'fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
-                                        : t('booking.form.dateTime.datePlaceholder') || 'Sélectionner une date'}
-                                    </span>
-                                    <span style={{ color: '#bbb', fontSize: '1.2em', marginLeft: '0.5em' }}>&#8250;</span>
-                                  </button>
-                                }
+                                value={formData.date_reservation}
+                                onChange={(e) => handleDateChange(e.target.value)}
+                                min={getMinDate()}
                               />
-                              <ErrorMessage name="date_reservation" component="div" className="text-danger small" />
                             </div>
-                            <div className="col-md-6" style={{ minWidth: '180px', maxWidth: '260px' }}>
-                              <Field
-                                as="select"
-                                name="heure_reservation"
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">{t('booking.form.dateTime.time')}</label>
+                              <select
                                 className="form-select form-select-lg"
-                                style={{
-                                  minHeight: '48px',
-                                  padding: '0.5rem 1rem',
-                                  fontSize: '1.25rem',
-                                  lineHeight: 1.5,
-                                  boxSizing: 'border-box',
-                                  borderRadius: '0.5rem',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  width: '100%'
-                                }}
-                                disabled={!values.date_reservation}
+                                name="heure_reservation"
+                                value={formData.heure_reservation}
+                                onChange={handleInputChange}
+                                disabled={!formData.date_reservation}
                               >
                                 <option value="">{t('booking.form.dateTime.selectTime')}</option>
                                 {availableSlots.map((slot) => (
@@ -721,38 +740,47 @@ const BookingPage = () => {
                                     {slot}
                                   </option>
                                 ))}
-                              </Field>
-                              <ErrorMessage name="heure_reservation" component="div" className="text-danger small" />
-                              {values.date_reservation && availableSlots.length === 0 && (
+                              </select>
+                              {formData.date_reservation && availableSlots.length === 0 && (
                                 <div className="text-muted small mt-1">
                                   {t('booking.form.dateTime.noAvailableSlots')}
                                 </div>
                               )}
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
 
                         {/* Notes */}
-                        <div className="mb-4">
+                        <motion.div
+                          className="mb-4"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 1.2, duration: 0.6 }}
+                        >
                           <label className="form-label">{t('booking.form.notes.label')}</label>
-                          <Field
-                            as="textarea"
-                            name="notes"
+                          <textarea
                             className="form-control"
+                            name="notes"
+                            value={formData.notes}
+                            onChange={handleInputChange}
                             rows="3"
                             placeholder={t('booking.form.notes.placeholder')}
                           />
-                          <ErrorMessage name="notes" component="div" className="text-danger small" />
-                        </div>
+                        </motion.div>
 
                         {/* Submit Button */}
-                        <div className="text-center">
+                        <motion.div
+                          className="text-center"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 1.4, duration: 0.6 }}
+                        >
                           <button
                             type="submit"
                             className="btn btn-green text-white btn-lg px-5"
-                            disabled={isSubmitting || !selectedService || !values.date_reservation || !values.heure_reservation}
+                            disabled={loading || !selectedService || !formData.date_reservation || !formData.heure_reservation}
                           >
-                            {isSubmitting ? (
+                            {loading ? (
                               <>
                                 <span className="spinner-border spinner-border-sm me-2" />
                                 {t('booking.form.submitting')}
@@ -764,10 +792,8 @@ const BookingPage = () => {
                               </>
                             )}
                           </button>
-                        </div>
-                      </Form>
-                    )}
-                  </Formik>
+                        </motion.div>
+                      </form>
                 </div>
               </motion.div>
             </div>

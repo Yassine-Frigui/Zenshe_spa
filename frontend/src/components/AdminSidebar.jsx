@@ -176,7 +176,7 @@ const AdminSidebar = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .admin-sidebar {
           border-right: 1px solid #e9ecef;
           width: 70px;
