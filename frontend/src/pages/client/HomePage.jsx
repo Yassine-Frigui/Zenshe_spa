@@ -10,12 +10,10 @@ import {
   FaLeaf,
   FaSpa,
   FaGift,
-  FaImages,
-  FaGem
+  FaImages
 } from 'react-icons/fa'
 
 import { publicAPI } from '../../services/api'
-import HeroSection from '../../components/HeroSection'
 
 const HomePage = () => {
   const { t, i18n } = useTranslation()
@@ -39,14 +37,13 @@ const HomePage = () => {
         publicAPI.getSpaInfo()
       ])
 
-      // Ensure data is always an array
       setPopularServices(Array.isArray(popularRes.data) ? popularRes.data : [])
-      setNewServices(Array.isArray(newRes.data?.services) ? newRes.data.services : Array.isArray(newRes.data) ? newRes.data : [])
-      setAvis(Array.isArray(avisRes.data?.avis) ? avisRes.data.avis : [])
+      setNewServices(Array.isArray(newRes.data.services) ? newRes.data.services : Array.isArray(newRes.data) ? newRes.data : [])
+      setAvis(Array.isArray(avisRes.data.avis) ? avisRes.data.avis : [])
       setSpaInfo(spaRes.data || {})
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error)
-      // Set empty arrays on error
+      // Set default empty arrays to prevent map errors
       setPopularServices([])
       setNewServices([])
       setAvis([])
@@ -56,10 +53,27 @@ const HomePage = () => {
     }
   }
 
+  const heroVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.8,
+        staggerChildren: 0.2
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  }
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <div className="spinner-pink"></div>
+        <div className="spinner-green"></div>
       </div>
     )
   }
@@ -67,28 +81,110 @@ const HomePage = () => {
   return (
     <div className="homepage">
       {/* Hero Section */}
-      <HeroSection
-        title={t('home.hero.title')}
-        subtitle={t('home.hero.sanctuary_badge', 'Salon de beauté des ongles spécialisé')}
-        description={spaInfo?.message_accueil || t('home.hero.subtitle')}
-        primaryButton={{
-          text: t('home.hero.bookNow'),
-          to: '/booking',
-          icon: FaCalendarAlt,
-          variant: 'btn-light'
-        }}
-        secondaryButton={{
-          text: t('home.hero.discoverServices'),
-          to: '/services',
-          icon: FaGem,
-          variant: 'btn-outline-light'
-        }}
-        image={{
-          src: '/images/chez_waad_beauty.jpg',
-          alt: 'Beauty Nails - Chez Waad'
-        }}
-        backgroundType="gradient"
-      />
+      <section className="hero-section position-relative overflow-hidden" style={{ marginTop: '76px', minHeight: '90vh' }}>
+        <div className="position-absolute w-100 h-100" style={{
+          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
+          zIndex: -2
+        }}></div>
+        <div className="position-absolute w-100 h-100" style={{
+          background: 'radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+          zIndex: -1
+        }}></div>
+        
+        <Container className="h-100 d-flex align-items-center">
+          <Row className="w-100 align-items-center">
+            <Col lg={6}>
+              <motion.div
+                variants={heroVariants}
+                initial="hidden"
+                animate="visible"
+                className="text-dark"
+              >
+                <motion.div variants={itemVariants} className="mb-4">
+                  <span className="badge bg-light text-green px-3 py-2 rounded-pill">
+                    <FaLeaf className="me-2" />
+                    {t('home.hero.sanctuary_badge', 'Sanctuaire féminin spécialisé')}
+                  </span>
+                </motion.div>
+                
+                <motion.h1 variants={itemVariants} className="display-4 fw-bold mb-4">
+                  {t('home.hero.title')}
+                </motion.h1>
+                
+                <motion.p variants={itemVariants} className="lead mb-5 opacity-90">
+                  {spaInfo?.message_accueil || t('home.hero.subtitle')}
+                </motion.p>
+                
+                <motion.div variants={itemVariants} className="d-flex flex-wrap gap-3">
+                  <Link to="/booking" className="btn btn-light btn-lg rounded-pill px-4">
+                    <FaCalendarAlt className="me-2" />
+                    {t('home.hero.bookNow')}
+                  </Link>
+                  <Link to="/services" className="btn btn-outline-light btn-lg rounded-pill px-4 text-dark">
+                    <FaSpa className="me-2" />
+                    {t('home.hero.discoverServices')}
+                  </Link>
+                </motion.div>
+              </motion.div>
+            </Col>
+            
+            <Col lg={6} className="text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, delay: 0.5 }}
+                className="position-relative"
+              >
+                <div className="float-animation">
+                  <div 
+                    className="rounded-circle mx-auto d-flex align-items-center justify-content-center overflow-hidden"
+                    style={{
+                      width: '400px',
+                      height: '400px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      backdropFilter: 'blur(20px)',
+                      border: '2px solid rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    <img 
+                      src="/images/zenshe_logo.png"
+                      alt="ZenShe Spa"
+                      className="w-100 h-100"
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Éléments décoratifs flottants */}
+                <motion.div
+                  animate={{ y: [-10, 10, -10] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                  className="position-absolute"
+                  style={{ top: '10%', right: '10%', fontSize: '30px' }}
+                >
+                  ✨
+                </motion.div>
+                <motion.div
+                  animate={{ y: [10, -10, 10] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="position-absolute"
+                  style={{ bottom: '20%', left: '5%', fontSize: '25px' }}
+                >
+                  💎
+                </motion.div>
+                <motion.div
+                  animate={{ y: [-5, 15, -5] }}
+                  transition={{ duration: 5, repeat: Infinity }}
+                  className="position-absolute"
+                  style={{ top: '60%', right: '5%', fontSize: '20px' }}
+                >
+                  🌸
+                </motion.div>
+              </motion.div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
 
       {/* Services Populaires */}
       <section className="py-5 bg-light">
@@ -108,7 +204,7 @@ const HomePage = () => {
             </p>
           </motion.div>
           <Row className="g-4">
-            {Array.isArray(popularServices) && popularServices.map((service, index) => (
+            {(popularServices || []).map((service, index) => (
               <Col md={6} lg={3} key={service.id}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -179,7 +275,7 @@ const HomePage = () => {
             </motion.div>
 
             <Row className="g-4">
-              {Array.isArray(newServices) && newServices.map((service, index) => (
+              {(newServices || []).map((service, index) => (
                 <Col lg={4} key={service.id}>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -240,12 +336,12 @@ const HomePage = () => {
 
           <Row className="g-4">
             {[
-              { name: 'hydrafacial.jpg', title: 'Accueil Beauty Chez Waad' },
-              { name: 'nails_example.jpg', title: 'Studio de Manucure' },
-              { name: 'pedicure.jpg', title: 'Espace Pédicure' },
-              { name: 'nails_.jpg', title: 'Salon de Beauté' },
-              { name: 'lashes.jpg', title: 'Lashes Lift' },
-              { name: 'nails_example2.jpg', title: 'Soins de Beauté' }
+              { name: 'zenshe_logo.jpg', title: 'Accueil ZenShe Spa' },
+              { name: 'lashes.jpg', title: 'Salle V-Steam' },
+              { name: 'nails_feet_1.jpg', title: 'Suite Vajacial' },
+              { name: 'nailstudio_logo.jpg', title: 'Espace Relaxation' },
+              { name: 'nails1.jpg', title: 'Head Spa Japonais' },
+              { name: 'nails2.jpg', title: 'Salle de Rituels' }
             ].map((item, index) => (
               <Col md={6} lg={4} key={index}>
                 <motion.div
@@ -259,7 +355,7 @@ const HomePage = () => {
                     <img 
                       src={`/images/${item.name}`}
                       alt={item.title}
-                      className="w-100 gallery-image"
+                      className="w-100"
                       style={{ 
                         height: '250px', 
                         objectFit: 'cover',
@@ -269,33 +365,18 @@ const HomePage = () => {
                       onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
                       onError={(e) => {
                         e.target.style.display = 'none'
-                        const fallback = e.target.parentElement.querySelector('.image-fallback')
-                        if (fallback) fallback.style.display = 'flex'
+                        e.target.nextSibling.style.display = 'flex'
                       }}
-                        onLoad={(e) => {
-                          // Ensure fallback is hidden when image loads successfully
-                          const fallback = e.target.parentElement.querySelector('.image-fallback')
-                          if (fallback) fallback.style.display = 'none'
-
-                          // Show the small gallery title when image successfully loads
-                          const titleEl = e.target.parentElement.querySelector('.gallery-title')
-                          if (titleEl) {
-                            titleEl.style.opacity = '1'
-                            titleEl.style.transform = 'translateY(0)'
-                          }
-                        }}
                     />
-                      <div 
-                        className="image-fallback w-100 h-100 d-flex align-items-center justify-content-center bg-soft-green position-absolute top-0"
-                        style={{ display: 'none', fontSize: '3rem' }}
-                      >
-                        {index === 0 ? '💅' : index === 1 ? '🌸' : index === 2 ? '💆‍♀️' : index === 3 ? '✨' : index === 4 ? '🧴' : '💄'}
-                      </div>
-
-                      {/* Small title that appears when the image loads */}
-                      <div className="gallery-title position-absolute top-0 start-0 w-100 px-3 py-2 text-white">
-                        <small className="d-inline-block bg-dark bg-opacity-50 rounded-pill px-2 py-1">{item.title}</small>
-                      </div>
+                    <div 
+                      className="w-100 h-100 d-flex align-items-center justify-content-center bg-soft-green position-absolute top-0"
+                      style={{ display: 'none', fontSize: '3rem' }}
+                    >
+                      {index === 0 ? '🌿' : index === 1 ? '🌸' : index === 2 ? '💆‍♀️' : index === 3 ? '✨' : index === 4 ? '🧴' : '🪒'}
+                    </div>
+                    <div className="position-absolute bottom-0 start-0 w-100 p-3 text-white" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
+                      <h6 className="mb-0">{item.title}</h6>
+                    </div>
                   </div>
                 </motion.div>
               </Col>
@@ -333,7 +414,7 @@ const HomePage = () => {
             </motion.div>
 
             <Row className="g-4">
-              {Array.isArray(avis) && avis.slice(0, 3).map((avis, index) => (
+              {(avis || []).slice(0, 3).map((avis, index) => (
                 <Col lg={4} key={index}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -343,7 +424,7 @@ const HomePage = () => {
                     <Card className="card-green h-100">
                       <Card.Body className="p-4">
                         <div className="d-flex mb-3">
-                          {[...Array(Math.floor(avis.note || 0))].map((_, i) => (
+                          {[...Array(avis.note)].map((_, i) => (
                             <FaStar
                               key={i} 
                               className="text-warning me-1" 
@@ -372,7 +453,7 @@ const HomePage = () => {
       )}
 
       {/* Call to Action */}
-      <section className="py-5  text-white">
+      <section className="py-5 bg-gradient-green text-white">
         <Container>
           <Row className="text-center">
             <Col>

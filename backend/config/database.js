@@ -1,121 +1,70 @@
 require('dotenv').config();
 const mysql = require('mysql2');
 
-// Determine if we're in production or local environment
-const isProduction = process.env.NODE_ENV === 'production';
-
-// Primary configuration (production or local based on NODE_ENV)
-// Allow opting into SSL via DB_SSL env var. Default: false (many free hosts don't support SSL).
-const useSSL = (process.env.DB_SSL === 'true' || process.env.DB_SSL === '1');
-
-const primaryDbConfig = {
-    host: process.env.DB_HOST || 'fdb1032.awardspace.net',
-    user: process.env.DB_USER || '4675996_waadnails',
-    password: process.env.DB_PASSWORD || 'yf5040y12',
-    database: process.env.DB_NAME || '4675996_waadnails',
-    port: parseInt(process.env.DB_PORT) || 3306,
+// Configuration de la base de données
+const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'zenshespa_database',
+    port: parseInt(process.env.DB_PORT) || 4306,
     charset: 'utf8mb4',
-    connectTimeout: 30000,
-    ssl: useSSL ? { rejectUnauthorized: false } : false
+    connectTimeout: 30000,      // 30 seconds for remote connections
+    ssl: process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false
 };
 
-// Fallback configuration (local)
-const fallbackDbConfig = {
-    host: process.env.DB_HOST_LOCAL || 'localhost',
-    user: process.env.DB_USER_LOCAL || 'root',
-    password: process.env.DB_PASSWORD_LOCAL || '',
-    database: process.env.DB_NAME_LOCAL || 'nails_waad',
-    port: parseInt(process.env.DB_PORT_LOCAL) || 4306,
-    charset: 'utf8mb4',
-    connectTimeout: 10000,
-    ssl: false
-};
+// Création du pool de connexions
+const pool = mysql.createPool({
+    ...dbConfig,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    acquireTimeout: 60000,      // 60 seconds to get connection
+    timeout: 60000,             // 60 seconds for queries
+    idleTimeout: 300000,        // 5 minutes
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+    reconnect: true,
+    multipleStatements: false
+});
 
-// Choose configuration based on environment or fallback
-let dbConfig = isProduction ? primaryDbConfig : fallbackDbConfig;
+// Version promise du pool
+const promisePool = pool.promise();
 
-// Création du pool de connexions avec retry logic
-let pool;
-let promisePool;
-
-const createPool = (config) => {
-    return mysql.createPool({
-        ...config,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-        acquireTimeout: 60000,
-        timeout: 60000,
-        idleTimeout: 300000,
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 0,
-        reconnect: true,
-        multipleStatements: false
-    });
-};
-
-// Initialize with primary config
-pool = createPool(dbConfig);
-promisePool = pool.promise();
-
-// Test de connexion avec fallback
-const testConnection = async (useConfig = dbConfig, configName = 'primary') => {
+// Test de connexion
+const testConnection = async () => {
     try {
-        console.log(`🔍 Testing ${configName} database connection...`);
-        console.log('Host:', useConfig.host);
-        console.log('Port:', useConfig.port);
-        console.log('Database:', useConfig.database);
-        console.log('User:', useConfig.user);
+        console.log('🔍 Testing database connection...');
+        console.log('Host:', dbConfig.host);
+        console.log('Port:', dbConfig.port);
+        console.log('Database:', dbConfig.database);
+        console.log('User:', dbConfig.user);
         
-        const testPool = createPool(useConfig);
-        const testPromisePool = testPool.promise();
-        
-        const connection = await testPromisePool.getConnection();
-        console.log(`✅ ${configName} database connection successful`);
+        const connection = await promisePool.getConnection();
+        console.log('✅ Connexion à la base de données réussie');
         
         // Test a simple query
         const [result] = await connection.execute('SELECT 1 as test');
-        console.log(`✅ ${configName} test query successful:`, result[0]);
+        console.log('✅ Test query successful:', result[0]);
         
         connection.release();
-        await testPool.end();
-        
         return true;
     } catch (error) {
-        console.error(`❌ ${configName} database connection failed:`, error.message);
+        console.error('❌ Erreur de connexion à la base de données:');
+        console.error('Error Code:', error.code);
+        console.error('Error Message:', error.message);
+        
+        if (error.code === 'ECONNREFUSED') {
+            console.error('📡 Connection refused - check host and port');
+        } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+            console.error('🔐 Access denied - check username and password');
+        } else if (error.code === 'ER_BAD_DB_ERROR') {
+            console.error('🗄️ Database does not exist - check database name');
+        } else if (error.code === 'ETIMEDOUT') {
+            console.error('⏰ Connection timeout - check network connectivity');
+        }
+        
         return false;
-    }
-};
-
-// Initialize connection with fallback logic
-const initializeDatabase = async () => {
-    try {
-        // Try primary configuration first
-        const primarySuccess = await testConnection(dbConfig, 'primary');
-        
-        if (primarySuccess) {
-            console.log('✅ Using primary database configuration');
-            return;
-        }
-        
-        // If primary fails, try fallback (local)
-        console.log('🔄 Primary connection failed, trying fallback configuration...');
-        const fallbackSuccess = await testConnection(fallbackDbConfig, 'fallback');
-        
-        if (fallbackSuccess) {
-            console.log('✅ Using fallback (local) database configuration');
-            // Recreate pool with fallback config
-            await pool.end();
-            dbConfig = fallbackDbConfig;
-            pool = createPool(dbConfig);
-            promisePool = pool.promise();
-        } else {
-            throw new Error('Both primary and fallback database connections failed');
-        }
-        
-    } catch (error) {
-        console.error('❌ Database initialization failed:', error.message);
-        throw error;
     }
 };
 
@@ -165,8 +114,7 @@ const executeTransaction = async (queries) => {
 module.exports = {
     pool,
     promisePool,
-    testConnection: initializeDatabase,
+    testConnection,
     executeQuery,
-    executeTransaction,
-    initializeDatabase
+    executeTransaction
 };

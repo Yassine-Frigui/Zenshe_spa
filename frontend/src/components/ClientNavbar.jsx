@@ -7,7 +7,6 @@ import {
   FaInfoCircle, 
   FaSpa, 
   FaCalendarAlt, 
-  FaGem,
   FaPhone,
   FaBars,
   FaTimes,
@@ -30,7 +29,7 @@ const ClientNavbar = () => {
   const navItems = [
     { path: '/', label: t('navigation.home'), icon: FaHome },
     { path: '/about', label: t('navigation.about'), icon: FaInfoCircle },
-    { path: '/services', label: t('navigation.services'), icon: FaGem },
+    { path: '/services', label: t('navigation.services'), icon: FaSpa },
     { path: '/booking', label: t('navigation.booking'), icon: FaCalendarAlt },
     { path: '/contact', label: t('navigation.contact'), icon: FaPhone }
   ]
@@ -38,33 +37,34 @@ const ClientNavbar = () => {
   return (
     <Navbar 
       expand="lg" 
-      className="navbar-pink fixed-top" 
+      className="navbar-green fixed-top" 
       expanded={expanded}
       onToggle={setExpanded}
     >
-      <Container fluid className="px-3 px-lg-4">
+      <Container>
         <Navbar.Brand as={Link} to="/" className="fw-bold text-white fs-3">
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="d-flex align-items-center"
           >
-            <img
-              src="/images/chez_waad_beauty.jpg"
-              alt="Beauty Nails - Chez Waad"
-              className="me-2"
-              style={{
-                height: '32px',
+            <img 
+              src="/images/zenshe_logo.png" 
+              alt="ZenShe Spa"
+              style={{ 
+                height: '32px', 
+                marginRight: '8px', 
                 borderRadius: '6px',
-                objectFit: 'cover',
-                marginInlineEnd: '8px'
+                objectFit: 'cover'
               }}
+
+
             />
-            <span className="navbar-brand-text">Beauty Nails - Chez Waad</span>
+Zen she spa
           </motion.div>
         </Navbar.Brand>
 
-  <Navbar.Toggle 
+        <Navbar.Toggle 
           aria-controls="basic-navbar-nav"
           className="border-0 text-white"
           onClick={() => setExpanded(!expanded)}
@@ -152,20 +152,19 @@ const ClientNavbar = () => {
       </Container>
 
       <style>{`
-        /* Keep existing navbar color but use structure from green variant */
-        .navbar-pink .nav-link.active {
+        .navbar-green .nav-link.active {
           background: rgba(255, 255, 255, 0.2);
           border-radius: 20px;
           padding: 8px 16px !important;
         }
         
-        .navbar-pink .navbar-toggler:focus {
+        .navbar-green .navbar-toggler:focus {
           box-shadow: none;
         }
         
         @media (max-width: 991.98px) {
-          .navbar-pink .navbar-collapse {
-            background: rgba(149, 217, 195, 0.95);
+          .navbar-green .navbar-collapse {
+            background: rgba(46, 77, 76, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             margin-top: 10px;

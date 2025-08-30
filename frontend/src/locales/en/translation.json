@@ -73,7 +73,7 @@
     },
     "signup": {
       "title": "Sign Up",
-      "subtitle": "Create your account to start your beauty journey",
+      "subtitle": "Create your account to start your wellness journey",
       "firstName": "First Name",
       "lastName": "Last Name",
       "email": "Email address",
@@ -128,38 +128,38 @@
   },
   "home": {
     "hero": {
-      "title": "Welcome to Beauty Nails - Chez Waad",
-      "subtitle": "Experience premium nail care and beauty treatments in our luxurious salon. From classic manicures to artistic nail designs, we create beautiful nails that express your unique style.",
+      "title": "Escape to ZenShe Spa",
+      "subtitle": "Discover our specialized intimate wellness treatments, vaginal herbal steaming and holistic healing rituals in a sanctuary dedicated to women. Your haven of peace and reconnection.",
       "bookNow": "Book now",
       "discoverServices": "Our Services",
-      "sanctuary_badge": "Premium nail sanctuary"
+      "sanctuary_badge": "Specialized feminine sanctuary"
     },
-    "featuredServices": "Our Most Popular Services",
-    "featuredServicesDesc": "Discover why our clients love these nail treatments",
+    "featuredServices": "Our Most Requested Services",
+    "featuredServicesDesc": "Discover why our clients love these treatments",
     "viewAllServices": "View All Our Services",
     "newServices": {
-      "title": "New Nail Trends",
-      "description": "Discover our latest nail art and treatment innovations",
+      "title": "New Treatments",
+      "description": "Discover our latest wellness innovations",
       "badge": "New",
       "tryButton": "Try Now"
     },
     "gallery": {
-      "title": "Our Beauty Sanctuary",
-      "description": "Discover our elegant spaces dedicated to nail care and beauty"
+      "title": "Our Wellness Sanctuary",
+      "description": "Discover our spaces dedicated to intimate wellness and healing"
     },
     "testimonials": {
       "title": "What Our Clients Say",
-      "description": "Beautiful nails and happy clients are our pride"
+      "description": "Their wellness is our pride"
     },
     "cta": {
-      "title": "Ready for beautiful nails?",
-      "description": "Book your personalized nail treatment now and let your nails shine",
+      "title": "Ready for your wellness moment?",
+      "description": "Book your personalized treatment now and reconnect with your femininity",
       "button": "Book My Appointment"
     }
   },
   "services": {
     "title": "Our Services",
-    "subtitle": "Premium nail care and beauty treatments",
+    "subtitle": "Intimate wellness and holistic healing for women",
     "allServices": "All Services",
     "categories": "Categories",
     "duration": "Duration",
@@ -171,15 +171,15 @@
     "noServicesFound": "No services found",
     "tryDifferentCategory": "Try selecting a different category",
     "cta": {
-      "title": "Questions about our nail services?",
-      "description": "Our experienced nail artists are here to help you achieve beautiful nails"
+      "title": "Questions about our intimate wellness services?",
+      "description": "Our experienced team is here to guide you on your wellness journey"
     }
   },
   "booking": {
     "title": "Book an appointment",
     "hero": {
       "title": "Book your appointment",
-      "subtitle": "Choose your service and preferred time for a personalized nail care experience"
+      "subtitle": "Choose your service and preferred time for a personalized beauty experience"
     },
     "form": {
       "title": "Booking form",
@@ -194,7 +194,6 @@
       "lastName": "Last name *",
       "email": "Email *",
       "phone": "Phone *",
-      "phoneHelper": "(minimum required for auto-save)",
       "placeholders": {
         "firstName": "Your first name",
         "lastName": "Your last name",
@@ -202,11 +201,12 @@
         "phone": "06 12 34 56 78"
       },
       "dateTime": {
-        "title": "Date and time",
-        "date": "Date *",
-        "time": "Time *",
-        "selectTime": "Select a time",
-        "noAvailableSlots": "No available slots for this date"
+  "title": "Date and time",
+  "date": "Date *",
+  "time": "Time *",
+  "selectTime": "Select a time",
+  "noAvailableSlots": "No available slots for this date",
+  "datePlaceholder": "Select a date"
       },
       "notes": {
         "label": "Special notes (optional)",
@@ -245,34 +245,34 @@
   },
   "about": {
     "hero": {
-      "title": "About Beauty Nails - Chez Waad",
-      "subtitle": "Your destination for premium nail care and artistic nail design"
+      "title": "About ZenShe Spa",
+      "subtitle": "Your sanctuary dedicated to feminine intimate wellness and holistic healing"
     },
     "mission": {
       "title": "Our Mission",
-      "description": "At Beauty Nails - Chez Waad, we create a luxurious space where every client can express their unique style through beautiful nail art and professional nail care."
+      "description": "At ZenShe Spa, we create a sacred space where every woman can reconnect with her feminine essence and restore her natural balance."
     },
     "values": {
       "feminine_wellness": {
-        "title": "Beauty Care",
-        "description": "We specialize in manicure, pedicure and beauty treatments to enhance your natural radiance and style."
+        "title": "Feminine Wellness",
+        "description": "We specialize in treatments dedicated to intimate wellness and feminine fulfillment."
       },
       "holistic_approach": {
-        "title": "Comprehensive Approach",
-        "description": "Our services combine traditional techniques and modern innovations for complete and personalized beauty treatments."
+        "title": "Holistic Approach",
+        "description": "Our treatments combine ancestral traditions and modern techniques for complete care of body and spirit."
       },
       "excellence_discretion": {
-        "title": "Excellence & Elegance",
-        "description": "Superior quality service in a luxurious, relaxing and welcoming environment."
+        "title": "Excellence & Discretion",
+        "description": "Personalized service in a safe, confidential and caring environment."
       }
     },
     "story": {
       "title": "Our Story",
-      "description": "Beauty Chez Waad was born from the passion to create a space dedicated exclusively to beauty and nail care, where traditional artistry meets modern innovation."
+      "description": "ZenShe Spa was born from the passion to create a space dedicated exclusively to feminine wellness, where tradition meets innovation."
     },
     "team": {
       "title": "Our Team",
-      "description": "Trained and passionate estheticians and nail artists, dedicated to your beauty and satisfaction."
+      "description": "Trained and passionate professionals, dedicated to your wellness and comfort."
     }
   },
   "profile": {

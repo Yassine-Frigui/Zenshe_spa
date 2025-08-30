@@ -14,7 +14,6 @@ import {
   FaGem
 } from 'react-icons/fa'
 import { publicAPI } from '../../services/api'
-import HeroSection from '../../components/HeroSection'
 
 const ServicesPage = () => {
   const { t, i18n } = useTranslation()
@@ -34,12 +33,10 @@ const ServicesPage = () => {
         publicAPI.getCategories()
       ])
 
-      // Ensure data is always an array
-      setServices(Array.isArray(servicesRes.data?.services) ? servicesRes.data.services : Array.isArray(servicesRes.data) ? servicesRes.data : [])
-      setCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : [])
+      setServices(servicesRes.data.services || servicesRes.data || [])
+      setCategories(categoriesRes.data || [])
     } catch (error) {
       console.error('Error loading services:', error)
-      // Set empty arrays on error
       setServices([])
       setCategories([])
     } finally {
@@ -48,15 +45,15 @@ const ServicesPage = () => {
   }
 
   const filteredServices = selectedCategory === 'all' 
-    ? services 
-    : services.filter(service => service.categorie_id === parseInt(selectedCategory))
+    ? (Array.isArray(services) ? services : [])
+    : (Array.isArray(services) ? services.filter(service => service.categorie_id === parseInt(selectedCategory)) : [])
 
   const getServiceIcon = (categoryName) => {
     const icons = {
       'V-Steam': '🌿',
       'Vajacials': '🌸', 
       'Massages et Soins Corps': '💆‍♀️',
-      'Waad': '✨',
+      'ZenShe Rituals': '✨',
       'Japanese Head Spa': '🧴',
       'Épilation': '🪒'
     }
@@ -70,31 +67,39 @@ const ServicesPage = () => {
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <div className="spinner-pink"></div>
+        <div className="spinner-green"></div>
       </div>
     )
   }
 
   return (
-    <div className="services-page">
-      {/* Hero Section */}
-      <HeroSection
-        title={t('services.title')}
-        subtitle={t('services.badge', 'Services premium')}
-        description={t('services.subtitle')}
-        primaryButton={{
-          text: t('common.bookNow', 'Réserver maintenant'),
-          to: '/booking',
-          icon: FaCalendarAlt,
-          variant: 'btn-light'
-        }}
-
-        image={{
-          src: '/images/nails_example.jpg',
-          alt: 'Beauty Nails - Chez Waad'
-        }}
-        backgroundType="gradient"
-      />
+    <div className="services-page" style={{ marginTop: '76px' }}>
+      {/* Header */}
+      <section className="py-5 text-white"
+      style={{
+          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
+      }}
+      >
+        <Container>
+          <Row className="text-center">
+            <Col>
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <h1 className="display-4 fw-bold mb-4">
+                  <FaSpa className="me-3" />
+                  {t('services.title')}
+                </h1>
+                <p className="lead mb-0 opacity-90">
+                  {t('services.subtitle')}
+                </p>
+              </motion.div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
 
       {/* Category Filters */}
       <section className="py-4 bg-light sticky-top">
@@ -112,23 +117,23 @@ const ServicesPage = () => {
                       active={selectedCategory === 'all'}
                       onClick={() => setSelectedCategory('all')}
                       className={`rounded-pill mx-1 ${
-                        selectedCategory === 'all' ? 'bg-green text-white' : 'text-soft-green'
+                        selectedCategory === 'all' ? 'bg-green text-white' : 'text-green'
                       }`}
                       style={{ 
-                        background: selectedCategory === 'all' ? 'var(--primary-green)' : 'text-soft-green+',
+                        background: selectedCategory === 'all' ? 'var(--primary-green)' : 'transparent',
                         border: `2px solid var(--primary-green)`
                       }}
                     >
                       <FaStar className="me-2" />
                       {t('services.allServices')}
                       <Badge className="ms-2" bg="light" text="dark">
-                        {services.length}
+                        {Array.isArray(services) ? services.length : 0}
                       </Badge>
                     </Nav.Link>
                   </Nav.Item>
                   
                   {Array.isArray(categories) && categories.map((category) => {
-                    const categoryServices = services.filter(s => s.categorie_id === category.id)
+                    const categoryServices = Array.isArray(services) ? services.filter(s => s.categorie_id === category.id) : []
                     return (
                       <Nav.Item key={category.id} className="mb-2">
                         <Nav.Link
@@ -173,7 +178,7 @@ const ServicesPage = () => {
               transition={{ duration: 0.6 }}
               className="text-center mb-5"
             >
-              {Array.isArray(categories) && categories
+              {categories
                 .filter(cat => cat.id.toString() === selectedCategory)
                 .map(category => (
                   <div key={category.id}>
@@ -192,7 +197,7 @@ const ServicesPage = () => {
           )}
 
           <Row className="g-4">
-            {Array.isArray(filteredServices) && filteredServices.map((service, index) => (
+            {filteredServices.map((service, index) => (
               <Col lg={4} md={6} key={service.id}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -290,7 +295,6 @@ const ServicesPage = () => {
                         <Link 
                           to={`/services/${service.id}`}
                           className="btn btn-outline-green"
-                          style={{ background: `linear-gradient(135deg, var(--snow), var(--snow ) ` }}
                         >
                           View Details
                         </Link>
@@ -298,7 +302,7 @@ const ServicesPage = () => {
                           to={`/booking?service=${service.id}`}
                           className="btn btn-green"
                           style={{
-                            background: `linear-gradient(135deg, var(--accent-green), var(--accent-green))`
+                            background: `linear-gradient(135deg, ${getCategoryColor(service.couleur_theme)}, var(--accent-green))`
                           }}
                         >
                           <FaCalendarAlt className="me-2" />

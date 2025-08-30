@@ -8,10 +8,8 @@ import {
   FaInstagram, 
   FaPaperPlane,
   FaHeart,
-  FaComment,
-  FaGem
+  FaComment
 } from 'react-icons/fa';
-import HeroSection from '../../components/HeroSection';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -56,15 +54,15 @@ const ContactPage = () => {
 
   const contactInfo = [
     {
-      icon: <FaMapMarkerAlt className="text-primary" size={24} />,
+      icon: <FaMapMarkerAlt className="text-green" size={24} />,
       title: "Adresse",
       details: [
-        "Centre Ikram,Menzah 8,",
+        "Avenue De La Bourse,Lac2,",
         " Tunis, Tunisie",
       ]
     },
     {
-      icon: <FaPhone className="text-primary" size={24} />,
+      icon: <FaPhone className="text-green" size={24} />,
       title: "Téléphone",
       details: [
         "01 23 45 67 89",
@@ -72,15 +70,15 @@ const ContactPage = () => {
       ]
     },
     {
-      icon: <FaEnvelope className="text-primary" size={24} />,
+      icon: <FaEnvelope className="text-green" size={24} />,
       title: "Email",
       details: [
-        "contact@beauty-nails-waad.tn",
-        "reservation@beauty-nails-waad.tn"
+        "contact@zenshe-spa.tn",
+        "reservation@zenshe-spa.tn"
       ]
     },
     {
-      icon: <FaClock className="text-primary" size={24} />,
+      icon: <FaClock className="text-green" size={24} />,
       title: "Horaires",
       details: [
         "Mon - Sat: 9h00 - 19h00", 
@@ -93,7 +91,7 @@ const ContactPage = () => {
     {
       icon: <FaInstagram />,
       name: "Instagram",
-      url: "https://www.instagram.com/chez_waad.beautynails/",
+      url: "https://www.instagram.com/zenshe.spa/",
       color: "instagram",
       followers: "4.3K"
     },
@@ -122,22 +120,54 @@ const ContactPage = () => {
   return (
     <div className="contact-page">
       {/* Hero Section */}
-      <HeroSection
-        title="Contactez-nous"
-        subtitle="Service client premium"
-        description="Nous sommes là pour répondre à toutes vos questions et vous aider à planifier votre prochaine expérience beauté."
-        primaryButton={{
-          text: "Prendre votre rendez-vous",
-          to: '/booking',
-          icon: FaHeart,
-          variant: 'btn-light'
-        }}
-        image={{
-          src: "images/hydrafacial.jpg",
-          alt: "Contact Beauty Nails - Chez Waad"
-        }}
-        backgroundType="gradient"
-      />
+      <motion.section 
+        className="hero-contact py-5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        style={{
+          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
+      }}
+      >
+        <div className="container">
+          <div className="row align-items-center">
+            <div className="col-lg-6">
+              <motion.div
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
+              >
+                <h1 className="display-4 fw-bold text-white mb-4">
+                  Contactez-nous
+                </h1>
+                <p className="lead text-white mb-4">
+                  Nous sommes là pour répondre à toutes vos questions et vous aider 
+                  à planifier votre prochaine expérience beauté.
+                </p>
+                <div className="d-flex align-items-center text-white">
+                  <FaHeart className="me-2" />
+                  <span>Nous répondons sous 24h maximum</span>
+                </div>
+              </motion.div>
+            </div>
+            <div className="col-lg-6">
+              <motion.div
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="text-center"
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&h=400&fit=crop" 
+                  alt="Contact ZenShe Spa" 
+                  className="img-fluid rounded-3 shadow-lg"
+                  style={{ maxHeight: '400px', objectFit: 'cover' }}
+                />
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </motion.section>
 
       {/* Contact Info Section */}
       <section className="py-5">
@@ -156,7 +186,7 @@ const ContactPage = () => {
                   <div className="icon-wrapper mb-3 d-flex justify-content-center">
                     {info.icon}
                   </div>
-                  <h5 className="fw-bold text-primary mb-3">{info.title}</h5>
+                  <h5 className="fw-bold text-green mb-3">{info.title}</h5>
                   {info.details.map((detail, idx) => (
                     <p key={idx} className="text-muted mb-1">{detail}</p>
                   ))}
@@ -308,14 +338,14 @@ const ContactPage = () => {
                 <h2 className="fw-bold text-green mb-4">Notre emplacement</h2>
                 <div className="map-container bg-white rounded-3 shadow-sm p-3" style={{ height: '400px' }}>
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3192.4348657579962!2d10.165080875217063!3d36.85600857223121!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd3355d480b6dd%3A0x2a95d3a970231827!2z2YXYsdmD2LIg2KXZg9ix2KfZhQ!5e0!3m2!1sen!2stn!4v1756146087823!5m2!1sen!2stn" 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d798.1997010008397!2d10.265970295246431!3d36.84729431399712!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd4b0063432e01%3A0x43cd73a6b6d294de!2sZenShe%20Spa!5e0!3m2!1sen!2stn!4v1751655335818!5m2!1sen!2stn"
                     height="100%"
                     width="100%"
                     style={{ border: 0, borderRadius: '8px' }}
                     allowFullScreen=""
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    title="Chez Waad Beauty Location - Centre Ikram Menzah 8"
+                    title="ZenShe Spa Location - Avenue De La Bourse, Lac 2"
                   />
                 </div>
                 <div className="mt-3 p-3 bg-soft-green rounded-3 border border-green">
@@ -440,7 +470,7 @@ const ContactPage = () => {
       </section>
 
       {/* Emergency Contact */}
-      <section className="py-4 bg-soft-green">
+      <section className="py-4 bg-green">
         <div className="container">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -450,8 +480,8 @@ const ContactPage = () => {
             className="row align-items-center text-center text-md-start"
           >
             <div className="col-md-8">
-              <h5 className="text-dark fw-bold mb-2">Besoin d'aide urgente ?</h5>
-              <p className="text-dark mb-0 opacity-90">
+              <h5 className="text-white fw-bold mb-2">Besoin d'aide urgente ?</h5>
+              <p className="text-white mb-0 opacity-90">
                 Pour toute urgence ou question de dernière minute, n'hésitez pas à nous appeler directement.
               </p>
             </div>
