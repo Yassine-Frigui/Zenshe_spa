@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
-console.log('🤖 ZenShe Spa - Configuration du Bot Telegram\n');
+console.log('🤖 Waad - Configuration du Bot Telegram\n');
 
 const envPath = path.join(__dirname, '../../.env');
 

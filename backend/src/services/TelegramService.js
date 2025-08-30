@@ -103,7 +103,7 @@ class TelegramService {
         });
 
         const message = `
-${statusEmoji} <b>NOUVELLE RÉSERVATION - ZenShe Spa</b>
+${statusEmoji} <b>NOUVELLE RÉSERVATION - Chez Waad</b>
 
 👤 <b>Cliente:</b>
 • Nom: ${client.prenom} ${client.nom}
@@ -307,7 +307,7 @@ ${reservation.notes_client ? `💭 <b>Notes:</b> ${reservation.notes_client}` : 
      */
     async testConnection() {
         try {
-            const testMessage = `🔧 <b>Test de connexion ZenShe Spa</b>\n\n✅ Le bot Telegram est correctement configuré!\n\n⏰ ${new Date().toLocaleString('fr-FR')}`;
+            const testMessage = `🔧 <b>Test de connexion Beauty Nails Chez Waad</b>\n\n✅ Le bot Telegram est correctement configuré!\n\n⏰ ${new Date().toLocaleString('fr-FR')}`;
             return await this.sendMessage(testMessage);
         } catch (error) {
             console.error('Telegram connection test failed:', error);
@@ -316,4 +316,4 @@ ${reservation.notes_client ? `💭 <b>Notes:</b> ${reservation.notes_client}` : 
     }
 }
 
-module.exports = new TelegramService();
+module.exports = TelegramService;

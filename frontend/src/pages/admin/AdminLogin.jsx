@@ -79,7 +79,7 @@ const AdminLogin = () => {
                     </div>
                   </div>
                   <h3 className="fw-bold text-green mb-2">Administration</h3>
-                  <p className="text-accent-green mb-0">ZenShe Spa</p>
+                  <p className="text-accent-green mb-0">Waad</p>
                 </motion.div>
               </div>
 
@@ -106,7 +106,7 @@ const AdminLogin = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="admin@zenshe.ca"
+                        placeholder="admin@waad.ca"
                         required
                         autoFocus
                       />
@@ -190,7 +190,7 @@ const AdminLogin = () => {
                   {/* Demo Credentials */}
                   <div className="text-center">
                     <small className="text-muted">
-                      <strong>Demo:</strong> admin@zenshe.ca / admin123
+                      <strong>Demo:</strong> admin@waad.ca / admin123
                     </small>
                   </div>
                 </motion.form>

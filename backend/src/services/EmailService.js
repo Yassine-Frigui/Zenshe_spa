@@ -21,14 +21,14 @@ class EmailService {
             const emailData = {
                 sender: { 
                     email: process.env.BREVO_SENDER_EMAIL || "noreply@zenshespa.com", 
-                    name: "Zenshe Spa" 
+                    name: "Chez Waad Beauty" 
                 },
                 to: [{ email: email, name: clientName }],
-                subject: "Code de réinitialisation - Zenshe Spa",
+                subject: "Code de réinitialisation - Chez Waad Beauty",
                 htmlContent: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                         <div style="text-align: center; margin-bottom: 30px;">
-                            <h1 style="color: #e91e63; margin: 0;">Zenshe Spa</h1>
+                            <h1 style="color: #e91e63; margin: 0;">Chez Waad Beauty</h1>
                         </div>
                         
                         <h2 style="color: #333; margin-bottom: 20px;">Code de réinitialisation de mot de passe</h2>
@@ -73,7 +73,7 @@ class EmailService {
                     </div>
                 `,
                 textContent: `
-                    Code de réinitialisation de mot de passe - Zenshe Spa
+                    Code de réinitialisation de mot de passe - Chez Waad Beauty
                     
                     Bonjour${clientName ? ' ' + clientName : ''},
                     
@@ -155,7 +155,7 @@ class EmailService {
 
             const emailData = {
                 sender: {
-                    name: process.env.SALON_NAME || 'Zenshe Spa',
+                    name: process.env.SALON_NAME || 'Chez Waad Beauty',
                     email: senderEmail
                 },
                 to: [{
@@ -170,7 +170,7 @@ class EmailService {
                                 ✨ Réservation Confirmée ✨
                             </h1>
                             <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">
-                                ${process.env.SALON_NAME || 'Zenshe Spa'}
+                                ${process.env.SALON_NAME || 'Chez Waad Beauty'}
                             </p>
                         </div>
                         
@@ -229,7 +229,7 @@ class EmailService {
                                     📞 ${process.env.SALON_PHONE || '+216 24 157 715'}
                                 </p>
                                 <p style="color: #e91e63; font-weight: bold; margin: 5px 0;">
-                                    ✉️ ${process.env.SALON_EMAIL || 'contact@zenshe-spa.tn'}
+                                    ✉️ ${process.env.SALON_EMAIL || 'contact@chezwaad.tn'}
                                 </p>
                             </div>
                             
@@ -238,7 +238,7 @@ class EmailService {
                                     Merci de nous faire confiance pour votre bien-être ✨
                                 </p>
                                 <p style="color: #999; font-size: 12px; margin: 10px 0 0 0;">
-                                    ${process.env.SALON_NAME || 'Zenshe Spa'} - Votre havre de paix et de beauté
+                                    ${process.env.SALON_NAME || 'Chez Waad Beauty'} - Votre havre de paix et de beauté
                                 </p>
                             </div>
                         </div>
@@ -264,11 +264,11 @@ class EmailService {
                     
                     Contact :
                     Téléphone : ${process.env.SALON_PHONE || '+216 24 157 715'}
-                    Email : ${process.env.SALON_EMAIL || 'contact@zenshe-spa.tn'}
+                    Email : ${process.env.SALON_EMAIL || 'contact@chezwaad.tn'}
                     
                     Merci de nous faire confiance pour votre bien-être !
                     
-                    ${process.env.SALON_NAME || 'Zenshe Spa'}
+                    ${process.env.SALON_NAME || 'Chez Waad Beauty'}
                 `
             };
 
@@ -336,7 +336,7 @@ class EmailService {
 
             const emailData = {
                 sender: {
-                    name: process.env.SALON_NAME || 'Zenshe Spa',
+                    name: process.env.SALON_NAME || 'Chez Waad Beauty',
                     email: senderEmail
                 },
                 to: [{
@@ -351,7 +351,7 @@ class EmailService {
                                 🔐 Confirmez votre réservation
                             </h1>
                             <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">
-                                ${process.env.SALON_NAME || 'Zenshe Spa'}
+                                ${process.env.SALON_NAME || 'Chez Waad Beauty'}
                             </p>
                         </div>
                         
@@ -422,7 +422,7 @@ class EmailService {
                                     📞 ${process.env.SALON_PHONE || '+216 24 157 715'}
                                 </p>
                                 <p style="color: #e91e63; font-weight: bold; margin: 5px 0;">
-                                    ✉️ ${process.env.SALON_EMAIL || 'contact@zenshe-spa.tn'}
+                                    ✉️ ${process.env.SALON_EMAIL || 'contact@chezwaad.tn'}
                                 </p>
                             </div>
                             
@@ -431,7 +431,7 @@ class EmailService {
                                     Merci de nous faire confiance pour votre bien-être ✨
                                 </p>
                                 <p style="color: #999; font-size: 12px; margin: 10px 0 0 0;">
-                                    ${process.env.SALON_NAME || 'Zenshe Spa'} - Votre havre de paix et de beauté
+                                    ${process.env.SALON_NAME || 'Chez Waad Beauty'} - Votre havre de paix et de beauté
                                 </p>
                             </div>
                         </div>
@@ -462,11 +462,11 @@ class EmailService {
                     
                     Contact :
                     Téléphone : ${process.env.SALON_PHONE || '+216 24 157 715'}
-                    Email : ${process.env.SALON_EMAIL || 'contact@zenshe-spa.tn'}
+                    Email : ${process.env.SALON_EMAIL || 'contact@chezwaad.tn'}
                     
                     Merci de nous faire confiance pour votre bien-être !
                     
-                    ${process.env.SALON_NAME || 'Zenshe Spa'}
+                    ${process.env.SALON_NAME || 'Chez Waad Beauty'}
                 `
             };
 

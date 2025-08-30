@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "beauty-nails-chez-waad-backend",
   "version": "1.0.0",
   "main": "express.js",
   "scripts": {

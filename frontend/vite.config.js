@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'rightly-wise-tadpole.ngrok-free.app', // Only used in development
+        target: 'https://waad-nails.onrender.com', // Local backend server
         changeOrigin: true,
         secure: false,
       }

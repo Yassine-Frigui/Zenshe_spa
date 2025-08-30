@@ -101,7 +101,7 @@ const ServiceDetailPage = () => {
               >
                 <div className="card-green h-100 p-4">
                   <div className="d-flex align-items-center mb-4">
-                    <div className="service-icon bg-gradient-green text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                    <div className="service-icon bg-gradient-footer text-white rounded-circle d-flex align-items-center justify-content-center me-3"
                          style={{ width: '60px', height: '60px', fontSize: '24px' }}>
                       🌿
                     </div>

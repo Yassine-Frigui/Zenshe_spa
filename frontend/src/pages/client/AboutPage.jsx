@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Carousel } from 'react-bootstrap'
 import { motion } from 'framer-motion';
-import { FaHeart, FaStar, FaLeaf, FaSpa, FaQuoteLeft } from 'react-icons/fa';
+import { FaHeart, FaStar, FaLeaf, FaSpa, FaQuoteLeft, FaGem } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { publicAPI } from '../../services/api'
+import HeroSection from '../../components/HeroSection'
 
 const AboutPage = () => {
   const { t } = useTranslation();
@@ -19,10 +20,9 @@ const AboutPage = () => {
   const fetchTestimonials = async () => {
     try {
       const response = await publicAPI.getAvis(1, 12)
-      setTestimonials(Array.isArray(response.data.avis) ? response.data.avis : [])
+      setTestimonials(response.data.avis)
     } catch (error) {
       console.error('Erreur lors du chargement des témoignages:', error)
-      setTestimonials([])
     } finally {
       setLoading(false)
     }
@@ -57,62 +57,30 @@ const AboutPage = () => {
 
   // Group testimonials by 3 for carousel slides
   const groupedTestimonials = []
-  if (Array.isArray(testimonials) && testimonials.length > 0) {
-    for (let i = 0; i < testimonials.length; i += 3) {
-      groupedTestimonials.push(testimonials.slice(i, i + 3))
-    }
+  for (let i = 0; i < testimonials.length; i += 3) {
+    groupedTestimonials.push(testimonials.slice(i, i + 3))
   }
 
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <div className="spinner-green"></div>
+        <div className="spinner-pink"></div>
       </div>
     )
   }
 
   return (
-    <div className="about-page"
-    >
+    <div className="about-page">
       {/* Hero Section */}
-      <section className="hero-section  text-white py-5" 
-      style={{
-          background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
-      }}
-      >
-        <Container>
-          
-          <Row className="align-items-center">
-            <Col lg={6}>
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                <h1 className="display-4 fw-bold mb-4">{t('about.hero.title')}</h1>
-                <p className="lead mb-4">
-                  {salonInfo?.message_accueil || t('about.hero.subtitle')}
-                </p>
-              </motion.div>
-            </Col>
-            <Col lg={6}>
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="text-center"
-              >
-                <img 
-                  src="/images/zenshe_logo.jpg"
-                  alt={salonInfo?.nom_salon || "ZenShe Spa"}
-                  className="img-fluid rounded-circle"
-                  style={{ maxWidth: '300px', border: '3px solid rgba(255,255,255,0.3)' }}
-                />
-              </motion.div>
-            </Col>
-          </Row>
-        </Container>
-      </section>
+      <HeroSection
+        title={t('about.hero.title')}
+        description={salonInfo?.message_accueil || t('about.hero.subtitle')}
+        image={{
+          src: '/images/nailstech.jpg',
+          alt: salonInfo?.nom_salon || "Beauty Nails - Chez Waad"
+        }}
+        backgroundType="gradient"
+      />
 
       {/* Mission Section */}
       <section className="py-5">
@@ -256,7 +224,7 @@ const AboutPage = () => {
       </section>
 
       {/* Contact Info */}
-      <section className="py-5 bg-soft-green">
+      <section className="py-5 ">
         <Container>
           <Row>
             <Col lg={8} className="mx-auto text-center">
@@ -267,11 +235,11 @@ const AboutPage = () => {
               >
                 <h2 className="text-green fw-bold mb-4">Nous Contacter</h2>
                 <p className="lead text-muted mb-4">
-                  Avenue De La Bourse, Lac 2
+                  Centre Ikram , Menzah 8 , Tunis
                 </p>
                 <p className="text-muted mb-4">
-                  <strong>Téléphone:</strong> +216 24 157 715<br />
-                  <strong>instagram:</strong> zenshe_spa
+                  <strong>Téléphone:</strong> +216 20 777 051 <br />
+                  <strong>instagram:</strong> nails_waad
                 </p>
                 <a 
                   href="/booking" 

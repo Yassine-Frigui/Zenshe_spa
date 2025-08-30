@@ -2,7 +2,7 @@
   "navigation": {
     "home": "Accueil",
     "about": "À Propos", 
-    "services": "Soins",
+    "services": "Services",
     "booking": "Réserver",
     "contact": "Contact",
     "login": "Connexion",
@@ -73,7 +73,7 @@
     },
     "signup": {
       "title": "Inscription",
-      "subtitle": "Créez votre compte pour commencer votre parcours bien-être",
+      "subtitle": "Créez votre compte pour commencer votre parcours beauté",
       "firstName": "Prénom",
       "lastName": "Nom",
       "email": "Adresse e-mail",
@@ -128,38 +128,38 @@
   },
   "home": {
     "hero": {
-      "title": "Évadez-vous au ZenShe Spa",
-      "subtitle": "Découvrez nos soins spécialisés de bien-être intime, de bain de vapeur aux herbes vaginales et de rituels de guérison holistiques dans un sanctuaire dédié aux femmes. Votre havre de paix et de reconnexion.",
+      "title": "Bienvenue chez Beauty Nails - Chez Waad",
+      "subtitle": "Découvrez des services de manucure premium et des traitements de beauté dans notre salon luxueux. Des manucures classiques aux designs artistiques, nous créons de beaux ongles qui expriment votre style unique.",
       "bookNow": "Réserver maintenant",
-      "discoverServices": "Nos Soins",
-      "sanctuary_badge": "Sanctuaire féminin spécialisé"
+      "discoverServices": "Nos Services",
+      "sanctuary_badge": "Sanctuaire premium des ongles"
     },
-    "featuredServices": "Nos Soins les Plus Demandés",
-    "featuredServicesDesc": "Découvrez pourquoi nos clients adorent ces soins",
-    "viewAllServices": "Voir Tous Nos Soins",
+    "featuredServices": "Nos Services les Plus Populaires",
+    "featuredServicesDesc": "Découvrez pourquoi nos clients adorent ces services d'ongles",
+    "viewAllServices": "Voir Tous Nos Services",
     "newServices": {
-      "title": "Nouveaux Soins",
-      "description": "Découvrez nos dernières innovations bien-être",
+      "title": "Nouvelles Tendances Ongles",
+      "description": "Découvrez nos dernières innovations en nail art et services",
       "badge": "Nouveau",
       "tryButton": "Essayer"
     },
     "gallery": {
-      "title": "Notre Sanctuaire Bien-être",
-      "description": "Découvrez nos espaces dédiés au bien-être intime et à la guérison"
+      "title": "Notre Sanctuaire Beauté",
+      "description": "Découvrez nos espaces élégants dédiés aux services des ongles et à la beauté"
     },
     "testimonials": {
       "title": "Ce Que Disent Nos Clients",
-      "description": "Leur bien-être fait notre fierté"
+      "description": "De beaux ongles et des clients heureux font notre fierté"
     },
     "cta": {
-      "title": "Prête pour votre moment bien-être ?",
-      "description": "Réservez dès maintenant votre soin personnalisé et reconnectez-vous à votre féminité",
+      "title": "Prête pour de beaux ongles ?",
+      "description": "Réservez dès maintenant votre soin personnalisé et laissez vos ongles briller",
       "button": "Je Prends Rendez-Vous"
     }
   },
   "services": {
-    "title": "Nos Soins",
-    "subtitle": "Bien-être intime et guérison holistique pour femmes",
+    "title": "Nos Services",
+    "subtitle": "Services de manucure premium et traitements de beauté",
     "allServices": "Tous les services",
     "categories": "Catégories",
     "duration": "Durée",
@@ -171,15 +171,15 @@
     "noServicesFound": "Aucun service trouvé",
     "tryDifferentCategory": "Essayez de sélectionner une catégorie différente",
     "cta": {
-      "title": "Des questions sur nos soins de bien-être intime ?",
-      "description": "Notre équipe expérimentée est là pour vous guider dans votre parcours bien-être"
+      "title": "Des questions sur nos services d'ongles ?",
+      "description": "Nos nail artists expérimentées sont là pour vous aider à obtenir de beaux ongles"
     }
   },
   "booking": {
     "title": "Réserver un rendez-vous",
     "hero": {
       "title": "Réserver votre rendez-vous",
-      "subtitle": "Choisissez votre service et votre horaire préféré pour une expérience beauté personnalisée"
+      "subtitle": "Choisissez votre service et votre horaire préféré pour une expérience de services des ongles personnalisée"
     },
     "form": {
       "title": "Formulaire de réservation",
@@ -194,6 +194,7 @@
       "lastName": "Nom *",
       "email": "Email *",
       "phone": "Téléphone *",
+      "phoneHelper": "(minimum requis pour sauvegarde automatique)",
       "placeholders": {
         "firstName": "Votre prénom",
         "lastName": "Votre nom",
@@ -201,12 +202,11 @@
         "phone": "06 12 34 56 78"
       },
       "dateTime": {
-  "title": "Date et heure",
-  "date": "Date *",
-  "time": "Heure *",
-  "selectTime": "Choisir un horaire",
-  "noAvailableSlots": "Aucun horaire disponible pour cette date",
-  "datePlaceholder": "Sélectionner une date"
+        "title": "Date et heure",
+        "date": "Date *",
+        "time": "Heure *",
+        "selectTime": "Choisir un horaire",
+        "noAvailableSlots": "Aucun horaire disponible pour cette date"
       },
       "notes": {
         "label": "Notes spéciales (optionnel)",
@@ -245,34 +245,34 @@
   },
   "about": {
     "hero": {
-      "title": "À Propos de ZenShe Spa",
-      "subtitle": "Votre sanctuaire dédié au bien-être intime féminin et à la guérison holistique"
+      "title": "À Propos de Beauty Nails - Chez Waad",
+      "subtitle": "Votre destination pour les services premium des ongles et le design artistique"
     },
     "mission": {
       "title": "Notre Mission",
-      "description": "Chez ZenShe Spa, nous créons un espace sacré où chaque femme peut se reconnecter avec son essence féminine et retrouver son équilibre naturel."
+      "description": "Chez Beauty Nails - Chez Waad, nous créons un espace luxueux où chaque cliente peut exprimer son style unique grâce à de beaux nail art et des services professionnels des ongles."
     },
     "values": {
       "feminine_wellness": {
-        "title": "Bien-être Féminin",
-        "description": "Nous nous spécialisons dans les soins dédiés au bien-être intime et à l'épanouissement féminin."
+        "title": "Services de Beauté",
+        "description": "Nous nous spécialisons dans les services de manucure, pédicure et traitements de beauté pour sublimer votre éclat naturel."
       },
       "holistic_approach": {
-        "title": "Approche Holistique",
-        "description": "Nos soins allient traditions ancestrales et techniques modernes pour un soin complet du corps et de l'esprit."
+        "title": "Approche Complète",
+        "description": "Nos services allient techniques traditionnelles et innovations modernes pour des services de beauté complets et personnalisés."
       },
       "excellence_discretion": {
-        "title": "Excellence & Discrétion",
-        "description": "Un service personnalisé dans un environnement sûr, confidentiel et bienveillant."
+        "title": "Excellence & Élégance",
+        "description": "Un service de qualité supérieure dans un environnement luxueux, relaxant et accueillant."
       }
     },
     "story": {
       "title": "Notre Histoire",
-      "description": "ZenShe Spa est né de la passion de créer un espace dédié exclusivement au bien-être féminin, où la tradition rencontre l'innovation."
+      "description": "Beauty Chez Waad est né de la passion de créer un espace dédié exclusivement à la beauté et aux services des ongles, où l'art traditionnel rencontre l'innovation moderne."
     },
     "team": {
       "title": "Notre Équipe",
-      "description": "Des professionnelles formées et passionnées, dédiées à votre bien-être et votre confort."
+      "description": "Des esthéticiennes et nail artists formées et passionnées, dédiées à votre beauté et à votre satisfaction."
     }
   },
   "profile": {

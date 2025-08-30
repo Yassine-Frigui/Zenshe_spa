@@ -101,7 +101,7 @@ const LanguageSwitcher = ({ variant = 'navbar' }) => {
         )}
       </AnimatePresence>
 
-      <style>{`
+      <style jsx>{`
         .language-switcher-footer .btn:focus {
           box-shadow: none;
         }

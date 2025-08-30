@@ -1,5 +1,5 @@
 {
-  "name": "my-react-app",
+  "name": "beauty-nails-chez-waad",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -16,10 +16,7 @@
     "@react-three/fiber": "^9.1.2",
     "axios": "^1.8.4",
     "bootstrap": "^5.3.5",
-    "chart.js": "^4.5.0",
-    "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
-    "formik": "^2.4.6",
     "framer-motion": "^12.6.5",
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.0",
@@ -27,8 +24,6 @@
     "my-react-app": "file:",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.9",
-    "react-chartjs-2": "^5.3.0",
-    "react-datepicker": "^8.7.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^15.6.1",
     "react-icons": "^5.5.0",
@@ -36,8 +31,7 @@
     "run": "^1.5.0",
     "scripts": "^0.1.0",
     "three": "^0.175.0",
-    "web-vitals": "^2.1.4",
-    "yup": "^1.7.0"
+    "web-vitals": "^2.1.4"
   },
   "eslintConfig": {
     "extends": [

@@ -7,6 +7,7 @@ import {
   FaInfoCircle, 
   FaSpa, 
   FaCalendarAlt, 
+  FaGem,
   FaPhone,
   FaBars,
   FaTimes,
@@ -29,7 +30,7 @@ const ClientNavbar = () => {
   const navItems = [
     { path: '/', label: t('navigation.home'), icon: FaHome },
     { path: '/about', label: t('navigation.about'), icon: FaInfoCircle },
-    { path: '/services', label: t('navigation.services'), icon: FaSpa },
+    { path: '/services', label: t('navigation.services'), icon: FaGem },
     { path: '/booking', label: t('navigation.booking'), icon: FaCalendarAlt },
     { path: '/contact', label: t('navigation.contact'), icon: FaPhone }
   ]
@@ -37,34 +38,33 @@ const ClientNavbar = () => {
   return (
     <Navbar 
       expand="lg" 
-      className="navbar-green fixed-top" 
+      className="navbar-pink fixed-top" 
       expanded={expanded}
       onToggle={setExpanded}
     >
-      <Container>
+      <Container fluid className="px-3 px-lg-4">
         <Navbar.Brand as={Link} to="/" className="fw-bold text-white fs-3">
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="d-flex align-items-center"
           >
-            <img 
-              src="/images/zenshe_logo.png" 
-              alt="ZenShe Spa"
-              style={{ 
-                height: '32px', 
-                marginRight: '8px', 
+            <img
+              src="/images/chez_waad_beauty.jpg"
+              alt="Beauty Nails - Chez Waad"
+              className="me-2"
+              style={{
+                height: '32px',
                 borderRadius: '6px',
-                objectFit: 'cover'
+                objectFit: 'cover',
+                marginInlineEnd: '8px'
               }}
-
-
             />
-Zen she spa
+            <span className="navbar-brand-text">Beauty Nails - Chez Waad</span>
           </motion.div>
         </Navbar.Brand>
 
-        <Navbar.Toggle 
+  <Navbar.Toggle 
           aria-controls="basic-navbar-nav"
           className="border-0 text-white"
           onClick={() => setExpanded(!expanded)}
@@ -152,19 +152,20 @@ Zen she spa
       </Container>
 
       <style>{`
-        .navbar-green .nav-link.active {
+        /* Keep existing navbar color but use structure from green variant */
+        .navbar-pink .nav-link.active {
           background: rgba(255, 255, 255, 0.2);
           border-radius: 20px;
           padding: 8px 16px !important;
         }
         
-        .navbar-green .navbar-toggler:focus {
+        .navbar-pink .navbar-toggler:focus {
           box-shadow: none;
         }
         
         @media (max-width: 991.98px) {
-          .navbar-green .navbar-collapse {
-            background: rgba(46, 77, 76, 0.95);
+          .navbar-pink .navbar-collapse {
+            background: rgba(149, 217, 195, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             margin-top: 10px;

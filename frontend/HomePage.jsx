@@ -240,12 +240,12 @@ const HomePage = () => {
 
           <Row className="g-4">
             {[
-              { name: 'hydrafacial.jpg', title: 'Accueil Beauty Chez Waad' },
-              { name: 'nails_example.jpg', title: 'Studio de Manucure' },
-              { name: 'pedicure.jpg', title: 'Espace Pédicure' },
-              { name: 'nails_.jpg', title: 'Salon de Beauté' },
-              { name: 'lashes.jpg', title: 'Lashes Lift' },
-              { name: 'nails_example2.jpg', title: 'Soins de Beauté' }
+              { name: 'chez_waad_beauty.jpg', title: 'Accueil Chez Waad Beauty' },
+              { name: 'lashes.jpg', title: 'Salle V-Steam' },
+              { name: 'nails_feet_1.jpg', title: 'Suite Vajacial' },
+              { name: 'nailstudio_logo.jpg', title: 'Espace Relaxation' },
+              { name: 'nails1.jpg', title: 'Head Spa Japonais' },
+              { name: 'nails2.jpg', title: 'Salle de Rituels' }
             ].map((item, index) => (
               <Col md={6} lg={4} key={index}>
                 <motion.div
@@ -259,7 +259,7 @@ const HomePage = () => {
                     <img 
                       src={`/images/${item.name}`}
                       alt={item.title}
-                      className="w-100 gallery-image"
+                      className="w-100"
                       style={{ 
                         height: '250px', 
                         objectFit: 'cover',
@@ -269,33 +269,18 @@ const HomePage = () => {
                       onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
                       onError={(e) => {
                         e.target.style.display = 'none'
-                        const fallback = e.target.parentElement.querySelector('.image-fallback')
-                        if (fallback) fallback.style.display = 'flex'
+                        e.target.nextSibling.style.display = 'flex'
                       }}
-                        onLoad={(e) => {
-                          // Ensure fallback is hidden when image loads successfully
-                          const fallback = e.target.parentElement.querySelector('.image-fallback')
-                          if (fallback) fallback.style.display = 'none'
-
-                          // Show the small gallery title when image successfully loads
-                          const titleEl = e.target.parentElement.querySelector('.gallery-title')
-                          if (titleEl) {
-                            titleEl.style.opacity = '1'
-                            titleEl.style.transform = 'translateY(0)'
-                          }
-                        }}
                     />
-                      <div 
-                        className="image-fallback w-100 h-100 d-flex align-items-center justify-content-center bg-soft-green position-absolute top-0"
-                        style={{ display: 'none', fontSize: '3rem' }}
-                      >
-                        {index === 0 ? '💅' : index === 1 ? '🌸' : index === 2 ? '💆‍♀️' : index === 3 ? '✨' : index === 4 ? '🧴' : '💄'}
-                      </div>
-
-                      {/* Small title that appears when the image loads */}
-                      <div className="gallery-title position-absolute top-0 start-0 w-100 px-3 py-2 text-white">
-                        <small className="d-inline-block bg-dark bg-opacity-50 rounded-pill px-2 py-1">{item.title}</small>
-                      </div>
+                    <div 
+                      className="w-100 h-100 d-flex align-items-center justify-content-center bg-soft-green position-absolute top-0"
+                      style={{ display: 'none', fontSize: '3rem' }}
+                    >
+                      {index === 0 ? '🌿' : index === 1 ? '🌸' : index === 2 ? '💆‍♀️' : index === 3 ? '✨' : index === 4 ? '🧴' : '🪒'}
+                    </div>
+                    <div className="position-absolute bottom-0 start-0 w-100 p-3 text-white" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
+                      <h6 className="mb-0">{item.title}</h6>
+                    </div>
                   </div>
                 </motion.div>
               </Col>
@@ -372,7 +357,7 @@ const HomePage = () => {
       )}
 
       {/* Call to Action */}
-      <section className="py-5  text-white">
+      <section className="py-5 bg-gradient-footer text-white">
         <Container>
           <Row className="text-center">
             <Col>

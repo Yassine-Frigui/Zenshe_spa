@@ -30,7 +30,7 @@ const ClientFooter = () => {
   ]
 
   return (
-    <footer className="bg-gradient-green text-white py-5 mt-auto">
+    <footer className="bg-gradient-footer text-white py-5 mt-auto">
       <Container>
         <Row className="g-4">
           {/* Logo et description */}
@@ -42,8 +42,8 @@ const ClientFooter = () => {
             >
               <div className="d-flex align-items-center mb-3">
                 <img 
-                  src="/images/zenshe_logo.png" 
-                  alt="ZenShe Spa"
+                  src="/images/chez_waad_beauty.jpg" 
+                  alt="Waad Beauty"
                   style={{ 
                     height: '50px', 
                     marginRight: '15px', 
@@ -52,10 +52,10 @@ const ClientFooter = () => {
                   }}
                 />
                 <h4 className="fw-bold mb-0">
-                  ZenShe Spa
+                  Chez Waad Beauty Nails
                 </h4>
               </div>
-              <p className="mb-3">
+              <p className="mb-3 text-white">
                 Your premier destination for intimate wellness and holistic healing, creating unforgettable moments of peace and reconnection.
               </p>
               <div className="d-flex gap-3">
@@ -151,7 +151,7 @@ const ClientFooter = () => {
               </div>
               <div className="d-flex align-items-center mb-3">
                 <FaEnvelope className="me-3" />
-                <small>info@zenshe.ca</small>
+                <small>info@chezwaad.ca</small>
               </div>
               <Link to="/booking" className="btn btn-outline-light btn-sm rounded-pill px-3">
                 <FaHeart className="me-2" />
@@ -172,7 +172,7 @@ const ClientFooter = () => {
               transition={{ duration: 0.6, delay: 0.4 }}
             >
               <small>
-                © {currentYear} ZenShe Spa. Tous droits réservés. 
+                © {currentYear} Chez Waad Beauty Nails. Tous droits réservés. 
                 <span className="ms-2">
                   Fait avec <FaHeart className="text-danger" /> pour votre bien-être
                 </span>
@@ -182,7 +182,7 @@ const ClientFooter = () => {
         </Row>
       </Container>
 
-      <style>{`
+      <style jsx>{`
         footer a:hover {
           color: #8fbbb8 !important;
           transition: color 0.3s ease;
