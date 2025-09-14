@@ -26,7 +26,8 @@
     "submit": "إرسال",
     "close": "إغلاق",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "optional": "اختياري"
   },
   "auth": {
     "forgotPassword": {
@@ -80,6 +81,8 @@
       "phone": "الهاتف (8 أرقام)",
       "password": "كلمة المرور",
       "confirmPassword": "تأكيد كلمة المرور",
+      "referralCode": "رمز الإحالة",
+      "referralCodePlaceholder": "أدخل رمز الإحالة (اختياري)",
       "createAccount": "إنشاء حسابي",
       "creating": "جاري إنشاء الحساب...",
       "alreadyHaveAccount": "لديك حساب بالفعل؟",
@@ -207,6 +210,18 @@
   "selectTime": "اختر وقتاً",
   "noAvailableSlots": "لا توجد مواعيد متاحة لهذا التاريخ",
   "datePlaceholder": "اختر التاريخ"
+      },
+      "addons": {
+        "title": "الإضافات",
+        "healing": {
+          "title": "إضافة علاجية",
+          "description": "عزز جلسة البخار الخاصة بك بخصائص علاجية لتجديد أعمق"
+        }
+      },
+      "referralCode": {
+        "label": "رمز الإحالة (اختياري)",
+        "placeholder": "أدخل رمز الإحالة الخاص بك",
+        "description": "لديك رمز إحالة؟ أدخله هنا للحصول على مزايا خاصة"
       },
       "notes": {
         "label": "ملاحظات خاصة (اختياري)",

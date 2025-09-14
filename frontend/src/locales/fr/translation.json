@@ -26,7 +26,8 @@
     "submit": "Soumettre",
     "close": "Fermer",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "optional": "optionnel"
   },
   "auth": {
     "forgotPassword": {
@@ -80,6 +81,8 @@
       "phone": "Téléphone (8 chiffres)",
       "password": "Mot de passe",
       "confirmPassword": "Confirmer le mot de passe",
+      "referralCode": "Code de Parrainage",
+      "referralCodePlaceholder": "Entrer le code de parrainage (optionnel)",
       "createAccount": "Créer mon compte",
       "creating": "Création du compte...",
       "alreadyHaveAccount": "Déjà un compte ?",
@@ -207,6 +210,18 @@
   "selectTime": "Choisir un horaire",
   "noAvailableSlots": "Aucun horaire disponible pour cette date",
   "datePlaceholder": "Sélectionner une date"
+      },
+      "addons": {
+        "title": "Suppléments",
+        "healing": {
+          "title": "Supplément Thérapeutique",
+          "description": "Enrichissez votre séance de bain de vapeur avec des propriétés curatives pour une régénération plus profonde"
+        }
+      },
+      "referralCode": {
+        "label": "Code de parrainage (optionnel)",
+        "placeholder": "Entrez votre code de parrainage",
+        "description": "Vous avez un code de parrainage ? Saisissez-le ici pour bénéficier d'avantages spéciaux"
       },
       "notes": {
         "label": "Notes spéciales (optionnel)",
