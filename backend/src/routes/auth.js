@@ -47,15 +47,40 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Email et mot de passe requis' });
         }
 
+        // Check if this is an admin login request (email has +dashboard suffix)
+        const isAdminLogin = email.includes('+dashboard@');
+        let actualEmail = email;
+        
+        if (isAdminLogin) {
+            // Remove +dashboard suffix to get the actual admin email
+            actualEmail = email.replace('+dashboard@', '@');
+            console.log('ADMIN LOGIN DETECTED - Original email:', email, 'Actual email:', actualEmail);
+        }
+
         // Rechercher l'utilisateur administrateur
         const admin = await executeQuery(
             'SELECT id, nom, email, mot_de_passe, role, actif FROM utilisateurs WHERE email = ? AND actif = TRUE',
-            [email]
+            [actualEmail]
         );
         console.log('ADMIN FOUND:', admin.length > 0 ? 'YES' : 'NO');
 
         if (!admin.length) {
-            return res.status(401).json({ message: 'Identifiants invalides' });
+            if (isAdminLogin) {
+                return res.status(401).json({ 
+                    message: 'Accès administrateur refusé. Utilisateur non trouvé ou pas autorisé.',
+                    isAdminLoginAttempt: true
+                });
+            } else {
+                return res.status(401).json({ message: 'Identifiants invalides' });
+            }
+        }
+
+        // If this is an admin login attempt, ensure the user has admin role
+        if (isAdminLogin && (!admin[0].role || admin[0].role === 'client')) {
+            return res.status(403).json({ 
+                message: 'Accès administrateur refusé. Privilèges insuffisants.',
+                isAdminLoginAttempt: true
+            });
         }
 
         // Vérifier le mot de passe
@@ -83,9 +108,10 @@ router.post('/login', async (req, res) => {
         });
 
         res.json({
-            message: 'Connexion réussie',
+            message: isAdminLogin ? 'Connexion administrateur réussie' : 'Connexion réussie',
             admin: adminData,
-            token
+            token,
+            isAdminLogin: isAdminLogin
         });
 
     } catch (error) {

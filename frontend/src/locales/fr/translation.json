@@ -26,7 +26,8 @@
     "submit": "Soumettre",
     "close": "Fermer",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "optional": "optionnel"
   },
   "auth": {
     "forgotPassword": {
@@ -80,6 +81,8 @@
       "phone": "Téléphone (8 chiffres)",
       "password": "Mot de passe",
       "confirmPassword": "Confirmer le mot de passe",
+      "referralCode": "Code de Parrainage",
+      "referralCodePlaceholder": "Entrer le code de parrainage (optionnel)",
       "createAccount": "Créer mon compte",
       "creating": "Création du compte...",
       "alreadyHaveAccount": "Déjà un compte ?",

@@ -12,7 +12,8 @@ import {
   FaBars,
   FaTimes,
   FaUser,
-  FaChartLine
+  FaChartLine,
+  FaGift
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
@@ -70,6 +71,11 @@ const AdminSidebar = () => {
       path: '/admin/statistics',
       icon: <FaChartLine />,
       label: 'Statistiques'
+    },
+    {
+      path: '/admin/referrals',
+      icon: <FaGift />,
+      label: 'Codes de Parrainage'
     },
     {
       path: '/admin/settings',

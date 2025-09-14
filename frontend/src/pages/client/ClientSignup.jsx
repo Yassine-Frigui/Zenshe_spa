@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FaUser, FaEnvelope, FaPhone, FaLock, FaEye, FaEyeSlash, FaUserPlus, FaCheck } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useClientAuth } from '../../context/ClientAuthContext';
+import axios from 'axios';
 
 function ClientSignup() {
     const { t } = useTranslation();
@@ -13,7 +14,8 @@ function ClientSignup() {
         email: '',
         telephone: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        referralCode: ''
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -26,6 +28,12 @@ function ClientSignup() {
         lowercase: false,
         number: false,
         special: false
+    });
+    const [referralCodeValidation, setReferralCodeValidation] = useState({
+        isChecking: false,
+        isValid: null,
+        message: '',
+        discountPercentage: 0
     });
     
     const { register, isAuthenticated } = useClientAuth();
@@ -59,6 +67,60 @@ function ClientSignup() {
         // Clear error when user starts typing
         if (error) setError('');
         if (success) setSuccess('');
+
+        // Handle referral code validation with debouncing
+        if (name === 'referralCode') {
+            setReferralCodeValidation({
+                isChecking: false,
+                isValid: null,
+                message: '',
+                discountPercentage: 0
+            });
+
+            if (value.trim().length > 0) {
+                // Debounce the validation call
+                setTimeout(() => validateReferralCode(value.trim()), 500);
+            }
+        }
+    };
+
+    // Validate referral code
+    const validateReferralCode = async (code) => {
+        if (!code || code.length < 3) return;
+
+        setReferralCodeValidation(prev => ({ ...prev, isChecking: true }));
+
+        try {
+            // We need a temporary user ID or handle this differently since user isn't registered yet
+            // For now, we'll create a special endpoint or handle this in the signup process
+            const response = await axios.post('/api/referral-codes/validate-for-signup', {
+                code: code
+            });
+
+            if (response.data.valid) {
+                setReferralCodeValidation({
+                    isChecking: false,
+                    isValid: true,
+                    message: `Code valide! ${response.data.discountPercentage}% de réduction sur votre première réservation.`,
+                    discountPercentage: response.data.discountPercentage
+                });
+            } else {
+                setReferralCodeValidation({
+                    isChecking: false,
+                    isValid: false,
+                    message: response.data.reason || 'Code de parrainage invalide',
+                    discountPercentage: 0
+                });
+            }
+        } catch (error) {
+            console.error('Error validating referral code:', error);
+            setReferralCodeValidation({
+                isChecking: false,
+                isValid: false,
+                message: 'Erreur lors de la vérification du code',
+                discountPercentage: 0
+            });
+        }
     };
 
     const validateForm = () => {
@@ -117,7 +179,8 @@ function ClientSignup() {
                 prenom: formData.prenom,
                 email: formData.email,
                 telephone: formData.telephone,
-                mot_de_passe: formData.password
+                mot_de_passe: formData.password,
+                referralCode: formData.referralCode.trim() || null
             };
 
             const result = await register(userData);
@@ -372,6 +435,42 @@ function ClientSignup() {
                                                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                                             </button>
                                         </div>
+                                    </div>
+
+                                    {/* Referral Code Field */}
+                                    <div className="col-12 mb-3">
+                                        <label htmlFor="referralCode" className="form-label text-dark fw-bold">
+                                            {t('auth.signup.referralCode')} <small className="text-muted">({t('common.optional')})</small>
+                                        </label>
+                                        <div className="input-group">
+                                            <span className="input-group-text bg-light border-end-0">
+                                                <FaCheck className={`${referralCodeValidation.isValid === true ? 'text-success' : 
+                                                    referralCodeValidation.isValid === false ? 'text-danger' : 'text-muted'}`} />
+                                            </span>
+                                            <input
+                                                type="text"
+                                                className={`form-control border-start-0 ${referralCodeValidation.isValid === true ? 'is-valid' : 
+                                                    referralCodeValidation.isValid === false ? 'is-invalid' : ''}`}
+                                                id="referralCode"
+                                                name="referralCode"
+                                                value={formData.referralCode}
+                                                onChange={handleChange}
+                                                placeholder={t('auth.signup.referralCodePlaceholder')}
+                                                disabled={referralCodeValidation.isChecking}
+                                            />
+                                            {referralCodeValidation.isChecking && (
+                                                <span className="input-group-text bg-light border-start-0">
+                                                    <span className="spinner-border spinner-border-sm" role="status">
+                                                        <span className="visually-hidden">Vérification...</span>
+                                                    </span>
+                                                </span>
+                                            )}
+                                        </div>
+                                        {referralCodeValidation.message && (
+                                            <div className={`form-text ${referralCodeValidation.isValid === true ? 'text-success' : 'text-danger'}`}>
+                                                {referralCodeValidation.message}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <button
