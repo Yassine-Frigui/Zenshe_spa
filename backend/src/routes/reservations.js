@@ -5,11 +5,17 @@ const { validateReservationData, validateClientData } = require('../middleware/a
 const { executeQuery } = require('../../config/database');
 const TelegramService = require('../services/TelegramService');
 const EmailService = require('../services/EmailService');
+const { reservationLimiter, validateInput, emailValidation, phoneValidation, nameValidation } = require('../middleware/security');
 const crypto = require('crypto');
 const router = express.Router();
 
 // Créer une nouvelle réservation (avec création de client si nécessaire)
-router.post('/', validateClientData, validateReservationData, async (req, res) => {
+router.post('/', reservationLimiter, validateInput([
+    nameValidation('nom'),
+    nameValidation('prenom'), 
+    emailValidation,
+    phoneValidation
+]), validateClientData, validateReservationData, async (req, res) => {
     try {
         console.log('Received reservation data:', req.body);
         

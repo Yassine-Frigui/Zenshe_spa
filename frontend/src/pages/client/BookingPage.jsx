@@ -187,10 +187,15 @@ const BookingPage = () => {
         session_id: sessionId
       };
 
-      console.log('Sending reservation data:', reservationData);
+      // Secure logging for production
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Sending reservation data:', reservationData);
+      }
 
       const response = await publicAPI.createReservation(reservationData);
-      console.log('Reservation response:', response);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Reservation response:', response);
+      }
       
       // Store reservation data for confirmation page
       setReservationData({

@@ -3,44 +3,16 @@ const jwt = require('jsonwebtoken');
 const { authenticateAdmin } = require('../middleware/auth');
 const { hashPassword, verifyPassword, generateToken } = require('../middleware/auth');
 const { executeQuery } = require('../../config/database');
+const { authLimiter, validateInput, emailValidation, passwordValidation } = require('../middleware/security');
 const router = express.Router();
 
 // Connexion administrateur
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, validateInput([emailValidation, passwordValidation]), async (req, res) => {
     try {
         console.log('LOGIN ATTEMPT:', req.body);
         const { email, password } = req.body;
 
-        // BYPASS MODE - SEULEMENT EN DÉVELOPPEMENT
-        if (process.env.BYPASS_AUTH === '1' && process.env.NODE_ENV === 'development') {
-            console.log('🚨 AUTH BYPASS MODE - AUTO LOGIN AS SUPER ADMIN');
-            
-            const mockAdmin = {
-                id: 999,
-                nom: 'Super Admin (DEV)',
-                email: 'dev@admin.local',
-                role: 'super_admin'
-            };
-
-            const token = generateToken({
-                id: mockAdmin.id,
-                email: mockAdmin.email,
-                role: mockAdmin.role
-            });
-
-            res.cookie('adminToken', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 24 * 60 * 60 * 1000 // 24 heures
-            });
-
-            return res.json({
-                message: 'Connexion réussie (BYPASS MODE)',
-                admin: mockAdmin,
-                token
-            });
-        }
+        // SECURITY: Authentication bypass removed for production security
 
         if (!email || !password) {
             console.log('Missing email or password');

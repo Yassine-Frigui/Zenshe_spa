@@ -5,6 +5,14 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
 
+// Security middleware
+const { 
+    securityHeaders, 
+    generalLimiter, 
+    sanitizeRequest, 
+    securityLogger 
+} = require('./middleware/security');
+
 // Import des routes
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
@@ -26,18 +34,55 @@ const { testConnection } = require('../config/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({
-    origin: [
-        process.env.FRONTEND_URL || 'http://localhost:3000',
-        'https://rightly-wise-tadpole.ngrok-free.app',
-        'https://zenshespa.netlify.app',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000'
-    ],
+// Trust proxy for accurate IP addresses
+app.set('trust proxy', 1);
+
+// Security middleware - must be first
+app.use(securityHeaders);
+app.use(generalLimiter);
+app.use(securityLogger);
+app.use(sanitizeRequest);
+
+// CORS configuration - more restrictive for production
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            process.env.FRONTEND_URL,
+            'http://localhost:3000',
+            'http://127.0.0.1:3000'
+        ].filter(Boolean); // Remove undefined values
+        
+        // Allow requests with no origin (mobile apps, etc.)
+        if (!origin) return callback(null, true);
+        
+        // For production, only allow specific domains
+        if (process.env.NODE_ENV === 'production') {
+            const productionOrigins = [
+                process.env.FRONTEND_URL,
+                'https://zenshespa.netlify.app'
+            ].filter(Boolean);
+            
+            if (productionOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS policy'));
+            }
+        } else {
+            // Development mode - allow local origins
+            if (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS policy'));
+            }
+        }
+    },
     credentials: true,
-    optionsSuccessStatus: 200
-}));
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
