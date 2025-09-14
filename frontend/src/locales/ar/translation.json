@@ -26,7 +26,8 @@
     "submit": "إرسال",
     "close": "إغلاق",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "optional": "اختياري"
   },
   "auth": {
     "forgotPassword": {
@@ -80,6 +81,8 @@
       "phone": "الهاتف (8 أرقام)",
       "password": "كلمة المرور",
       "confirmPassword": "تأكيد كلمة المرور",
+      "referralCode": "رمز الإحالة",
+      "referralCodePlaceholder": "أدخل رمز الإحالة (اختياري)",
       "createAccount": "إنشاء حسابي",
       "creating": "جاري إنشاء الحساب...",
       "alreadyHaveAccount": "لديك حساب بالفعل؟",

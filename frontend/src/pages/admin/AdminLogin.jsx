@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaSignInAlt, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 
@@ -15,6 +15,22 @@ const AdminLogin = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle redirect from client login with pre-filled email
+  useEffect(() => {
+    if (location.state?.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: location.state.email
+      }));
+    }
+    if (location.state?.message) {
+      setError(location.state.message);
+      // Clear the message after 5 seconds
+      setTimeout(() => setError(''), 5000);
+    }
+  }, [location.state]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -655,4 +655,127 @@ router.post('/telegram/daily-summary', requireRole('admin'), async (req, res) =>
     }
 });
 
+// ==========================================
+// REFERRAL CODES ADMIN ROUTES
+// ==========================================
+
+const ReferralCode = require('../models/ReferralCode');
+
+// Get all referral codes (admin view)
+router.get('/referral-codes', async (req, res) => {
+    try {
+        const { page = 1, limit = 50 } = req.query;
+        const offset = (page - 1) * limit;
+        
+        const result = await ReferralCode.getAllReferralCodes(parseInt(limit), parseInt(offset));
+        
+        res.json({
+            success: true,
+            data: result.codes,
+            pagination: {
+                total: result.total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(result.total / limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error getting referral codes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get referral codes',
+            error: error.message
+        });
+    }
+});
+
+// Get referral code statistics (admin)
+router.get('/referral-codes/:codeId/stats', async (req, res) => {
+    try {
+        const { codeId } = req.params;
+        const stats = await ReferralCode.getReferralCodeStats(codeId);
+        
+        res.json({
+            success: true,
+            stats
+        });
+    } catch (error) {
+        console.error('Error getting referral code stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get referral code statistics',
+            error: error.message
+        });
+    }
+});
+
+// Deactivate a referral code (admin)
+router.put('/referral-codes/:codeId/deactivate', async (req, res) => {
+    try {
+        const { codeId } = req.params;
+        const success = await ReferralCode.deactivateCode(codeId);
+        
+        if (success) {
+            res.json({
+                success: true,
+                message: 'Referral code deactivated successfully'
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: 'Referral code not found'
+            });
+        }
+    } catch (error) {
+        console.error('Error deactivating referral code:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to deactivate referral code',
+            error: error.message
+        });
+    }
+});
+
+// Create referral code for a specific client (admin)
+router.post('/referral-codes/create-for-client', async (req, res) => {
+    try {
+        const { clientId, discountPercentage = 10, maxUses = null, expiresAt = null } = req.body;
+        
+        if (!clientId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client ID is required'
+            });
+        }
+        
+        // Validate discount percentage
+        if (discountPercentage < 1 || discountPercentage > 100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Discount percentage must be between 1% and 100%'
+            });
+        }
+        
+        const referralCode = await ReferralCode.createReferralCode(
+            clientId,
+            discountPercentage,
+            maxUses,
+            expiresAt
+        );
+        
+        res.status(201).json({
+            success: true,
+            referralCode,
+            message: 'Referral code created successfully'
+        });
+    } catch (error) {
+        console.error('Error creating referral code:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create referral code',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

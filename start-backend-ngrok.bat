@@ -12,7 +12,7 @@ timeout /t 5 /nobreak >nul
 
 echo.
 echo Starting NGROK tunnel...
-start "NGROK Tunnel" cmd /k "ngrok http --domain=rightly-wise-tadpole.ngrok-free.app 5000"
+start "NGROK Tunnel" cmd /k "   "
 
 echo.
 echo =======================================

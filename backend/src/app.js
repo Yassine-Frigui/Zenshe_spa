@@ -18,6 +18,7 @@ const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 const membershipRoutes = require('./routes/memberships');
 const statisticsRoutes = require('./routes/statistics');
+const referralCodesRoutes = require('./routes/referralCodes');
 
 // Import de la configuration de base de données
 const { testConnection } = require('../config/database');
@@ -71,6 +72,8 @@ app.use('/api/admin/statistics', statisticsRoutes);
 console.log('📊 Statistics routes mounted at /api/admin/statistics');
 app.use('/api/public', publicRoutes);
 app.use('/api/memberships', membershipRoutes);
+app.use('/api/referral-codes', referralCodesRoutes);
+console.log('🎁 Referral codes routes mounted at /api/referral-codes');
 
 // Route de test
 app.get('/api/test', (req, res) => {

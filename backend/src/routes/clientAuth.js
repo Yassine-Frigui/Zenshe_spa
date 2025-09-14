@@ -25,7 +25,7 @@ const generateToken = (clientId) => {
 // Client registration
 router.post('/register', validateClientRegistration, async (req, res) => {
     try {
-        const { nom, prenom, email, telephone, mot_de_passe } = req.body;
+        const { nom, prenom, email, telephone, mot_de_passe, referralCode } = req.body;
 
         // Check if client already exists
         const existingClient = await executeQuery(
@@ -65,12 +65,37 @@ router.post('/register', validateClientRegistration, async (req, res) => {
 
         const clientId = await ClientModel.createClient(clientData);
 
+        // Handle referral code if provided
+        let referralMessage = '';
+        if (referralCode && referralCode.trim()) {
+            try {
+                const ReferralCode = require('../models/ReferralCode');
+                
+                // Validate the referral code
+                const validation = await ReferralCode.validateCode(referralCode.trim(), clientId);
+                
+                if (validation.valid) {
+                    // Update client record to include referral code
+                    await executeQuery(
+                        'UPDATE clients SET referred_by_code_id = ? WHERE id = ?',
+                        [validation.referralCode.id, clientId]
+                    );
+                    
+                    referralMessage = ` Code de parrainage appliqué! Vous bénéficierez d'une réduction de ${validation.discountPercentage}% sur votre première réservation.`;
+                }
+            } catch (error) {
+                console.error('Error processing referral code during registration:', error);
+                // Don't fail registration if referral code processing fails
+            }
+        }
+
         // No need for verification token since we auto-verify
         console.log(`Client créé et auto-vérifié: ${email}`);
 
         res.status(201).json({
-            message: 'Compte créé avec succès. Vous pouvez maintenant vous connecter.',
-            clientId
+            message: `Compte créé avec succès. Vous pouvez maintenant vous connecter.${referralMessage}`,
+            clientId,
+            hasReferralCode: !!referralCode
         });
     } catch (error) {
         console.error('Erreur lors de l\'enregistrement:', error);

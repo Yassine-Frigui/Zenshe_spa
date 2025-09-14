@@ -50,7 +50,7 @@ const ServicesPage = () => {
 
   const getServiceIcon = (categoryName) => {
     const icons = {
-      'V-Steam': '🌿',
+      'V-Steam': 'FaLeaf',
       'Vajacials': '🌸', 
       'Massages et Soins Corps': '💆‍♀️',
       'ZenShe Rituals': '✨',

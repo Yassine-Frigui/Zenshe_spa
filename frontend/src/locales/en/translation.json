@@ -26,7 +26,8 @@
     "submit": "Submit",
     "close": "Close",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "optional": "optional"
   },
   "auth": {
     "forgotPassword": {
@@ -80,6 +81,8 @@
       "phone": "Phone (8 digits)",
       "password": "Password",
       "confirmPassword": "Confirm password",
+      "referralCode": "Referral Code",
+      "referralCodePlaceholder": "Enter referral code (optional)",
       "createAccount": "Create my account",
       "creating": "Creating account...",
       "alreadyHaveAccount": "Already have an account?",
