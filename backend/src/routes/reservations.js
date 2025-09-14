@@ -18,6 +18,8 @@ router.post('/', validateClientData, validateReservationData, async (req, res) =
             nom, prenom, email, telephone, date_naissance, adresse, notes,
             // Données réservation
             service_id, service_variant_id, package_id, date_reservation, heure_debut, notes_client,
+            // Referral code and add-ons
+            referralCode, has_healing_addon,
             // Session ID pour conversion de brouillon
             session_id
         } = req.body;
@@ -88,6 +90,31 @@ router.post('/', validateClientData, validateReservationData, async (req, res) =
 
         console.log('Calculated end time:', heure_fin);
 
+        // Process referral code if provided
+        let referral_code_id = null;
+        let addon_price = 0.00;
+        
+        if (referralCode && referralCode.trim()) {
+            try {
+                const ReferralCode = require('../models/ReferralCode');
+                const validation = await ReferralCode.validateCode(referralCode.trim(), client_id);
+                if (validation.valid) {
+                    referral_code_id = validation.referralCode.id;
+                }
+            } catch (error) {
+                console.error('Error processing referral code:', error);
+            }
+        }
+
+        // Calculate addon price if healing addon is selected
+        if (has_healing_addon) {
+            const healingAddon = await executeQuery('SELECT prix FROM services WHERE id = 7');
+            if (healingAddon.length > 0) {
+                addon_price = healingAddon[0].prix;
+                prix_service += addon_price; // Add addon price to total
+            }
+        }
+
         // Validation: ensure end time is different from start time
         if (heure_fin === heure_debut) {
             console.error('Invalid time calculation: end time equals start time');
@@ -130,11 +157,15 @@ router.post('/', validateClientData, validateReservationData, async (req, res) =
                         statut = 'en_attente',
                         reservation_status = 'reserved',
                         prix_service = ?,
+                        prix_addons = ?,
                         prix_final = ?,
                         session_id = NULL,
+                        referral_code_id = ?,
+                        has_healing_addon = ?,
+                        addon_price = ?,
                         date_modification = NOW()
                     WHERE id = ?
-                `, [client_id, prix_service, prix_service, existingDraft[0].id]);
+                `, [client_id, prix_service, addonPrice, prix_service + addonPrice, referralCodeId, hasHealingAddon, addonPrice, existingDraft[0].id]);
                 
                 reservationId = existingDraft[0].id;
                 convertedFromDraft = true;
@@ -156,8 +187,8 @@ router.post('/', validateClientData, validateReservationData, async (req, res) =
                 heure_fin,
                 notes_client,
                 prix_service,
-                prix_addons: 0,
-                prix_final: prix_service,
+                prix_addons: addonPrice,
+                prix_final: prix_service + addonPrice,
                 statut: 'en_attente',
                 reservation_status: 'reserved',
                 // Add client information
@@ -165,7 +196,11 @@ router.post('/', validateClientData, validateReservationData, async (req, res) =
                 client_prenom: prenom,
                 client_telephone: telephone,
                 client_email: email,
-                session_id: null
+                session_id: null,
+                // Add referral code and healing addon
+                referral_code_id: referralCodeId,
+                has_healing_addon: hasHealingAddon,
+                addon_price: addonPrice
             });
         }
 
@@ -716,8 +751,8 @@ router.post('/save-draft', async (req, res) => {
                 (client_id, service_id, date_reservation, heure_debut, heure_fin, 
                  statut, reservation_status, prix_service, prix_final,
                  client_nom, client_prenom, client_telephone, client_email,
-                 notes_client, session_id)
-                VALUES (NULL, ?, ?, ?, ?, 'draft', 'draft', 0, 0, ?, ?, ?, ?, ?, ?)
+                 notes_client, session_id, referral_code_id, has_healing_addon, addon_price)
+                VALUES (NULL, ?, ?, ?, ?, 'draft', 'draft', 0, 0, ?, ?, ?, ?, ?, ?, NULL, FALSE, 0.00)
             `, [
                 service_id || 1,
                 date_reservation || '2025-07-15',

@@ -211,6 +211,18 @@
   "noAvailableSlots": "No available slots for this date",
   "datePlaceholder": "Select a date"
       },
+      "addons": {
+        "title": "Add-ons",
+        "healing": {
+          "title": "Healing Add-On",
+          "description": "Enhance your V-Steam session with therapeutic healing properties for deeper rejuvenation"
+        }
+      },
+      "referralCode": {
+        "label": "Referral Code (optional)",
+        "placeholder": "Enter your referral code",
+        "description": "Have a referral code? Enter it here to get special benefits"
+      },
       "notes": {
         "label": "Special notes (optional)",
         "placeholder": "Allergies, preferences, special requests..."

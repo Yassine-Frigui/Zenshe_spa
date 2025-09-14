@@ -26,7 +26,9 @@ const BookingPage = () => {
     telephone: '',
     date_reservation: '',
     heure_reservation: '',
-    notes: ''
+    notes: '',
+    referralCode: '',
+    hasHealingAddon: false
   });
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -123,10 +125,10 @@ const BookingPage = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -174,6 +176,12 @@ const BookingPage = () => {
         date_reservation: formData.date_reservation,
         heure_debut: formData.heure_reservation,
         notes_client: formData.notes || '',
+        
+        // Referral code
+        referralCode: formData.referralCode || null,
+        
+        // Add-on data
+        has_healing_addon: formData.hasHealingAddon,
         
         // Session ID for draft conversion
         session_id: sessionId
@@ -751,12 +759,63 @@ const BookingPage = () => {
                           </div>
                         </motion.div>
 
-                        {/* Notes */}
+                        {/* Healing Add-On */}
+                        {selectedService && [1, 2, 3].includes(parseInt(selectedService)) && (
+                          <motion.div
+                            className="mb-4"
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 1.1, duration: 0.6 }}
+                          >
+                            <h5 className="fw-bold text-green mb-3">
+                              {t('booking.form.addons.title')}
+                            </h5>
+                            <div className="form-check p-3 border rounded bg-light">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id="healingAddon"
+                                name="hasHealingAddon"
+                                checked={formData.hasHealingAddon}
+                                onChange={handleInputChange}
+                              />
+                              <label className="form-check-label fw-bold ms-2" htmlFor="healingAddon">
+                                {t('booking.form.addons.healing.title')} (+50 DT)
+                              </label>
+                              <p className="text-muted small mb-0 mt-1">
+                                {t('booking.form.addons.healing.description')}
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {/* Referral Code */}
                         <motion.div
                           className="mb-4"
                           initial={{ x: -20, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           transition={{ delay: 1.2, duration: 0.6 }}
+                        >
+                          <label className="form-label">{t('booking.form.referralCode.label')}</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="referralCode"
+                            value={formData.referralCode}
+                            onChange={handleInputChange}
+                            placeholder={t('booking.form.referralCode.placeholder')}
+                          />
+                          <div className="form-text text-muted">
+                            {t('booking.form.referralCode.description')}
+                          </div>
+                        </motion.div>
+
+                        {/* Notes */}
+                        <motion.div
+                          className="mb-4"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 1.3, duration: 0.6 }}
                         >
                           <label className="form-label">{t('booking.form.notes.label')}</label>
                           <textarea
@@ -774,7 +833,7 @@ const BookingPage = () => {
                           className="text-center"
                           initial={{ y: 20, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 1.4, duration: 0.6 }}
+                          transition={{ delay: 1.5, duration: 0.6 }}
                         >
                           <button
                             type="submit"

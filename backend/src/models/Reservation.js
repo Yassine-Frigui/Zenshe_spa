@@ -35,8 +35,9 @@ class ReservationModel {
             INSERT INTO reservations 
             (client_id, service_id, date_reservation, heure_debut, heure_fin, 
              statut, reservation_status, prix_service, prix_final, notes_client,
-             client_nom, client_prenom, client_telephone, client_email, session_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             client_nom, client_prenom, client_telephone, client_email, session_id,
+             referral_code_id, has_healing_addon, addon_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
         queries.push({
@@ -56,7 +57,10 @@ class ReservationModel {
                 client_prenom || null,
                 client_telephone || null,
                 client_email || null,
-                session_id || null
+                session_id || null,
+                reservationData.referral_code_id || null,
+                reservationData.has_healing_addon || false,
+                reservationData.addon_price || 0.00
             ]
         });
 

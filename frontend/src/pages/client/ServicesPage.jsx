@@ -50,14 +50,14 @@ const ServicesPage = () => {
 
   const getServiceIcon = (categoryName) => {
     const icons = {
-      'V-Steam': 'FaLeaf',
-      'Vajacials': '🌸', 
-      'Massages et Soins Corps': '💆‍♀️',
-      'ZenShe Rituals': '✨',
-      'Japanese Head Spa': '🧴',
-      'Épilation': '🪒'
+      'V-Steam': <FaLeaf className="text-green" />,
+      'Vajacials': <FaHeart className="text-green" />, 
+      'Massages et Soins Corps': <FaSpa className="text-green" />,
+      'ZenShe Rituals': <FaStar className="text-green" />,
+      'Japanese Head Spa': <FaGem className="text-green" />,
+      'Épilation': <FaLeaf className="text-green" />
     }
-    return icons[categoryName] || '🌺'
+    return icons[categoryName] || <FaLeaf className="text-green" />
   }
 
   const getCategoryColor = (couleur) => {
