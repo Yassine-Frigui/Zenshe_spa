@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../context/CartContext';
 import './CartIcon.css';
 
 const CartIcon = ({ onClick, showCount = true, size = 'medium' }) => {
