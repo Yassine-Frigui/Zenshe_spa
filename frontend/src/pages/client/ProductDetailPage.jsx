@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import api from '../../services/api';
+import { publicAPI } from '../../services/api';
 import AddToCartButton from '../../components/AddToCartButton';
 import CartWidget from '../../components/CartWidget';
 import { useCart } from '../../context/CartContext';
@@ -25,13 +25,13 @@ const ProductDetailPage = () => {
         const fetchProduct = async () => {
             setLoading(true);
             try {
-                const response = await api.get(`/api/store/products/${productId}`);
+                const response = await publicAPI.getProduct(productId);
                 
                 if (response.data.success) {
-                    setProduct(response.data.product);
+                    setProduct(response.data.data);
                     // Fetch related products
-                    if (response.data.product.category_id) {
-                        fetchRelatedProducts(response.data.product.category_id, productId);
+                    if (response.data.data.category_id) {
+                        fetchRelatedProducts(response.data.data.category_id, productId);
                     }
                 } else {
                     setError(response.data.message);
@@ -51,16 +51,14 @@ const ProductDetailPage = () => {
 
     const fetchRelatedProducts = async (categoryId, excludeId) => {
         try {
-            const response = await api.get('/api/store/products', {
-                params: {
-                    category_id: categoryId,
-                    limit: 4,
-                    exclude: excludeId
-                }
+            const response = await publicAPI.getProducts({
+                category_id: categoryId,
+                limit: 4,
+                exclude: excludeId
             });
             
             if (response.data.success) {
-                setRelatedProducts(response.data.products);
+                setRelatedProducts(response.data.data);
             }
         } catch (error) {
             console.error('Error fetching related products:', error);

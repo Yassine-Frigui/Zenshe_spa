@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import api from '../../services/api';
+import { publicAPI } from '../../services/api';
 import AddToCartButton from '../../components/AddToCartButton';
 import CartWidget from '../../components/CartWidget';
 import './StorePage.css';
@@ -35,9 +35,9 @@ const StorePage = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await api.get('/api/store/categories');
+                const response = await publicAPI.getCategories();
                 if (response.data.success) {
-                    setCategories(response.data.categories);
+                    setCategories(response.data.data);
                 }
             } catch (error) {
                 console.error('Error fetching categories:', error);
@@ -63,11 +63,11 @@ const StorePage = () => {
                 if (priceRange.min) params.min_price = priceRange.min;
                 if (priceRange.max) params.max_price = priceRange.max;
 
-                const response = await api.get('/api/store/products', { params });
+                const response = await publicAPI.getProducts(params);
                 
                 if (response.data.success) {
-                    setProducts(response.data.products);
-                    setTotalPages(Math.ceil(response.data.total / itemsPerPage));
+                    setProducts(response.data.data);
+                    setTotalPages(Math.ceil(response.data.pagination.total / itemsPerPage));
                 } else {
                     setError(response.data.message);
                 }
