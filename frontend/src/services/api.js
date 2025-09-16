@@ -111,7 +111,19 @@ export const publicAPI = {
   // Brouillons de réservation (auto-save)
   saveDraft: (data) => axios.post('/api/reservations/save-draft', data),
   getDraft: (sessionId) => axios.get(`/api/reservations/get-draft/${sessionId}`),
-  deleteDraft: (sessionId) => axios.delete(`/api/reservations/delete-draft/${sessionId}`)
+  deleteDraft: (sessionId) => axios.delete(`/api/reservations/delete-draft/${sessionId}`),
+
+  // Store/Boutique API
+  getProducts: (params = {}) => axios.get('/api/store/products', { params }),
+  getProduct: (id) => axios.get(`/api/store/products/${id}`),
+  getCategories: () => axios.get('/api/store/categories'),
+  createOrder: (data) => axios.post('/api/store/orders', data),
+  getOrder: (id) => axios.get(`/api/store/orders/${id}`),
+
+  // Brouillons de commandes boutique (auto-save)
+  saveOrderDraft: (data) => axios.post('/api/store/save-draft', data),
+  getOrderDraft: (sessionId) => axios.get(`/api/store/get-draft/${sessionId}`),
+  deleteOrderDraft: (sessionId) => axios.delete(`/api/store/delete-draft/${sessionId}`)
 }
 
 // Services pour les API client (authentification côté client)

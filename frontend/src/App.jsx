@@ -14,6 +14,9 @@ import ClientSignup from './pages/client/ClientSignup'
 import ClientProfile from './pages/client/ClientProfile'
 import ForgotPassword from './pages/client/ForgotPassword'
 import ResetPassword from './pages/client/ResetPassword'
+import StorePage from './pages/client/StorePage'
+import ProductDetailPage from './pages/client/ProductDetailPage'
+import CartPage from './pages/client/CartPage'
 
 // Import des pages admin
 import AdminLogin from './pages/admin/AdminLogin'
@@ -36,6 +39,7 @@ import ClientProtectedRoute from './components/ClientProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
 import { ClientAuthProvider } from './context/ClientAuthContext'
 import { LanguageProvider } from './context/LanguageContext'
+import { CartProvider } from './context/CartContext'
 
 // Variants pour les animations de page
 const pageVariants = {
@@ -64,7 +68,8 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <ClientAuthProvider>
-        <Router>
+          <CartProvider>
+            <Router>
           <div className="App">
             <AnimatePresence mode='wait'>
               <Routes>
@@ -183,6 +188,43 @@ function App() {
                     transition={pageTransition}
                   >
                     <ResetPassword />
+                  </motion.div>
+                } />
+
+                {/* Routes boutique */}
+                <Route path="boutique" element={
+                  <motion.div
+                    initial="initial"
+                    animate="in"
+                    exit="out"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <StorePage />
+                  </motion.div>
+                } />
+                
+                <Route path="boutique/produit/:productId" element={
+                  <motion.div
+                    initial="initial"
+                    animate="in"
+                    exit="out"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <ProductDetailPage />
+                  </motion.div>
+                } />
+                
+                <Route path="boutique/panier" element={
+                  <motion.div
+                    initial="initial"
+                    animate="in"
+                    exit="out"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <CartPage />
                   </motion.div>
                 } />
 
@@ -332,6 +374,7 @@ function App() {
           </AnimatePresence>
         </div>
       </Router>
+          </CartProvider>
       </ClientAuthProvider>
     </AuthProvider>
     </LanguageProvider>

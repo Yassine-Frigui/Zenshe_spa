@@ -1,0 +1,145 @@
+.cart-icon {
+    position: relative;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+    border-radius: 50%;
+    padding: 8px;
+}
+
+.cart-icon:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.05);
+}
+
+.cart-icon:focus {
+    outline: 2px solid #D4B8A3;
+    outline-offset: 2px;
+}
+
+.cart-icon__container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-icon__svg {
+    transition: all 0.2s ease-in-out;
+    color: #8B4513;
+}
+
+.cart-icon--small .cart-icon__svg {
+    width: 20px;
+    height: 20px;
+}
+
+.cart-icon--medium .cart-icon__svg {
+    width: 24px;
+    height: 24px;
+}
+
+.cart-icon--large .cart-icon__svg {
+    width: 28px;
+    height: 28px;
+}
+
+.cart-icon:hover .cart-icon__svg {
+    color: #D4B8A3;
+}
+
+.cart-icon__badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #8B4513;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    animation: pulse 0.3s ease-in-out;
+}
+
+.cart-icon--small .cart-icon__badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    top: -6px;
+    right: -6px;
+}
+
+.cart-icon--large .cart-icon__badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 12px;
+    top: -10px;
+    right: -10px;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.8);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Dark theme support */
+.dark .cart-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .cart-icon__svg {
+    color: #D4B8A3;
+}
+
+.dark .cart-icon:hover .cart-icon__svg {
+    color: #E6C9B7;
+}
+
+.dark .cart-icon__badge {
+    background-color: #D4B8A3;
+    color: #2D1B0E;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    .cart-icon,
+    .cart-icon__svg,
+    .cart-icon__badge {
+        transition: none;
+    }
+    
+    .cart-icon:hover {
+        transform: none;
+    }
+    
+    .cart-icon__badge {
+        animation: none;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .cart-icon__badge {
+        border: 2px solid white;
+    }
+    
+    .dark .cart-icon__badge {
+        border: 2px solid black;
+    }
+}

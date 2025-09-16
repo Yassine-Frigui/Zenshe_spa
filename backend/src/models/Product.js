@@ -1,0 +1,439 @@
+const { executeQuery, executeTransaction } = require('../../config/database');
+
+class ProductModel {
+    // Get all products with filtering and pagination
+    static async getAllProducts(filters = {}, pagination = {}) {
+        const {
+            category_id,
+            category,
+            is_active = true,
+            is_featured,
+            search,
+            min_price,
+            max_price,
+            in_stock_only = false
+        } = filters;
+
+        const {
+            page = 1,
+            limit = 12,
+            sort_by = 'name',
+            sort_order = 'ASC'
+        } = pagination;
+
+        const offset = (page - 1) * limit;
+        let whereConditions = ['p.is_active = ?'];
+        let queryParams = [is_active];
+
+        // Build WHERE conditions
+        if (category_id) {
+            whereConditions.push('p.category_id = ?');
+            queryParams.push(category_id);
+        }
+
+        if (category) {
+            whereConditions.push('p.category = ?');
+            queryParams.push(category);
+        }
+
+        if (is_featured !== undefined) {
+            whereConditions.push('p.is_featured = ?');
+            queryParams.push(is_featured);
+        }
+
+        if (search) {
+            whereConditions.push('(p.name LIKE ? OR p.description LIKE ? OR p.detailed_description LIKE ?)');
+            const searchTerm = `%${search}%`;
+            queryParams.push(searchTerm, searchTerm, searchTerm);
+        }
+
+        if (min_price) {
+            whereConditions.push('p.price >= ?');
+            queryParams.push(min_price);
+        }
+
+        if (max_price) {
+            whereConditions.push('p.price <= ?');
+            queryParams.push(max_price);
+        }
+
+        if (in_stock_only) {
+            whereConditions.push('p.stock_quantity > 0');
+        }
+
+        // Valid sort columns
+        const validSortColumns = ['name', 'price', 'created_at', 'stock_quantity'];
+        const sortColumn = validSortColumns.includes(sort_by) ? sort_by : 'name';
+        const sortDirection = sort_order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        const query = `
+            SELECT 
+                p.*,
+                pc.name as category_name,
+                pc.description as category_description
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            WHERE ${whereConditions.join(' AND ')}
+            ORDER BY p.${sortColumn} ${sortDirection}
+            LIMIT ? OFFSET ?
+        `;
+
+        queryParams.push(limit, offset);
+        
+        const products = await executeQuery(query, queryParams);
+
+        // Get total count for pagination
+        const countQuery = `
+            SELECT COUNT(*) as total
+            FROM products p
+            WHERE ${whereConditions.join(' AND ')}
+        `;
+        
+        const countParams = queryParams.slice(0, -2); // Remove LIMIT and OFFSET
+        const [{ total }] = await executeQuery(countQuery, countParams);
+
+        return {
+            products: products.map(this.formatProduct),
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: parseInt(total),
+                pages: Math.ceil(total / limit)
+            }
+        };
+    }
+
+    // Get product by ID
+    static async getProductById(id) {
+        const query = `
+            SELECT 
+                p.*,
+                pc.name as category_name,
+                pc.description as category_description
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            WHERE p.id = ?
+        `;
+        
+        const [product] = await executeQuery(query, [id]);
+        return product ? this.formatProduct(product) : null;
+    }
+
+    // Get product by SKU
+    static async getProductBySku(sku) {
+        const query = `
+            SELECT 
+                p.*,
+                pc.name as category_name,
+                pc.description as category_description
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            WHERE p.sku = ?
+        `;
+        
+        const [product] = await executeQuery(query, [sku]);
+        return product ? this.formatProduct(product) : null;
+    }
+
+    // Get featured products
+    static async getFeaturedProducts(limit = 8) {
+        const query = `
+            SELECT 
+                p.*,
+                pc.name as category_name
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            WHERE p.is_featured = true AND p.is_active = true
+            ORDER BY p.created_at DESC
+            LIMIT ?
+        `;
+        
+        const products = await executeQuery(query, [limit]);
+        return products.map(this.formatProduct);
+    }
+
+    // Get products by category
+    static async getProductsByCategory(categoryId, limit = null) {
+        let query = `
+            SELECT 
+                p.*,
+                pc.name as category_name
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            WHERE p.category_id = ? AND p.is_active = true
+            ORDER BY p.name ASC
+        `;
+        
+        const params = [categoryId];
+        
+        if (limit) {
+            query += ' LIMIT ?';
+            params.push(limit);
+        }
+        
+        const products = await executeQuery(query, params);
+        return products.map(this.formatProduct);
+    }
+
+    // Create new product
+    static async createProduct(productData) {
+        const {
+            name,
+            description,
+            detailed_description,
+            price,
+            category,
+            category_id,
+            image_url,
+            gallery_images,
+            stock_quantity = 0,
+            is_active = true,
+            is_featured = false,
+            weight = 0.00,
+            dimensions,
+            sku
+        } = productData;
+
+        // Validate required fields
+        if (!name || !price) {
+            throw new Error('Name and price are required');
+        }
+
+        // Check if SKU already exists
+        if (sku) {
+            const existingProduct = await this.getProductBySku(sku);
+            if (existingProduct) {
+                throw new Error('SKU already exists');
+            }
+        }
+
+        const query = `
+            INSERT INTO products (
+                name, description, detailed_description, price, category, 
+                category_id, image_url, gallery_images, stock_quantity,
+                is_active, is_featured, weight, dimensions, sku
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const result = await executeQuery(query, [
+            name,
+            description || null,
+            detailed_description || null,
+            price,
+            category || null,
+            category_id || null,
+            image_url || null,
+            gallery_images ? JSON.stringify(gallery_images) : null,
+            stock_quantity,
+            is_active,
+            is_featured,
+            weight,
+            dimensions || null,
+            sku || null
+        ]);
+
+        return this.getProductById(result.insertId);
+    }
+
+    // Update product
+    static async updateProduct(id, productData) {
+        const existingProduct = await this.getProductById(id);
+        if (!existingProduct) {
+            throw new Error('Product not found');
+        }
+
+        const {
+            name,
+            description,
+            detailed_description,
+            price,
+            category,
+            category_id,
+            image_url,
+            gallery_images,
+            stock_quantity,
+            is_active,
+            is_featured,
+            weight,
+            dimensions,
+            sku
+        } = productData;
+
+        // Check SKU uniqueness if updating
+        if (sku && sku !== existingProduct.sku) {
+            const existingSku = await this.getProductBySku(sku);
+            if (existingSku && existingSku.id !== id) {
+                throw new Error('SKU already exists');
+            }
+        }
+
+        const query = `
+            UPDATE products SET
+                name = COALESCE(?, name),
+                description = COALESCE(?, description),
+                detailed_description = COALESCE(?, detailed_description),
+                price = COALESCE(?, price),
+                category = COALESCE(?, category),
+                category_id = COALESCE(?, category_id),
+                image_url = COALESCE(?, image_url),
+                gallery_images = COALESCE(?, gallery_images),
+                stock_quantity = COALESCE(?, stock_quantity),
+                is_active = COALESCE(?, is_active),
+                is_featured = COALESCE(?, is_featured),
+                weight = COALESCE(?, weight),
+                dimensions = COALESCE(?, dimensions),
+                sku = COALESCE(?, sku),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `;
+
+        await executeQuery(query, [
+            name,
+            description,
+            detailed_description,
+            price,
+            category,
+            category_id,
+            image_url,
+            gallery_images ? JSON.stringify(gallery_images) : null,
+            stock_quantity,
+            is_active,
+            is_featured,
+            weight,
+            dimensions,
+            sku,
+            id
+        ]);
+
+        return this.getProductById(id);
+    }
+
+    // Delete product (soft delete - set inactive)
+    static async deleteProduct(id) {
+        const query = `
+            UPDATE products SET 
+                is_active = false, 
+                updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        `;
+        
+        await executeQuery(query, [id]);
+        return { success: true, message: 'Product deactivated successfully' };
+    }
+
+    // Hard delete product
+    static async hardDeleteProduct(id) {
+        // Check if product is referenced in any orders
+        const orderItemsCheck = await executeQuery(
+            'SELECT COUNT(*) as count FROM store_order_items WHERE product_id = ?',
+            [id]
+        );
+
+        if (orderItemsCheck[0].count > 0) {
+            throw new Error('Cannot delete product that has been ordered. Consider deactivating instead.');
+        }
+
+        const query = 'DELETE FROM products WHERE id = ?';
+        await executeQuery(query, [id]);
+        return { success: true, message: 'Product deleted successfully' };
+    }
+
+    // Update stock quantity
+    static async updateStock(id, quantity) {
+        const query = `
+            UPDATE products SET 
+                stock_quantity = ?, 
+                updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        `;
+        
+        await executeQuery(query, [quantity, id]);
+        return this.getProductById(id);
+    }
+
+    // Reduce stock (for orders)
+    static async reduceStock(id, quantity) {
+        const product = await this.getProductById(id);
+        if (!product) {
+            throw new Error('Product not found');
+        }
+
+        if (product.stock_quantity < quantity) {
+            throw new Error('Insufficient stock');
+        }
+
+        const newQuantity = product.stock_quantity - quantity;
+        return this.updateStock(id, newQuantity);
+    }
+
+    // Get low stock products
+    static async getLowStockProducts(threshold = 5) {
+        const query = `
+            SELECT 
+                p.*,
+                pc.name as category_name
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            WHERE p.stock_quantity <= ? AND p.is_active = true
+            ORDER BY p.stock_quantity ASC
+        `;
+        
+        const products = await executeQuery(query, [threshold]);
+        return products.map(this.formatProduct);
+    }
+
+    // Search products
+    static async searchProducts(searchTerm, limit = 20) {
+        const query = `
+            SELECT 
+                p.*,
+                pc.name as category_name,
+                MATCH(p.name, p.description) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            WHERE (
+                MATCH(p.name, p.description) AGAINST(? IN NATURAL LANGUAGE MODE) OR
+                p.name LIKE ? OR 
+                p.description LIKE ? OR 
+                p.sku LIKE ?
+            ) AND p.is_active = true
+            ORDER BY relevance DESC, p.name ASC
+            LIMIT ?
+        `;
+
+        const searchWildcard = `%${searchTerm}%`;
+        const products = await executeQuery(query, [
+            searchTerm, searchTerm, searchWildcard, searchWildcard, searchWildcard, limit
+        ]);
+        
+        return products.map(this.formatProduct);
+    }
+
+    // Format product for API response
+    static formatProduct(product) {
+        if (!product) return null;
+
+        return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            detailed_description: product.detailed_description,
+            price: parseFloat(product.price),
+            category: product.category,
+            category_id: product.category_id,
+            category_name: product.category_name,
+            image_url: product.image_url,
+            gallery_images: product.gallery_images ? JSON.parse(product.gallery_images) : [],
+            stock_quantity: product.stock_quantity,
+            is_active: Boolean(product.is_active),
+            is_featured: Boolean(product.is_featured),
+            weight: parseFloat(product.weight || 0),
+            dimensions: product.dimensions,
+            sku: product.sku,
+            created_at: product.created_at,
+            updated_at: product.updated_at
+        };
+    }
+}
+
+module.exports = ProductModel;

@@ -1,0 +1,38 @@
+.cart-widget {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.cart-widget--fixed {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 4px;
+}
+
+.cart-widget--navbar {
+    margin-left: 1rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .cart-widget--fixed {
+        top: 15px;
+        right: 15px;
+    }
+    
+    .cart-widget--navbar {
+        margin-left: 0.5rem;
+    }
+}
+
+/* Dark theme */
+.dark .cart-widget--fixed {
+    background: #2a2a2a;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
