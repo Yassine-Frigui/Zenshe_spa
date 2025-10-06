@@ -87,8 +87,9 @@ const ClientLogin = () => {
     };
 
     return (
-        <div className="py-5" 
-             style={{ background: 'linear-gradient(135deg, #ffeef4 0%, #fff 100%)', minHeight: '80vh' }}>
+        <div className="client-login-page">
+            <div className="py-5" 
+                 style={{ background: 'linear-gradient(135deg, #ffeef4 0%, #fff 100%)', minHeight: '80vh' }}>
             <div className="container">
                 <div className="row justify-content-center">
                     <div className="col-md-6 col-lg-5">
@@ -217,6 +218,7 @@ const ClientLogin = () => {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 };

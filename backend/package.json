@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "main": "express.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --coverage --verbose",
+    "test:unit": "jest tests/unit --coverage",
+    "test:integration": "jest tests/integration --coverage",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --coverageReporters=html text",
+    "test:models": "jest tests/unit/models",
+    "test:services": "jest tests/unit/services",
+    "test:middleware": "jest tests/unit/middleware",
+    "test:routes": "jest tests/integration/routes",
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "db:init": "node database/init.js",
@@ -43,7 +51,10 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
-    "nodemon": "^3.0.0"
+    "nodemon": "^3.0.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "@types/jest": "^29.5.8"
   },
   "description": ""
 }

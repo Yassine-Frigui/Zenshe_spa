@@ -92,6 +92,65 @@ router.post('/login', authLimiter, validateInput([emailValidation, passwordValid
     }
 });
 
+// DEVELOPMENT ONLY: Admin bypass route
+router.post('/dev-admin-bypass', async (req, res) => {
+    // Only allow in development mode
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ message: 'Endpoint not found' });
+    }
+
+    try {
+        console.log('DEV BYPASS: Authenticating as superadmin');
+        
+        // Find or create superadmin user
+        let admin = await executeQuery(
+            'SELECT id, nom, email, role FROM utilisateurs WHERE email = ? AND actif = TRUE',
+            ['superadmin@zenshe.spa']
+        );
+
+        if (!admin.length) {
+            // Create superadmin if doesn't exist
+            const hashedPassword = await hashPassword('admin123');
+            const insertResult = await executeQuery(
+                'INSERT INTO utilisateurs (nom, email, mot_de_passe, role, actif) VALUES (?, ?, ?, ?, ?)',
+                ['Super Admin', 'superadmin@zenshe.spa', hashedPassword, 'superadmin', true]
+            );
+            
+            admin = await executeQuery(
+                'SELECT id, nom, email, role FROM utilisateurs WHERE id = ?',
+                [insertResult.insertId]
+            );
+        }
+
+        const adminData = admin[0];
+
+        // Generate token
+        const token = generateToken({
+            id: adminData.id,
+            email: adminData.email,
+            role: adminData.role
+        });
+
+        res.cookie('adminToken', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000 // 24 heures
+        });
+
+        res.json({
+            message: 'Connexion superadmin bypass réussie (DEV ONLY)',
+            admin: adminData,
+            token,
+            isAdminLogin: true
+        });
+
+    } catch (error) {
+        console.error('Erreur lors du bypass admin:', error);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
+});
+
 // Déconnexion
 router.post('/logout', (req, res) => {
     res.clearCookie('adminToken');

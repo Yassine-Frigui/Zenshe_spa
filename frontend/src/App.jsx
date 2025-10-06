@@ -17,6 +17,8 @@ import ResetPassword from './pages/client/ResetPassword'
 import StorePage from './pages/client/StorePage'
 import ProductDetailPage from './pages/client/ProductDetailPage'
 import CartPage from './pages/client/CartPage'
+import CheckoutPage from './pages/client/CheckoutPage'
+import ConfirmationPage from './pages/client/ConfirmationPage'
 
 // Import des pages admin
 import AdminLogin from './pages/admin/AdminLogin'
@@ -28,6 +30,7 @@ import AdminInventaire from './pages/admin/AdminInventaire'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminStatistics from './pages/admin/AdminStatistics'
 import AdminReferrals from './pages/admin/AdminReferrals'
+import AdminStoreDashboard from './pages/admin/AdminStoreDashboard'
 
 // Import des composants
 import ClientLayout from './components/layouts/ClientLayout'
@@ -192,41 +195,15 @@ function App() {
                 } />
 
                 {/* Routes boutique */}
-                <Route path="boutique" element={
-                  <motion.div
-                    initial="initial"
-                    animate="in"
-                    exit="out"
-                    variants={pageVariants}
-                    transition={pageTransition}
-                  >
-                    <StorePage />
-                  </motion.div>
-                } />
+                <Route path="boutique" element={<StorePage />} />
                 
-                <Route path="boutique/produit/:productId" element={
-                  <motion.div
-                    initial="initial"
-                    animate="in"
-                    exit="out"
-                    variants={pageVariants}
-                    transition={pageTransition}
-                  >
-                    <ProductDetailPage />
-                  </motion.div>
-                } />
+                <Route path="boutique/produit/:productId" element={<ProductDetailPage />} />
                 
-                <Route path="boutique/panier" element={
-                  <motion.div
-                    initial="initial"
-                    animate="in"
-                    exit="out"
-                    variants={pageVariants}
-                    transition={pageTransition}
-                  >
-                    <CartPage />
-                  </motion.div>
-                } />
+                <Route path="boutique/panier" element={<CartPage />} />
+                
+                <Route path="boutique/checkout" element={<CheckoutPage />} />
+                
+                <Route path="boutique/confirmation" element={<ConfirmationPage />} />
 
                 {/* Route client protégée - Profile */}
                 <Route path="/profile" element={
@@ -349,6 +326,17 @@ function App() {
                     transition={pageTransition}
                   >
                     <AdminSettings />
+                  </motion.div>
+                } />
+                <Route path="store" element={
+                  <motion.div
+                    initial="initial"
+                    animate="in"
+                    exit="out"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <AdminStoreDashboard />
                   </motion.div>
                 } />
               </Route>

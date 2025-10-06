@@ -1,0 +1,102 @@
+/* JotformCard Component Styles */
+
+.jotform-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 2px solid #e0e0e0;
+}
+
+.jotform-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  border-color: var(--bs-green);
+}
+
+.jotform-card .card-header {
+  background: linear-gradient(135deg, #2e4d4c 0%, #3d6361 100%);
+  padding: 1rem 1.5rem;
+  border-bottom: none;
+}
+
+.jotform-card .card-header h5 {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.jotform-container {
+  position: relative;
+  background: #f8f9fa;
+}
+
+.jotform-container iframe {
+  display: block;
+  background: white;
+}
+
+.jotform-card .alert {
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.jotform-card .alert-info {
+  background-color: #e7f3ff;
+  color: #0c5460;
+}
+
+.jotform-card .alert-danger {
+  background-color: #ffe7e7;
+  color: #721c24;
+}
+
+.jotform-card .card-footer {
+  background-color: #f0f8f7;
+  border-top: 1px solid #d4edda;
+  padding: 0.75rem 1.5rem;
+}
+
+.jotform-card .badge {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Loading animation */
+.jotform-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: #f8f9fa;
+}
+
+.jotform-loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e0e0e0;
+  border-top-color: #2e4d4c;
+  border-radius: 50%;
+  animation: jotform-spin 1s linear infinite;
+}
+
+@keyframes jotform-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .jotform-card .card-header h5 {
+    font-size: 1rem;
+  }
+
+  .jotform-card .card-header,
+  .jotform-card .card-footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .jotform-container iframe {
+    min-height: 600px;
+  }
+}

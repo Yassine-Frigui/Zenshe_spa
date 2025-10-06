@@ -158,6 +158,7 @@ export const clientAPI = {
 export const adminAPI = {
   // Authentication
   login: (credentials) => axios.post('/api/auth/login', credentials),
+  devAdminBypass: () => axios.post('/api/auth/dev-admin-bypass'),
   logout: () => axios.post('/api/auth/logout'),
   refreshToken: () => axios.post('/api/auth/refresh'),
   getMe: () => axios.get('/api/auth/me'),
@@ -227,7 +228,34 @@ export const adminAPI = {
   createAdministrateur: (data) => axios.post('/api/admin/utilisateurs', data),
   updateAdministrateur: (id, data) => axios.put(`/api/admin/utilisateurs/${id}`, data),
   toggleAdminStatus: (id) => axios.patch(`/api/admin/utilisateurs/${id}/toggle`),
-  deleteAdministrateur: (id) => axios.delete(`/api/admin/utilisateurs/${id}`)
+  deleteAdministrateur: (id) => axios.delete(`/api/admin/utilisateurs/${id}`),
+
+  // Codes de parrainage
+  getReferralCodes: (limit = 20, offset = 0) => 
+    axios.get(`/api/admin/referral-codes?limit=${limit}&offset=${offset}`),
+  getReferralCodeStats: (codeId) => axios.get(`/api/admin/referral-codes/${codeId}/stats`),
+  deactivateReferralCode: (codeId) => axios.put(`/api/admin/referral-codes/${codeId}/deactivate`),
+  getClientReferrals: (clientId, limit = 10, offset = 0) => 
+    axios.get(`/api/admin/referral-codes?client_id=${clientId}&limit=${limit}&offset=${offset}`),
+  createReferralCodeForClient: (data) => axios.post('/api/admin/referral-codes/create-for-client', data),
+
+  // Avis clients
+  getAvis: () => axios.get('/api/admin/avis'),
+  createAvis: (data) => axios.post('/api/admin/avis', data),
+  updateAvis: (id, data) => axios.put(`/api/admin/avis/${id}`, data),
+  deleteAvis: (id) => axios.delete(`/api/admin/avis/${id}`),
+  toggleAvisVisibility: (id, visible) => axios.patch(`/api/admin/avis/${id}/visibility`, { visible }),
+
+  // Admin Store Management
+  getStoreProducts: (params = {}) => axios.get('/api/admin/store/products', { params }),
+  getStoreProduct: (id) => axios.get(`/api/admin/store/products/${id}`),
+  createStoreProduct: (data) => axios.post('/api/admin/store/products', data),
+  updateStoreProduct: (id, data) => axios.put(`/api/admin/store/products/${id}`, data),
+  deleteStoreProduct: (id) => axios.delete(`/api/admin/store/products/${id}`),
+  getStoreOrders: (params = {}) => axios.get('/api/admin/store/orders', { params }),
+  getStoreOrder: (id) => axios.get(`/api/admin/store/orders/${id}`),
+  updateStoreOrderStatus: (id, status) => axios.put(`/api/admin/store/orders/${id}/status`, { status }),
+  getStoreStats: () => axios.get('/api/admin/store/stats')
 }
 
 // Intercepteur pour gérer les erreurs d'authentification

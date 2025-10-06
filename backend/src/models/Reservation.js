@@ -24,20 +24,22 @@ class ReservationModel {
             client_prenom,
             client_telephone,
             client_email,
-            session_id
+            session_id,
+            // Jotform submission data
+            jotform_submission
         } = reservationData;
 
         // Prepare queries for transaction
         const queries = [];
         
-        // Main reservation query
+        // Main reservation query with jotform_submission
         const reservationQuery = `
             INSERT INTO reservations 
             (client_id, service_id, date_reservation, heure_debut, heure_fin, 
              statut, reservation_status, prix_service, prix_final, notes_client,
              client_nom, client_prenom, client_telephone, client_email, session_id,
-             referral_code_id, has_healing_addon, addon_price)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             referral_code_id, has_healing_addon, addon_price, jotform_submission)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
         queries.push({
@@ -60,7 +62,8 @@ class ReservationModel {
                 session_id || null,
                 reservationData.referral_code_id || null,
                 reservationData.has_healing_addon || false,
-                reservationData.addon_price || 0.00
+                reservationData.addon_price || 0.00,
+                jotform_submission ? JSON.stringify(jotform_submission) : null
             ]
         });
 
@@ -178,6 +181,16 @@ class ReservationModel {
             ORDER BY ri.item_type, ri.id
         `;
         const items = await executeQuery(itemsQuery, [id]);
+
+        // Parse jotform_submission if it exists
+        if (reservation.jotform_submission) {
+            try {
+                reservation.jotform_submission = JSON.parse(reservation.jotform_submission);
+            } catch (error) {
+                console.error('Error parsing jotform_submission:', error);
+                reservation.jotform_submission = null;
+            }
+        }
 
         return {
             ...reservation,

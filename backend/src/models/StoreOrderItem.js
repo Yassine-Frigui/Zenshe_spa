@@ -62,10 +62,7 @@ class StoreOrderItemModel {
         const itemPrice = price || product.price;
         const subtotal = itemPrice * quantity;
 
-        // Check stock availability
-        if (product.stock_quantity < quantity) {
-            throw new Error('Insufficient stock available');
-        }
+        // Stock check removed - pre-order system allows any quantity
 
         const insertQuery = `
             INSERT INTO store_order_items (
@@ -85,11 +82,11 @@ class StoreOrderItemModel {
             subtotal
         ]);
 
-        // Update product stock
-        await executeQuery(
-            'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
-            [quantity, product_id]
-        );
+        // Stock update removed - pre-order system doesn't track stock
+        // await executeQuery(
+        //     'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+        //     [quantity, product_id]
+        // );
 
         // Update order totals (triggers will handle this automatically)
         
@@ -111,17 +108,7 @@ class StoreOrderItemModel {
         const quantityDiff = newQuantity - oldQuantity;
         const newSubtotal = item.product_price * newQuantity;
 
-        // Check stock availability for increase
-        if (quantityDiff > 0) {
-            const [product] = await executeQuery(
-                'SELECT stock_quantity FROM products WHERE id = ?',
-                [item.product_id]
-            );
-
-            if (!product || product.stock_quantity < quantityDiff) {
-                throw new Error('Insufficient stock for quantity increase');
-            }
-        }
+        // Stock check removed - pre-order system allows any quantity
 
         // Update order item
         const updateQuery = `
@@ -132,13 +119,13 @@ class StoreOrderItemModel {
 
         await executeQuery(updateQuery, [newQuantity, newSubtotal, id]);
 
-        // Adjust product stock
-        if (quantityDiff !== 0) {
-            await executeQuery(
-                'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
-                [quantityDiff, item.product_id]
-            );
-        }
+        // Stock update removed - pre-order system doesn't track stock
+        // if (quantityDiff !== 0) {
+        //     await executeQuery(
+        //         'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+        //         [quantityDiff, item.product_id]
+        //     );
+        // }
 
         return this.getOrderItemById(id);
     }
@@ -150,11 +137,11 @@ class StoreOrderItemModel {
             throw new Error('Order item not found');
         }
 
-        // Restore product stock
-        await executeQuery(
-            'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-            [item.quantity, item.product_id]
-        );
+        // Stock restoration removed - pre-order system doesn't track stock
+        // await executeQuery(
+        //     'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+        //     [item.quantity, item.product_id]
+        // );
 
         // Delete order item (triggers will update order totals)
         await executeQuery('DELETE FROM store_order_items WHERE id = ?', [id]);
@@ -240,7 +227,8 @@ class StoreOrderItemModel {
                 MAX(soi.product_price) as max_selling_price,
                 p.name as current_product_name,
                 p.price as current_price,
-                p.stock_quantity as current_stock
+                p.is_preorder as is_preorder,
+                p.estimated_delivery_days as estimated_delivery_days
             FROM store_order_items soi
             JOIN store_orders so ON soi.order_id = so.id
             LEFT JOIN products p ON soi.product_id = p.id
@@ -273,7 +261,8 @@ class StoreOrderItemModel {
             current_product: {
                 name: summary.current_product_name,
                 price: parseFloat(summary.current_price || 0),
-                stock_quantity: parseInt(summary.current_stock || 0)
+                is_preorder: Boolean(summary.is_preorder),
+                estimated_delivery_days: parseInt(summary.estimated_delivery_days || 14)
             }
         };
     }

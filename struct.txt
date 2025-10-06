@@ -1,4 +1,1 @@
-Source Code JotForm
-JotForm API Key
-Brevo E-mail
-netlify (optional)
+cd "C:\Users\yassi\Downloads\ngrok-v3-stable-windows-amd64" && ngrok http --domain=rightly-wise-tadpole.ngrok-free.app 5000

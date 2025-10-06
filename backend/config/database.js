@@ -89,20 +89,23 @@ const executeQuery = async (query, params = [], retryCount = 0) => {
     }
 };
 
-// Fonction pour les transactions
-const executeTransaction = async (queries) => {
+// Fonction pour les transactions avec callback
+const executeTransaction = async (callback) => {
     const connection = await promisePool.getConnection();
     try {
         await connection.beginTransaction();
         
-        const results = [];
-        for (const { query, params } of queries) {
-            const [result] = await connection.execute(query, params);
-            results.push(result);
-        }
+        // Create a connection-specific executeQuery function
+        const executeQueryWithConnection = async (query, params = []) => {
+            const [rows] = await connection.execute(query, params);
+            return rows;
+        };
+        
+        // Execute the callback with the connection-specific query function
+        const result = await callback(executeQueryWithConnection);
         
         await connection.commit();
-        return results;
+        return result;
     } catch (error) {
         await connection.rollback();
         throw error;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaUsers,
   FaPlus,
@@ -12,7 +12,12 @@ import {
   FaCalendarAlt,
   FaStar,
   FaHeart,
-  FaGift
+  FaGift,
+  FaCode,
+  FaTimes,
+  FaSave,
+  FaUserEdit,
+  FaTicketAlt
 } from 'react-icons/fa';
 import { adminAPI } from '../../services/api';
 
@@ -23,6 +28,23 @@ const AdminClients = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const [clientReferrals, setClientReferrals] = useState({});
+  const [expandedClient, setExpandedClient] = useState(null);
+  const [formData, setFormData] = useState({
+    nom: '',
+    prenom: '',
+    email: '',
+    telephone: '',
+    adresse: '',
+    date_naissance: '',
+    notes: '',
+    statut: 'actif',
+    langue_preferee: 'fr',
+    actif: 1
+  });
 
   useEffect(() => {
     fetchClients();
@@ -95,9 +117,106 @@ const AdminClients = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (clientId) => {
+  const handleDelete = async (clientId) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
-      setClients(prev => prev.filter(client => client.id !== clientId));
+      try {
+        await adminAPI.deleteClient(clientId);
+        setClients(prev => prev.filter(client => client.id !== clientId));
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression du client');
+      }
+    }
+  };
+
+  const handleEdit = (client) => {
+    setEditingClient(client);
+    setFormData({
+      nom: client.nom,
+      prenom: client.prenom,
+      email: client.email,
+      telephone: client.telephone,
+      adresse: client.adresse || '',
+      date_naissance: client.date_naissance || '',
+      notes: client.notes || '',
+      statut: client.statut,
+      langue_preferee: client.langue_preferee || 'fr',
+      actif: client.actif !== undefined ? client.actif : 1
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCreate = () => {
+    setFormData({
+      nom: '',
+      prenom: '',
+      email: '',
+      telephone: '',
+      adresse: '',
+      date_naissance: '',
+      notes: '',
+      statut: 'actif',
+      langue_preferee: 'fr',
+      actif: 1
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      if (editingClient) {
+        const response = await adminAPI.updateClient(editingClient.id, formData);
+        setClients(prev => prev.map(c => c.id === editingClient.id ? {...c, ...formData} : c));
+        setShowEditModal(false);
+      } else {
+        const response = await adminAPI.createClient(formData);
+        const newClient = response.data.client;
+        setClients(prev => [...prev, newClient]);
+        setShowCreateModal(false);
+      }
+      setEditingClient(null);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const fetchClientReferrals = async (clientId) => {
+    try {
+      const response = await adminAPI.getClientReferrals(clientId);
+      // Each client now has only one referral code
+      const referralCode = response.data.data && response.data.data[0] ? response.data.data[0] : null;
+      setClientReferrals(prev => ({...prev, [clientId]: referralCode}));
+    } catch (error) {
+      console.error('Erreur lors du chargement du code de parrainage:', error);
+      toast.error('Erreur lors du chargement du code de parrainage');
+      setClientReferrals(prev => ({...prev, [clientId]: null}));
+    }
+  };
+
+  const toggleClientExpansion = (clientId) => {
+    if (expandedClient === clientId) {
+      setExpandedClient(null);
+    } else {
+      setExpandedClient(clientId);
+      if (clientReferrals[clientId] === undefined) {
+        fetchClientReferrals(clientId);
+      }
+    }
+  };
+
+  const generateReferralCode = async (clientId) => {
+    try {
+      const data = { clientId: clientId };
+      
+      await adminAPI.createReferralCodeForClient(data);
+      toast.success('Code de parrainage récupéré avec succès');
+      
+      // Refresh the referral code for this client
+      fetchClientReferrals(clientId);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du code:', error);
+      toast.error('Erreur lors de la récupération du code de parrainage');
     }
   };
 
@@ -134,6 +253,7 @@ const AdminClients = () => {
           <div className="col-auto">
             <motion.button
               className="btn btn-pink"
+              onClick={handleCreate}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -250,9 +370,9 @@ const AdminClients = () => {
                     <th className="border-0 px-4 py-3">Client</th>
                     <th className="border-0 py-3">Contact</th>
                     <th className="border-0 py-3">Statut</th>
+                    <th className="border-0 py-3">Code Parrainage</th>
                     <th className="border-0 py-3">Visites</th>
                     <th className="border-0 py-3">Total dépensé</th>
-                    <th className="border-0 py-3">Dernière visite</th>
                     <th className="border-0 py-3">Actions</th>
                   </tr>
                 </thead>
@@ -266,8 +386,8 @@ const AdminClients = () => {
                     </tr>
                   ) : (
                     filteredClients.map((client, index) => (
+                      <React.Fragment key={client.id}>
                       <motion.tr
-                        key={client.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 + index * 0.05, duration: 0.4 }}
@@ -318,16 +438,23 @@ const AdminClients = () => {
                           {getStatutBadge(client.statut)}
                         </td>
                         <td className="py-3">
-                          <span className="fw-bold">{client.nombre_visites}</span>
+                          <div className="d-flex align-items-center gap-2">
+                            <button
+                              className="btn btn-sm btn-outline-info"
+                              onClick={() => toggleClientExpansion(client.id)}
+                              title="Voir code de parrainage"
+                            >
+                              <FaTicketAlt size={12} />
+                              {clientReferrals[client.id] ? 1 : 0}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-3">
+                          <span className="fw-bold">{client.nombre_visites || 0}</span>
                           <div className="small text-muted">visites</div>
                         </td>
                         <td className="py-3">
-                          <span className="fw-bold text-success">{client.total_depense}DT</span>
-                        </td>
-                        <td className="py-3">
-                          <span className="small">
-                            {new Date(client.derniere_visite).toLocaleDateString('fr-FR')}
-                          </span>
+                          <span className="fw-bold text-success">{client.total_depense || 0}DT</span>
                         </td>
                         <td className="py-3">
                           <div className="d-flex gap-1">
@@ -341,28 +468,13 @@ const AdminClients = () => {
                               <FaEye size={12} />
                             </motion.button>
                             <motion.button
-                              className="btn btn-sm btn-outline-success"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              title="Appeler"
-                            >
-                              <FaPhone size={12} />
-                            </motion.button>
-                            <motion.button
-                              className="btn btn-sm btn-outline-info"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              title="Email"
-                            >
-                              <FaEnvelope size={12} />
-                            </motion.button>
-                            <motion.button
                               className="btn btn-sm btn-outline-warning"
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              title="Réserver"
+                              onClick={() => handleEdit(client)}
+                              title="Modifier"
                             >
-                              <FaCalendarAlt size={12} />
+                              <FaEdit size={12} />
                             </motion.button>
                             <motion.button
                               className="btn btn-sm btn-outline-danger"
@@ -376,6 +488,75 @@ const AdminClients = () => {
                           </div>
                         </td>
                       </motion.tr>
+                      {expandedClient === client.id && (
+                        <motion.tr
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="bg-light"
+                        >
+                          <td colSpan="7" className="p-4">
+                            <div className="row">
+                              <div className="col-12">
+                                <h6 className="fw-bold mb-3">
+                                  <FaCode className="text-primary me-2" />
+                                  Code de Parrainage de {client.prenom}
+                                </h6>
+                                {clientReferrals[client.id] ? (
+                                  <div className="row justify-content-center">
+                                    <div className="col-md-8 mb-3">
+                                      <div className="card border-0 shadow-sm">
+                                        <div className="card-body p-4 text-center">
+                                          <div className="d-flex justify-content-between align-items-start mb-3">
+                                            <h4 className="fw-bold text-primary mb-0">{clientReferrals[client.id].code}</h4>
+                                            <span className={`badge fs-6 ${clientReferrals[client.id].is_active ? 'bg-success' : 'bg-secondary'}`}>
+                                              {clientReferrals[client.id].is_active ? 'Actif' : 'Inactif'}
+                                            </span>
+                                          </div>
+                                          <div className="row text-center">
+                                            <div className="col-4">
+                                              <div className="fw-bold text-success fs-5">{clientReferrals[client.id].discount_percentage}%</div>
+                                              <small className="text-muted">Réduction</small>
+                                            </div>
+                                            <div className="col-4">
+                                              <div className="fw-bold fs-5">{clientReferrals[client.id].current_uses || 0}</div>
+                                              <small className="text-muted">Utilisations</small>
+                                            </div>
+                                            <div className="col-4">
+                                              <div className="fw-bold fs-5">{clientReferrals[client.id].max_uses || '∞'}</div>
+                                              <small className="text-muted">Max</small>
+                                            </div>
+                                          </div>
+                                          {clientReferrals[client.id].expires_at && (
+                                            <div className="mt-3">
+                                              <small className="text-muted">
+                                                Expire le: {new Date(clientReferrals[client.id].expires_at).toLocaleDateString('fr-FR')}
+                                              </small>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-center text-muted py-4">
+                                    <FaTicketAlt size={32} className="mb-2 opacity-50" />
+                                    <p>Aucun code de parrainage généré</p>
+                                    <button 
+                                      className="btn btn-outline-primary btn-sm"
+                                      onClick={() => generateReferralCode(client.id)}
+                                    >
+                                      <FaPlus className="me-1" />
+                                      Générer le code
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      )}
+                      </React.Fragment>
                     ))
                   )}
                 </tbody>
@@ -486,6 +667,159 @@ const AdminClients = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de création/édition client */}
+      <AnimatePresence>
+        {(showCreateModal || showEditModal) && (
+          <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-lg">
+              <motion.div
+                className="modal-content"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title fw-bold">
+                    <FaUserEdit className="text-primary me-2" />
+                    {editingClient ? 'Modifier Client' : 'Nouveau Client'}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setShowCreateModal(false);
+                      setEditingClient(null);
+                    }}
+                  />
+                </div>
+                <div className="modal-body">
+                  <form>
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-bold">Prénom*</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={formData.prenom}
+                          onChange={(e) => setFormData({...formData, prenom: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-bold">Nom*</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={formData.nom}
+                          onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-bold">Email*</label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          value={formData.email}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-bold">Téléphone*</label>
+                        <input
+                          type="tel"
+                          className="form-control"
+                          value={formData.telephone}
+                          onChange={(e) => setFormData({...formData, telephone: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-bold">Date de naissance</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={formData.date_naissance}
+                          onChange={(e) => setFormData({...formData, date_naissance: e.target.value})}
+                        />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-bold">Statut</label>
+                        <select
+                          className="form-select"
+                          value={formData.statut}
+                          onChange={(e) => setFormData({...formData, statut: e.target.value})}
+                        >
+                          <option value="actif">Actif</option>
+                          <option value="inactif">Inactif</option>
+                        </select>
+                        <div className="form-text">Statut du compte client</div>
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label fw-bold">Langue préférée</label>
+                        <select
+                          className="form-select"
+                          value={formData.langue_preferee}
+                          onChange={(e) => setFormData({...formData, langue_preferee: e.target.value})}
+                        >
+                          <option value="fr">Français</option>
+                          <option value="en">English</option>
+                          <option value="ar">العربية</option>
+                        </select>
+                        <div className="form-text">Langue de communication préférée</div>
+                      </div>
+                      <div className="col-12 mb-3">
+                        <label className="form-label fw-bold">Adresse</label>
+                        <textarea
+                          className="form-control"
+                          rows="2"
+                          value={formData.adresse}
+                          onChange={(e) => setFormData({...formData, adresse: e.target.value})}
+                          placeholder="Adresse complète du client..."
+                        />
+                      </div>
+                      <div className="col-12 mb-3">
+                        <label className="form-label fw-bold">Notes</label>
+                        <textarea
+                          className="form-control"
+                          rows="3"
+                          value={formData.notes}
+                          onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                          placeholder="Notes privées sur le client (préférences, allergies, etc.)..."
+                        />
+                      </div>
+                    </div>
+                  </form>
+                </div>
+                <div className="modal-footer border-0">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setShowCreateModal(false);
+                      setEditingClient(null);
+                    }}
+                  >
+                    <FaTimes className="me-2" />
+                    Annuler
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleSave}
+                  >
+                    <FaSave className="me-2" />
+                    {editingClient ? 'Mettre à jour' : 'Créer'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,6 +1,7 @@
+-- Insert sample products for the boutique (Pre-order system - no stock management)
 INSERT IGNORE INTO products (
     name, description, detailed_description, price, category, category_id,
-    image_url, stock_quantity, is_active, is_featured, sku
+    image_url, is_preorder, estimated_delivery_days, is_active, is_featured, sku
 ) VALUES 
 (
     'Chaise de Spa Luxe ZS001',
@@ -8,7 +9,7 @@ INSERT IGNORE INTO products (
     'Chaise de spa luxueuse avec fonction massage, hauteur ajustable et revêtement en cuir premium. Parfaite pour tout spa ou centre de bien-être.',
     2500.00, 'Chaises de Spa', 1,
     '/images/products/spa-chair-001.jpg',
-    5, TRUE, TRUE, 'ZS001-SPA-CHAIR'
+    TRUE, 21, TRUE, TRUE, 'ZS001-SPA-CHAIR'
 ),
 (
     'Lit de Soins du Visage Professionnel',
@@ -16,7 +17,7 @@ INSERT IGNORE INTO products (
     'Lit professionnel ajustable pour soins du visage avec coussin en mousse à mémoire de forme et surface vinyle facile à nettoyer.',
     1200.00, 'Équipements', 4,
     '/images/products/facial-bed-002.jpg',
-    8, TRUE, FALSE, 'ZS002-FACIAL-BED'
+    TRUE, 30, TRUE, FALSE, 'ZS002-FACIAL-BED'
 ),
 (
     'Sérum Visage Bio Anti-Âge',
@@ -24,5 +25,5 @@ INSERT IGNORE INTO products (
     'Sérum visage bio premium anti-âge avec des ingrédients naturels pour une peau radieuse et jeune.',
     89.99, 'Produits de Soins', 2,
     '/images/products/serum-003.jpg',
-    25, TRUE, TRUE, 'ZS003-SERUM'
+    TRUE, 7, TRUE, TRUE, 'ZS003-SERUM'
 );

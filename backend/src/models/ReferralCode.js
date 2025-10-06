@@ -237,6 +237,40 @@ class ReferralCode {
     }
   }
 
+  // Get referral codes by client (admin)
+  static async getReferralCodesByClient(clientId, limit = 50, offset = 0) {
+    try {
+      const codes = await db.executeQuery(
+        `SELECT rc.*, c.nom as owner_name, c.email as owner_email,
+                COUNT(ru.id) as total_uses,
+                COALESCE(SUM(ru.discount_amount), 0) as total_discounts_given
+         FROM referral_codes rc 
+         JOIN clients c ON rc.owner_client_id = c.id 
+         LEFT JOIN referral_usage ru ON rc.id = ru.referral_code_id 
+         WHERE rc.owner_client_id = ?
+         GROUP BY rc.id 
+         ORDER BY rc.created_at DESC 
+         LIMIT ? OFFSET ?`,
+        [clientId, limit, offset]
+      );
+
+      const countResult = await db.executeQuery(
+        'SELECT COUNT(*) as total FROM referral_codes WHERE owner_client_id = ?',
+        [clientId]
+      );
+
+      return {
+        codes,
+        total: countResult[0].total,
+        limit,
+        offset
+      };
+    } catch (error) {
+      console.error('Error getting referral codes by client:', error);
+      throw error;
+    }
+  }
+
   // Deactivate a referral code
   static async deactivateCode(codeId) {
     try {

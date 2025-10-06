@@ -27,7 +27,9 @@ router.post('/', reservationLimiter, validateInput([
             // Referral code and add-ons
             referralCode, has_healing_addon,
             // Session ID pour conversion de brouillon
-            session_id
+            session_id,
+            // Jotform submission data
+            jotform_submission
         } = req.body;
 
         console.log('Extracted data:', {
@@ -206,7 +208,9 @@ router.post('/', reservationLimiter, validateInput([
                 // Add referral code and healing addon
                 referral_code_id: referralCodeId,
                 has_healing_addon: hasHealingAddon,
-                addon_price: addonPrice
+                addon_price: addonPrice,
+                // Add Jotform submission
+                jotform_submission: jotform_submission
             });
         }
 

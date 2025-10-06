@@ -155,54 +155,54 @@ router.delete('/products/:id/hard', async (req, res) => {
     }
 });
 
-// PUT /api/admin/store/products/:id/stock - Update product stock
-router.put('/products/:id/stock', async (req, res) => {
-    try {
-        const productId = parseInt(req.params.id);
-        const { stock_quantity } = req.body;
-        
-        if (stock_quantity === undefined || stock_quantity < 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Quantité de stock invalide'
-            });
-        }
+// PUT /api/admin/store/products/:id/stock - DISABLED: Stock management removed (pre-order system)
+// router.put('/products/:id/stock', async (req, res) => {
+//     try {
+//         const productId = parseInt(req.params.id);
+//         const { stock_quantity } = req.body;
+//         
+//         if (stock_quantity === undefined || stock_quantity < 0) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Quantité de stock invalide'
+//             });
+//         }
 
-        const product = await ProductModel.updateStock(productId, stock_quantity);
-        
-        res.json({
-            success: true,
-            message: 'Stock mis à jour avec succès',
-            data: product
-        });
-    } catch (error) {
-        console.error('Error updating stock:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Erreur lors de la mise à jour du stock'
-        });
-    }
-});
+//         const product = await ProductModel.updateStock(productId, stock_quantity);
+//         
+//         res.json({
+//             success: true,
+//             message: 'Stock mis à jour avec succès',
+//             data: product
+//         });
+//     } catch (error) {
+//         console.error('Error updating stock:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: error.message || 'Erreur lors de la mise à jour du stock'
+//         });
+//     }
+// });
 
-// GET /api/admin/store/products/low-stock - Get low stock products
-router.get('/products/low-stock', async (req, res) => {
-    try {
-        const threshold = req.query.threshold ? parseInt(req.query.threshold) : 5;
-        const products = await ProductModel.getLowStockProducts(threshold);
-        
-        res.json({
-            success: true,
-            data: products,
-            threshold: threshold
-        });
-    } catch (error) {
-        console.error('Error fetching low stock products:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la récupération des produits en rupture de stock'
-        });
-    }
-});
+// GET /api/admin/store/products/low-stock - DISABLED: Stock management removed (pre-order system)
+// router.get('/products/low-stock', async (req, res) => {
+//     try {
+//         const threshold = req.query.threshold ? parseInt(req.query.threshold) : 5;
+//         const products = await ProductModel.getLowStockProducts(threshold);
+//         
+//         res.json({
+//             success: true,
+//             data: products,
+//             threshold: threshold
+//         });
+//     } catch (error) {
+//         console.error('Error fetching low stock products:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Erreur lors de la récupération des produits en rupture de stock'
+//         });
+//     }
+// });
 
 // =====================================================
 // ADMIN CATEGORY MANAGEMENT

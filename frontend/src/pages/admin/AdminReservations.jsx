@@ -30,6 +30,7 @@ const AdminReservations = () => {
   const [dateFilter, setDateFilter] = useState('tous');
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [editFormData, setEditFormData] = useState({
     statut: '',
@@ -38,9 +39,24 @@ const AdminReservations = () => {
     client_prenom: '',
     client_telephone: '',
     client_email: '',
-    notes_admin: ''
+    notes_client: '',
+    heure_debut: '',
+    heure_fin: ''
+  });
+  const [createFormData, setCreateFormData] = useState({
+    service_id: '',
+    date_reservation: '',
+    heure_debut: '',
+    heure_fin: '',
+    client_nom: '',
+    client_prenom: '',
+    client_telephone: '',
+    client_email: '',
+    notes_client: '',
+    statut: 'en_attente'
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     fetchReservations();
@@ -197,7 +213,9 @@ const AdminReservations = () => {
       client_prenom: reservation.client.prenom,
       client_telephone: reservation.client.telephone,
       client_email: reservation.client.email,
-      notes_admin: reservation.notes_admin || ''
+      notes_client: reservation.notes || '',
+      heure_debut: reservation.heure_reservation || '',
+      heure_fin: reservation.heure_fin || ''
     });
     setShowEditModal(true);
   };
@@ -213,15 +231,18 @@ const AdminReservations = () => {
       await adminAPI.updateReservationStatus(
         selectedReservation.id, 
         editFormData.statut, 
-        editFormData.notes_admin
+        editFormData.notes_client
       );
 
-      // Update client details and service if provided
+      // Update client details, service, and time if provided
       const updateData = {};
       if (editFormData.client_nom) updateData.client_nom = editFormData.client_nom;
       if (editFormData.client_prenom) updateData.client_prenom = editFormData.client_prenom;
       if (editFormData.client_telephone) updateData.client_telephone = editFormData.client_telephone;
       if (editFormData.client_email) updateData.client_email = editFormData.client_email;
+      if (editFormData.notes_client) updateData.notes_client = editFormData.notes_client;
+      if (editFormData.heure_debut) updateData.heure_debut = editFormData.heure_debut;
+      if (editFormData.heure_fin) updateData.heure_fin = editFormData.heure_fin;
       if (editFormData.service_id && editFormData.service_id !== selectedReservation.service_id) {
         updateData.service_id = editFormData.service_id;
       }
@@ -278,6 +299,66 @@ const AdminReservations = () => {
     setShowModal(true);
   };
 
+  const openCreateModal = () => {
+    setCreateFormData({
+      service_id: '',
+      date_reservation: '',
+      heure_debut: '',
+      heure_fin: '',
+      client_nom: '',
+      client_prenom: '',
+      client_telephone: '',
+      client_email: '',
+      notes_client: '',
+      statut: 'en_attente'
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setIsCreating(true);
+      
+      // Create the reservation
+      const reservationData = {
+        service_id: createFormData.service_id,
+        date_reservation: createFormData.date_reservation,
+        heure_debut: createFormData.heure_debut,
+        heure_fin: createFormData.heure_fin,
+        client_nom: createFormData.client_nom,
+        client_prenom: createFormData.client_prenom,
+        client_telephone: createFormData.client_telephone,
+        client_email: createFormData.client_email,
+        notes_client: createFormData.notes_client,
+        statut: createFormData.statut
+      };
+
+      await adminAPI.createReservationWithClient(reservationData);
+
+      // Refresh reservations
+      await fetchReservations();
+      
+      // Close modal and show success
+      setShowCreateModal(false);
+      alert('Réservation créée avec succès !');
+      
+    } catch (error) {
+      console.error('Erreur lors de la création:', error);
+      alert('Erreur lors de la création de la réservation');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleCreateInputChange = (field, value) => {
+    setCreateFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
@@ -313,6 +394,7 @@ const AdminReservations = () => {
               className="btn btn-pink"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={openCreateModal}
             >
               <FaPlus className="me-2" />
               Nouvelle réservation
@@ -745,7 +827,7 @@ const AdminReservations = () => {
                           <option value="en_cours">En cours</option>
                           <option value="terminee">Terminée</option>
                           <option value="annulee">Annulée</option>
-                          <option value="absent">Absent (No-show)</option>
+                          <option value="no_show">Absent (No-show)</option>
                         </select>
                         <div className="form-text">
                           Sélectionnez le nouveau statut pour cette réservation
@@ -753,13 +835,13 @@ const AdminReservations = () => {
                       </div>
 
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Notes administrateur</label>
+                        <label className="form-label fw-semibold">Notes client</label>
                         <textarea
                           className="form-control"
                           rows="3"
-                          value={editFormData.notes_admin}
-                          onChange={(e) => handleInputChange('notes_admin', e.target.value)}
-                          placeholder="Ajoutez des notes sur cette modification..."
+                          value={editFormData.notes_client}
+                          onChange={(e) => handleInputChange('notes_client', e.target.value)}
+                          placeholder="Notes ou demandes spéciales du client..."
                         />
                       </div>
 
@@ -881,6 +963,218 @@ const AdminReservations = () => {
                         <>
                           <FaSave />
                           Sauvegarder les modifications
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <motion.div
+              className="modal-content"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">
+                  <FaPlus className="text-success me-2" />
+                  Nouvelle réservation
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={isCreating}
+                />
+              </div>
+              
+              <form onSubmit={handleCreateSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    {/* Reservation Details Section */}
+                    <div className="col-md-6">
+                      <h6 className="fw-bold text-primary mb-3">
+                        <FaCalendarAlt className="me-2" />
+                        Détails de la réservation
+                      </h6>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Service <span className="text-danger">*</span></label>
+                        <select
+                          className="form-select"
+                          value={createFormData.service_id}
+                          onChange={(e) => handleCreateInputChange('service_id', e.target.value)}
+                          required
+                        >
+                          <option value="">Sélectionner un service</option>
+                          {services.map(service => (
+                            <option key={service.id} value={service.id}>
+                              {service.nom} - {service.prix}DT ({service.duree}min)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Date <span className="text-danger">*</span></label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={createFormData.date_reservation}
+                          onChange={(e) => handleCreateInputChange('date_reservation', e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Heure début <span className="text-danger">*</span></label>
+                        <input
+                          type="time"
+                          className="form-control"
+                          value={createFormData.heure_debut}
+                          onChange={(e) => handleCreateInputChange('heure_debut', e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Heure fin <span className="text-danger">*</span></label>
+                        <input
+                          type="time"
+                          className="form-control"
+                          value={createFormData.heure_fin}
+                          onChange={(e) => handleCreateInputChange('heure_fin', e.target.value)}
+                          required
+                        />
+                        <div className="form-text">
+                          L'heure de fin sera calculée automatiquement selon la durée du service
+                        </div>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Statut initial</label>
+                        <select
+                          className="form-select"
+                          value={createFormData.statut}
+                          onChange={(e) => handleCreateInputChange('statut', e.target.value)}
+                        >
+                          <option value="draft">Brouillon</option>
+                          <option value="en_attente">En attente</option>
+                          <option value="confirmee">Confirmée</option>
+                        </select>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Notes client</label>
+                        <textarea
+                          className="form-control"
+                          rows="3"
+                          value={createFormData.notes_client}
+                          onChange={(e) => handleCreateInputChange('notes_client', e.target.value)}
+                          placeholder="Notes ou demandes spéciales du client..."
+                        />
+                      </div>
+                    </div>
+
+                    {/* Client Details Section */}
+                    <div className="col-md-6">
+                      <h6 className="fw-bold text-primary mb-3">
+                        <FaUser className="me-2" />
+                        Informations du client
+                      </h6>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Prénom <span className="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={createFormData.client_prenom}
+                          onChange={(e) => handleCreateInputChange('client_prenom', e.target.value)}
+                          placeholder="Prénom du client"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Nom <span className="text-danger">*</span></label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={createFormData.client_nom}
+                          onChange={(e) => handleCreateInputChange('client_nom', e.target.value)}
+                          placeholder="Nom du client"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Téléphone <span className="text-danger">*</span></label>
+                        <input
+                          type="tel"
+                          className="form-control"
+                          value={createFormData.client_telephone}
+                          onChange={(e) => handleCreateInputChange('client_telephone', e.target.value)}
+                          placeholder="Numéro de téléphone"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Email <span className="text-danger">*</span></label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          value={createFormData.client_email}
+                          onChange={(e) => handleCreateInputChange('client_email', e.target.value)}
+                          placeholder="Adresse email"
+                          required
+                        />
+                      </div>
+
+                      <div className="alert alert-info">
+                        <small>
+                          <strong>Note:</strong> Si le client existe déjà avec cet email, 
+                          ses informations seront mises à jour. Sinon, un nouveau client sera créé.
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="modal-footer border-0">
+                  <div className="d-flex gap-2 w-100">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowCreateModal(false)}
+                      disabled={isCreating}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-success d-flex align-items-center gap-2"
+                      disabled={isCreating}
+                    >
+                      {isCreating ? (
+                        <>
+                          <div className="spinner-border spinner-border-sm" role="status" />
+                          Création...
+                        </>
+                      ) : (
+                        <>
+                          <FaPlus />
+                          Créer la réservation
                         </>
                       )}
                     </button>

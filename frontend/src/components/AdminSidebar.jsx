@@ -13,7 +13,8 @@ import {
   FaTimes,
   FaUser,
   FaChartLine,
-  FaGift
+  FaGift,
+  FaStore
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
@@ -66,6 +67,11 @@ const AdminSidebar = () => {
       path: '/admin/inventaire',
       icon: <FaBoxes />,
       label: 'Inventaire'
+    },
+    {
+      path: '/admin/store',
+      icon: <FaStore />,
+      label: 'Boutique'
     },
     {
       path: '/admin/statistics',

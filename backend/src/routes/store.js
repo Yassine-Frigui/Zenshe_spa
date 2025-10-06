@@ -281,13 +281,7 @@ router.post('/orders', async (req, res) => {
                 });
             }
 
-            // Check stock availability
-            if (product.stock_quantity < item.quantity) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Stock insuffisant pour le produit: ${product.name}`
-                });
-            }
+            // Stock check removed - pre-order system allows any quantity
         }
 
         // Check if there's an existing draft for this session to convert

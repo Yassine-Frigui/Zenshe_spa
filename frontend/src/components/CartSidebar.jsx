@@ -166,7 +166,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                                             <button
                                                 className="cart-item__quantity-btn"
                                                 onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                                disabled={item.quantity >= item.stock_quantity}
+                                                disabled={item.quantity >= 99}
                                                 aria-label={t('cart.increaseQuantity')}
                                             >
                                                 +

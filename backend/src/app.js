@@ -29,6 +29,7 @@ const statisticsRoutes = require('./routes/statistics');
 const referralCodesRoutes = require('./routes/referralCodes');
 const storeRoutes = require('./routes/store');
 const adminStoreRoutes = require('./routes/adminStore');
+const jotformRoutes = require('./routes/jotform');
 
 // Import de la configuration de base de données
 const { testConnection } = require('../config/database');
@@ -48,6 +49,8 @@ app.use(sanitizeRequest);
 // CORS configuration - more restrictive for production
 const corsOptions = {
     origin: function (origin, callback) {
+        console.log('CORS request from origin:', origin);
+        
         const allowedOrigins = [
             process.env.FRONTEND_URL,
             'http://localhost:3000',
@@ -70,12 +73,8 @@ const corsOptions = {
                 callback(new Error('Not allowed by CORS policy'));
             }
         } else {
-            // Development mode - allow local origins
-            if (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS policy'));
-            }
+            // Development mode - be more permissive for local development
+            callback(null, true);
         }
     },
     credentials: true,
@@ -125,6 +124,8 @@ app.use('/api/store', storeRoutes);
 console.log('🛍️  Store routes mounted at /api/store');
 app.use('/api/admin/store', adminStoreRoutes);
 console.log('🛍️  Admin store routes mounted at /api/admin/store');
+app.use('/api/jotform', jotformRoutes);
+console.log('📝 Jotform routes mounted at /api/jotform');
 
 // Route de test
 app.get('/api/test', (req, res) => {
@@ -212,3 +213,4 @@ process.on('SIGINT', () => {
 startServer();
 
 module.exports = app;
+

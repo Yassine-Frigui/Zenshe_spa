@@ -17,7 +17,8 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
--- 2. Products table for boutique items
+-- 2. Products table for boutique items (Pre-order only, no stock management)
+-- Note: Do NOT drop this table if it exists - use ALTER TABLE to modify instead
 CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
@@ -25,23 +26,28 @@ CREATE TABLE IF NOT EXISTS products (
     detailed_description TEXT,
     price DECIMAL(10,2) NOT NULL,
     category VARCHAR(100),
+    category_id INT NULL COMMENT 'Foreign key to product_categories',
     image_url VARCHAR(500),
     gallery_images TEXT COMMENT 'JSON array of additional image URLs',
-    stock_quantity INT DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     is_featured BOOLEAN DEFAULT FALSE,
+    is_preorder BOOLEAN DEFAULT TRUE COMMENT 'All items are pre-order by default',
+    estimated_delivery_days INT DEFAULT 14 COMMENT 'Estimated delivery time in days',
     weight DECIMAL(8,2) DEFAULT 0.00 COMMENT 'Product weight in kg for shipping',
     dimensions VARCHAR(100) COMMENT 'Product dimensions (LxWxH)',
-    sku VARCHAR(50) UNIQUE COMMENT 'Stock Keeping Unit',
+    sku VARCHAR(50) UNIQUE COMMENT 'Product reference code',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     INDEX idx_products_category (category),
+    INDEX idx_products_category_id (category_id),
     INDEX idx_products_active (is_active),
     INDEX idx_products_featured (is_featured),
-    INDEX idx_products_sku (sku)
+    INDEX idx_products_sku (sku),
+    
+    FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci 
-COMMENT='Products available in the boutique/store';
+COMMENT='Pre-order products available in the boutique/store (custom-made or imported)';
 
 -- 3. Store orders table
 CREATE TABLE IF NOT EXISTS store_orders (

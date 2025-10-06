@@ -1,365 +1,221 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { publicAPI } from '../../services/api';
-import AddToCartButton from '../../components/AddToCartButton';
-import CartWidget from '../../components/CartWidget';
-import './StorePage.css';
+import React, { useEffect, useState } from 'react';
+import { Container, Row, Col, Card, Badge, Form } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
+import { useCart } from '../../context/CartContext';
 
 const StorePage = () => {
-    const { t } = useTranslation();
-    const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [loading, setLoading] = useState(true);
 
-    const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    
-    // Filters and search
-    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
-    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
-    const [priceRange, setPriceRange] = useState({
-        min: searchParams.get('min_price') || '',
-        max: searchParams.get('max_price') || ''
-    });
-    
-    // Pagination
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const itemsPerPage = 12;
-
-    // Fetch categories
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const response = await publicAPI.getCategories();
-                if (response.data.success) {
-                    setCategories(response.data.data);
-                }
-            } catch (error) {
-                console.error('Error fetching categories:', error);
-            }
-        };
-
-        fetchCategories();
-    }, []);
-
+  useEffect(() => {
     // Fetch products
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true);
-            try {
-                const params = {
-                    page: currentPage,
-                    limit: itemsPerPage,
-                    sort: sortBy
-                };
+    api.publicAPI.getProducts()
+      .then(response => {
+        const productsData = response.data?.data || response.data || [];
+        setProducts(Array.isArray(productsData) ? productsData : []);
+      })
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+    
+    // Fetch categories  
+    api.publicAPI.getCategories()
+      .then(response => {
+        const categoriesData = response.data?.data || response.data || [];
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      })
+      .catch(() => setCategories([]));
+  }, []);
 
-                if (selectedCategory) params.category_id = selectedCategory;
-                if (searchQuery) params.search = searchQuery;
-                if (priceRange.min) params.min_price = priceRange.min;
-                if (priceRange.max) params.max_price = priceRange.max;
+  let filteredProducts = products.filter(product =>
+    (!selectedCategory || product.category_id === parseInt(selectedCategory)) &&
+    (!search || product.name.toLowerCase().includes(search.toLowerCase()))
+  );
 
-                const response = await publicAPI.getProducts(params);
-                
-                if (response.data.success) {
-                    setProducts(response.data.data);
-                    setTotalPages(Math.ceil(response.data.pagination.total / itemsPerPage));
-                } else {
-                    setError(response.data.message);
-                }
-            } catch (error) {
-                console.error('Error fetching products:', error);
-                setError(t('errors.networkError'));
-            } finally {
-                setLoading(false);
-            }
-        };
+  if (sort === 'price-asc') {
+    filteredProducts = filteredProducts.sort((a, b) => a.price - b.price);
+  } else if (sort === 'price-desc') {
+    filteredProducts = filteredProducts.sort((a, b) => b.price - a.price);
+  } else if (sort === 'newest') {
+    filteredProducts = filteredProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
 
-        fetchProducts();
-    }, [currentPage, selectedCategory, searchQuery, sortBy, priceRange, t]);
+  const getPreorderBadge = () => {
+    return <Badge bg="info">Pré-commande</Badge>;
+  };
 
-    // Update URL params
-    useEffect(() => {
-        const params = new URLSearchParams();
-        if (selectedCategory) params.set('category', selectedCategory);
-        if (searchQuery) params.set('search', searchQuery);
-        if (sortBy !== 'newest') params.set('sort', sortBy);
-        if (priceRange.min) params.set('min_price', priceRange.min);
-        if (priceRange.max) params.set('max_price', priceRange.max);
-        
-        setSearchParams(params);
-    }, [selectedCategory, searchQuery, sortBy, priceRange, setSearchParams]);
+  const { addToCart } = useCart();
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        setCurrentPage(1);
-    };
+  const [addedIds, setAddedIds] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
-    const handleCategoryChange = (categoryId) => {
-        setSelectedCategory(categoryId);
-        setCurrentPage(1);
-    };
+  const addNotification = (message, href) => {
+    const id = Date.now() + Math.random();
+    setNotifications(prev => [...prev, { id, message, href }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
 
-    const handleSortChange = (newSort) => {
-        setSortBy(newSort);
-        setCurrentPage(1);
-    };
+  const handleQuickOrder = (product) => {
+    addToCart(product, 1);
+    setAddedIds(prev => [...prev, product.id]);
+    addNotification(`${product.name} ajouté au panier`, '/boutique/panier');
+    setTimeout(() => setAddedIds(prev => prev.filter(id => id !== product.id)), 1500);
+  };
 
-    const handlePriceRangeChange = (range) => {
-        setPriceRange(range);
-        setCurrentPage(1);
-    };
+  return (
+    <div className="store-page" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      <motion.div
+        className="py-5 mb-4"
+        style={{
+          backgroundColor: '#343a40',
+          color: 'white',
+        }}
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+      >
+        <Container className="text-center">
+          <h1 className="display-4 fw-bold mb-3">Explorez Notre Collection</h1>
+          <p className="lead mx-auto text-black" style={{ maxWidth: 700 }}>
+            Découvrez Nos Produits et routines, formulés pour répondre aux besoins de chaque type de peau.
+          </p>
+        </Container>
+      </motion.div>
 
-    const clearFilters = () => {
-        setSelectedCategory('');
-        setSearchQuery('');
-        setPriceRange({ min: '', max: '' });
-        setSortBy('newest');
-        setCurrentPage(1);
-    };
+      <Container>
+        <Row className="mb-4 align-items-center">
+          <Col md={4} className="mb-3 mb-md-0">
+            <Form.Control
+              type="text"
+              placeholder="Rechercher un produit..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </Col>
+          <Col md={4} className="mb-3 mb-md-0">
+            <Form.Select
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+            >
+              <option value="">Toutes les catégories</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </Form.Select>
+          </Col>
+          <Col md={4}>
+            <Form.Select
+              value={sort}
+              onChange={e => setSort(e.target.value)}
+            >
+              <option value="newest">Nouveautés</option>
+              <option value="price-asc">Prix croissant</option>
+              <option value="price-desc">Prix décroissant</option>
+            </Form.Select>
+          </Col>
+        </Row>
 
-    const handleProductClick = (productId) => {
-        navigate(`/boutique/produit/${productId}`);
-    };
-
-    if (loading) {
-        return (
-            <div className="store-page">
-                <div className="store-loading">
-                    <div className="loading-spinner"></div>
-                    <p>{t('common.loading')}</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="store-page">
-                <div className="store-error">
-                    <p>{error}</p>
-                    <button onClick={() => window.location.reload()}>
-                        {t('common.retry')}
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="store-page">
-            {/* Fixed Cart Widget */}
-            <CartWidget className="cart-widget--fixed" />
-
-            {/* Header */}
-            <div className="store-header">
-                <div className="container">
-                    <h1 className="store-title">{t('store.title')}</h1>
-                    
-                    {/* Search Bar */}
-                    <form className="store-search" onSubmit={handleSearch}>
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={t('store.search')}
-                            className="store-search__input"
+        <Row className="g-4 justify-content-center">
+          {loading ? (
+            <Col xs={12} className="text-center py-5">
+              <div className="spinner-border text-primary" />
+            </Col>
+          ) : filteredProducts.length === 0 ? (
+            <Col xs={12} className="text-center py-5">
+              <p className="text-muted">Aucun produit trouvé.</p>
+            </Col>
+          ) : (
+            <AnimatePresence>
+              {filteredProducts.map(product => (
+                <Col xs={12} sm={6} md={4} lg={3} key={product.id}>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    transition={{ duration: 0.4 }}
+                    whileHover={{ y: -5 }}
+                  >
+                    <Card className="h-100 border-0 shadow-sm">
+                      <Link to={`/boutique/produit/${product.id}`}>
+                        <Card.Img
+                          variant="top"
+                          src={product.image_url ? `http://localhost:5000${product.image_url}` : '/placeholder.jpg'}
+                          alt={product.name}
+                          style={{ height: '260px', objectFit: 'cover' }}
                         />
-                        <button type="submit" className="store-search__button">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="11" cy="11" r="8"/>
-                                <path d="m21 21-4.35-4.35"/>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div className="container">
-                <div className="store-content">
-                    {/* Sidebar Filters */}
-                    <aside className="store-sidebar">
-                        <div className="filter-section">
-                            <h3>{t('store.filters.title')}</h3>
-                            
-                            {/* Categories */}
-                            <div className="filter-group">
-                                <h4>{t('store.filters.category')}</h4>
-                                <div className="category-list">
-                                    <button
-                                        className={`category-item ${!selectedCategory ? 'active' : ''}`}
-                                        onClick={() => handleCategoryChange('')}
-                                    >
-                                        {t('store.allCategories')}
-                                    </button>
-                                    {categories.map(category => (
-                                        <button
-                                            key={category.id}
-                                            className={`category-item ${selectedCategory === category.id.toString() ? 'active' : ''}`}
-                                            onClick={() => handleCategoryChange(category.id.toString())}
-                                        >
-                                            {category.name} ({category.product_count || 0})
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Price Range */}
-                            <div className="filter-group">
-                                <h4>{t('store.filters.priceRange')}</h4>
-                                <div className="price-range">
-                                    <input
-                                        type="number"
-                                        placeholder="Min"
-                                        value={priceRange.min}
-                                        onChange={(e) => setPriceRange({...priceRange, min: e.target.value})}
-                                        min="0"
-                                    />
-                                    <span>-</span>
-                                    <input
-                                        type="number"
-                                        placeholder="Max"
-                                        value={priceRange.max}
-                                        onChange={(e) => setPriceRange({...priceRange, max: e.target.value})}
-                                        min="0"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Clear Filters */}
-                            <button className="clear-filters" onClick={clearFilters}>
-                                {t('store.filters.clearAll')}
-                            </button>
+                      </Link>
+                      <Card.Body className="text-center d-flex flex-column">
+                        <Card.Title className="fw-bold mb-2">{product.name}</Card.Title>
+                        <Card.Text className="text-muted mb-3" style={{ minHeight: 48 }}>
+                          {product.description ? product.description.substring(0, 60) + '...' : ''}
+                        </Card.Text>
+                        <div className="mb-3 fs-5 fw-bold text-primary">
+                          {Number(product.price).toFixed(2)} DT
                         </div>
-                    </aside>
-
-                    {/* Main Content */}
-                    <main className="store-main">
-                        {/* Toolbar */}
-                        <div className="store-toolbar">
-                            <div className="results-info">
-                                {searchQuery ? (
-                                    <span>{t('store.searchResults')}: "{searchQuery}"</span>
-                                ) : (
-                                    <span>{products.length} {t('store.products')}</span>
-                                )}
-                            </div>
-
-                            <div className="sort-controls">
-                                <label>{t('store.sortBy')}:</label>
-                                <select 
-                                    value={sortBy} 
-                                    onChange={(e) => handleSortChange(e.target.value)}
-                                >
-                                    <option value="newest">{t('store.sortOptions.newest')}</option>
-                                    <option value="oldest">{t('store.sortOptions.oldest')}</option>
-                                    <option value="price_asc">{t('store.sortOptions.priceAsc')}</option>
-                                    <option value="price_desc">{t('store.sortOptions.priceDesc')}</option>
-                                    <option value="name_asc">{t('store.sortOptions.nameAsc')}</option>
-                                    <option value="name_desc">{t('store.sortOptions.nameDesc')}</option>
-                                </select>
-                            </div>
+                        <div className="mt-auto d-flex flex-column align-items-center gap-2" style={{ paddingTop: 8 }}>
+                          <Link to={`/boutique/produit/${product.id}`} className="btn btn-outline-primary btn-sm rounded-pill py-1 px-3">
+                            Détails
+                          </Link>
+                          <button
+                            className="btn btn-success btn-sm rounded-pill py-1 px-3"
+                            onClick={() => handleQuickOrder(product)}
+                          >
+                            {addedIds.includes(product.id) ? 'Ajouté' : 'Commander (Pré-commande)'}
+                          </button>
                         </div>
-
-                        {/* Products Grid */}
-                        {products.length === 0 ? (
-                            <div className="no-results">
-                                <div className="no-results__icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                                        <circle cx="11" cy="11" r="8"/>
-                                        <path d="m21 21-4.35-4.35"/>
-                                    </svg>
-                                </div>
-                                <h3>{t('store.noResults')}</h3>
-                                <p>{t('store.noResultsDescription')}</p>
-                                <button onClick={clearFilters} className="clear-filters-btn">
-                                    {t('store.filters.clearAll')}
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="products-grid">
-                                {products.map((product, index) => (
-                                    <motion.div
-                                        key={product.id}
-                                        className="product-card"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                    >
-                                        <div className="product-card__image" onClick={() => handleProductClick(product.id)}>
-                                            <img
-                                                src={product.image_url || '/images/placeholder-product.jpg'}
-                                                alt={product.name}
-                                                onError={(e) => {
-                                                    e.target.src = '/images/placeholder-product.jpg';
-                                                }}
-                                            />
-                                            {product.stock_quantity === 0 && (
-                                                <div className="product-card__overlay">
-                                                    <span>{t('store.product.outOfStock')}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="product-card__content">
-                                            <h3 className="product-card__name" onClick={() => handleProductClick(product.id)}>
-                                                {product.name}
-                                            </h3>
-                                            
-                                            <p className="product-card__description">
-                                                {product.description}
-                                            </p>
-                                            
-                                            <div className="product-card__footer">
-                                                <div className="product-card__price">
-                                                    {product.price.toFixed(2)} MAD
-                                                </div>
-                                                
-                                                <AddToCartButton
-                                                    product={product}
-                                                    variant="primary"
-                                                    size="small"
-                                                />
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="pagination">
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                    className="pagination__btn"
-                                >
-                                    {t('common.previous')}
-                                </button>
-                                
-                                <div className="pagination__info">
-                                    {currentPage} / {totalPages}
-                                </div>
-                                
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                    className="pagination__btn"
-                                >
-                                    {t('common.next')}
-                                </button>
-                            </div>
-                        )}
-                    </main>
-                </div>
-            </div>
-        </div>
-    );
+                      </Card.Body>
+                      <Card.Footer className="text-center">
+                        {getPreorderBadge()}
+                      </Card.Footer>
+                    </Card>
+                  </motion.div>
+                </Col>
+              ))}
+            </AnimatePresence>
+          )}
+        </Row>
+      </Container>
+      {/* Notification strip container (animated) */}
+      <div style={{ position: 'fixed', right: 16, bottom: 24, zIndex: 1050, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+        <AnimatePresence initial={false}>
+          {notifications.map((n, idx) => (
+            <motion.div
+              key={n.id}
+              initial={{ x: 320, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 320, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+              style={{
+                minWidth: 320,
+                background: '#fff',
+                color: '#333',
+                padding: '12px 16px',
+                borderRadius: 10,
+                boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
+                marginTop: idx === 0 ? 0 : 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{n.message}</div>
+                <Link to={n.href} style={{ fontSize: 14, color: '#0d6efd', textDecoration: 'underline' }}>Voir le panier</Link>
+              </div>
+              <div style={{ fontSize: 20, color: '#0d6efd' }}>🧺</div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 };
 
 export default StorePage;

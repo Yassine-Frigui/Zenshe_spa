@@ -664,21 +664,31 @@ const ReferralCode = require('../models/ReferralCode');
 // Get all referral codes (admin view)
 router.get('/referral-codes', async (req, res) => {
     try {
-        const { page = 1, limit = 50 } = req.query;
+        const { page = 1, limit = 50, client_id } = req.query;
         const offset = (page - 1) * limit;
         
-        const result = await ReferralCode.getAllReferralCodes(parseInt(limit), parseInt(offset));
-        
-        res.json({
-            success: true,
-            data: result.codes,
-            pagination: {
-                total: result.total,
-                page: parseInt(page),
-                limit: parseInt(limit),
-                totalPages: Math.ceil(result.total / limit)
-            }
-        });
+        if (client_id) {
+            // Get single referral code for specific client
+            const ClientModel = require('../models/Client');
+            const referralCode = await ClientModel.getClientReferralCode(parseInt(client_id));
+            res.json({
+                success: true,
+                data: referralCode ? [referralCode] : []
+            });
+        } else {
+            // Get all referral codes
+            const result = await ReferralCode.getAllReferralCodes(parseInt(limit), parseInt(offset));
+            res.json({
+                success: true,
+                data: result.codes,
+                pagination: {
+                    total: result.total,
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    totalPages: Math.ceil(result.total / limit)
+                }
+            });
+        }
     } catch (error) {
         console.error('Error getting referral codes:', error);
         res.status(500).json({
@@ -736,10 +746,10 @@ router.put('/referral-codes/:codeId/deactivate', async (req, res) => {
     }
 });
 
-// Create referral code for a specific client (admin)
+// Get or create referral code for a specific client (admin)
 router.post('/referral-codes/create-for-client', async (req, res) => {
     try {
-        const { clientId, discountPercentage = 10, maxUses = null, expiresAt = null } = req.body;
+        const { clientId } = req.body;
         
         if (!clientId) {
             return res.status(400).json({
@@ -748,20 +758,22 @@ router.post('/referral-codes/create-for-client', async (req, res) => {
             });
         }
         
-        // Validate discount percentage
-        if (discountPercentage < 1 || discountPercentage > 100) {
-            return res.status(400).json({
-                success: false,
-                message: 'Discount percentage must be between 1% and 100%'
+        const ClientModel = require('../models/Client');
+        
+        // Check if client already has a referral code
+        let referralCode = await ClientModel.getClientReferralCode(clientId);
+        
+        if (referralCode) {
+            return res.json({
+                success: true,
+                referralCode,
+                message: 'Client already has a referral code'
             });
         }
         
-        const referralCode = await ReferralCode.createReferralCode(
-            clientId,
-            discountPercentage,
-            maxUses,
-            expiresAt
-        );
+        // This shouldn't happen as codes are created automatically, but handle edge cases
+        // where a client was created before the auto-generation was implemented
+        referralCode = await ReferralCode.createReferralCode(clientId, 10.00, null, null);
         
         res.status(201).json({
             success: true,
@@ -775,6 +787,157 @@ router.post('/referral-codes/create-for-client', async (req, res) => {
             message: 'Failed to create referral code',
             error: error.message
         });
+    }
+});
+
+// ===== AVIS CLIENTS MANAGEMENT =====
+
+// Récupérer tous les avis (pour admin)
+router.get('/avis', async (req, res) => {
+    try {
+        const avis = await executeQuery(`
+            SELECT 
+                a.id,
+                a.client_id,
+                a.note,
+                a.commentaire,
+                a.date_avis,
+                a.visible,
+                a.reponse_admin,
+                a.date_reponse,
+                CONCAT(c.prenom, ' ', c.nom) as client_nom,
+                c.email as client_email
+            FROM avis_clients a
+            LEFT JOIN clients c ON a.client_id = c.id
+            ORDER BY a.date_avis DESC
+        `);
+
+        res.json({
+            avis,
+            total: avis.length
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des avis:', error);
+        res.status(500).json({ error: 'Erreur lors de la récupération des avis' });
+    }
+});
+
+// Créer un nouvel avis
+router.post('/avis', async (req, res) => {
+    try {
+        const { client_id, note, commentaire, visible = 1 } = req.body;
+
+        // Vérifier le nombre d'avis existants
+        const countResult = await executeQuery('SELECT COUNT(*) as count FROM avis_clients');
+        const currentCount = countResult[0].count;
+
+        if (currentCount >= 3) {
+            return res.status(400).json({ 
+                error: 'Limite de 3 avis atteinte. Veuillez supprimer un avis existant avant d\'en créer un nouveau.' 
+            });
+        }
+
+        // Vérifier que le client existe
+        const clientExists = await executeQuery('SELECT id FROM clients WHERE id = ?', [client_id]);
+        if (clientExists.length === 0) {
+            return res.status(400).json({ error: 'Client non trouvé' });
+        }
+
+        const result = await executeQuery(`
+            INSERT INTO avis_clients (client_id, note, commentaire, visible, date_avis)
+            VALUES (?, ?, ?, ?, NOW())
+        `, [client_id, note, commentaire, visible]);
+
+        res.json({
+            message: 'Avis créé avec succès',
+            id: result.insertId
+        });
+    } catch (error) {
+        console.error('Erreur lors de la création de l\'avis:', error);
+        res.status(500).json({ error: 'Erreur lors de la création de l\'avis' });
+    }
+});
+
+// Modifier un avis existant
+router.put('/avis/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { client_id, note, commentaire, visible, reponse_admin } = req.body;
+
+        // Vérifier que l'avis existe
+        const avisExists = await executeQuery('SELECT id FROM avis_clients WHERE id = ?', [id]);
+        if (avisExists.length === 0) {
+            return res.status(404).json({ error: 'Avis non trouvé' });
+        }
+
+        // Vérifier que le client existe
+        const clientExists = await executeQuery('SELECT id FROM clients WHERE id = ?', [client_id]);
+        if (clientExists.length === 0) {
+            return res.status(400).json({ error: 'Client non trouvé' });
+        }
+
+        let updateQuery = `
+            UPDATE avis_clients 
+            SET client_id = ?, note = ?, commentaire = ?, visible = ?, updated_at = NOW()
+        `;
+        let updateParams = [client_id, note, commentaire, visible];
+
+        // Si une réponse admin est fournie, l'ajouter
+        if (reponse_admin !== undefined) {
+            updateQuery += ', reponse_admin = ?, date_reponse = NOW()';
+            updateParams.push(reponse_admin);
+        }
+
+        updateQuery += ' WHERE id = ?';
+        updateParams.push(id);
+
+        await executeQuery(updateQuery, updateParams);
+
+        res.json({ message: 'Avis mis à jour avec succès' });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'avis:', error);
+        res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'avis' });
+    }
+});
+
+// Supprimer un avis
+router.delete('/avis/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Vérifier que l'avis existe
+        const avisExists = await executeQuery('SELECT id FROM avis_clients WHERE id = ?', [id]);
+        if (avisExists.length === 0) {
+            return res.status(404).json({ error: 'Avis non trouvé' });
+        }
+
+        await executeQuery('DELETE FROM avis_clients WHERE id = ?', [id]);
+
+        res.json({ message: 'Avis supprimé avec succès' });
+    } catch (error) {
+        console.error('Erreur lors de la suppression de l\'avis:', error);
+        res.status(500).json({ error: 'Erreur lors de la suppression de l\'avis' });
+    }
+});
+
+// Basculer la visibilité d'un avis
+router.patch('/avis/:id/visibility', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { visible } = req.body;
+
+        // Vérifier que l'avis existe
+        const avisExists = await executeQuery('SELECT id FROM avis_clients WHERE id = ?', [id]);
+        if (avisExists.length === 0) {
+            return res.status(404).json({ error: 'Avis non trouvé' });
+        }
+
+        await executeQuery('UPDATE avis_clients SET visible = ?, updated_at = NOW() WHERE id = ?', [visible, id]);
+
+        res.json({ message: 'Visibilité de l\'avis mise à jour avec succès' });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de la visibilité:', error);
+        res.status(500).json({ error: 'Erreur lors de la mise à jour de la visibilité' });
     }
 });
 

@@ -13,12 +13,13 @@ import {
   FaUser,
   FaSignInAlt,
   FaUserPlus,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaStore
 } from 'react-icons/fa'
 import { useClientAuth } from '../context/ClientAuthContext'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from './LanguageSwitcher'
-import CartWidget from './CartWidget'
+// import CartWidget from './CartWidget'
 
 
 const ClientNavbar = () => {
@@ -31,7 +32,7 @@ const ClientNavbar = () => {
     { path: '/', label: t('navigation.home'), icon: FaHome },
     { path: '/about', label: t('navigation.about'), icon: FaInfoCircle },
     { path: '/services', label: t('navigation.services'), icon: FaSpa },
-    { path: '/boutique', label: t('store.title'), icon: FaSpa },
+    { path: '/boutique', label: t('store.title'), icon: FaStore },
     { path: '/booking', label: t('navigation.booking'), icon: FaCalendarAlt },
     { path: '/contact', label: t('navigation.contact'), icon: FaPhone }
   ]
@@ -95,11 +96,6 @@ Zen she spa
                 </motion.div>
               </Nav.Link>
             ))}
-
-            {/* Cart Widget */}
-            <Nav.Item className="mx-2 d-flex align-items-center">
-              <CartWidget className="cart-widget--navbar" />
-            </Nav.Item>
 
             {/* User Dropdown for Auth/Profile */}
             <Dropdown align="end" as={Nav.Item} className="mx-2">

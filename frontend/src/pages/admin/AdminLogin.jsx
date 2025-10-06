@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaSignInAlt, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { adminAPI } from '../../services/api';
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({
@@ -51,6 +52,26 @@ const AdminLogin = () => {
       navigate('/admin');
     } catch (error) {
       setError('Email ou mot de passe incorrect');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDevBypass = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await adminAPI.devAdminBypass();
+      if (response.data && response.data.admin) {
+        // Store the admin data and token similar to normal login
+        localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem('adminData', JSON.stringify(response.data.admin));
+        navigate('/admin');
+      }
+    } catch (error) {
+      console.error('Dev bypass error:', error);
+      setError('Erreur lors du bypass (dev only disponible en mode développement)');
     } finally {
       setLoading(false);
     }
@@ -202,6 +223,20 @@ const AdminLogin = () => {
                       </>
                     )}
                   </motion.button>
+
+                  {/* Development Bypass Button */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <motion.button
+                      type="button"
+                      className="btn btn-outline-warning btn-sm w-100 mb-3"
+                      disabled={loading}
+                      onClick={handleDevBypass}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      🔑 Bypass (Dev Only)
+                    </motion.button>
+                  )}
 
                   {/* Demo Credentials */}
                   <div className="text-center">

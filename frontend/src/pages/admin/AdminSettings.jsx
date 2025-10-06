@@ -17,7 +17,10 @@ import {
   FaCalendarDay,
   FaKey,
   FaUserShield,
-  FaBriefcase
+  FaBriefcase,
+  FaStar,
+  FaStarHalfAlt,
+  FaRegStar
 } from 'react-icons/fa';
 import { adminAPI } from '../../services/api';
 
@@ -28,6 +31,19 @@ const AdminSettings = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [reviewForm, setReviewForm] = useState({
+    client_id: '',
+    note: 5,
+    commentaire: '',
+    visible: true,
+    reponse_admin: ''
+  });
 
   const [userForm, setUserForm] = useState({
     nom: '',
@@ -61,6 +77,9 @@ const AdminSettings = () => {
       fetchUsers();
     } else if (activeTab === 'spa') {
       fetchSpaSettings();
+    } else if (activeTab === 'reviews') {
+      fetchReviews();
+      fetchClients();
     }
   }, [activeTab]);
 
@@ -98,6 +117,126 @@ const AdminSettings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getAvis();
+      setReviews(response.data.avis || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des avis:', error);
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await adminAPI.getClients(1, 50);
+      setClients(response.data.clients || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des clients:', error);
+      setClients([]);
+    }
+  };
+
+  const openReviewModal = (review = null) => {
+    setEditingReview(review);
+    if (review) {
+      setReviewForm({
+        client_id: review.client_id,
+        note: review.note,
+        commentaire: review.commentaire,
+        visible: review.visible,
+        reponse_admin: review.reponse_admin || ''
+      });
+    } else {
+      setReviewForm({
+        client_id: '',
+        note: 5,
+        commentaire: '',
+        visible: true,
+        reponse_admin: ''
+      });
+    }
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      
+      if (editingReview) {
+        await adminAPI.updateAvis(editingReview.id, reviewForm);
+        alert('Avis mis à jour avec succès !');
+      } else {
+        // Check if we already have 3 reviews
+        if (reviews.length >= 3) {
+          alert('Limite de 3 avis atteinte. Veuillez supprimer un avis existant avant d\'en créer un nouveau.');
+          return;
+        }
+        await adminAPI.createAvis(reviewForm);
+        alert('Avis créé avec succès !');
+      }
+      
+      await fetchReviews();
+      setShowReviewModal(false);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert(error.response?.data?.error || 'Erreur lors de la sauvegarde de l\'avis');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
+      try {
+        setLoading(true);
+        await adminAPI.deleteAvis(reviewId);
+        await fetchReviews();
+        alert('Avis supprimé avec succès !');
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression de l\'avis');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const toggleReviewVisibility = async (reviewId, currentVisibility) => {
+    try {
+      await adminAPI.toggleAvisVisibility(reviewId, !currentVisibility);
+      await fetchReviews();
+    } catch (error) {
+      console.error('Erreur lors du changement de visibilité:', error);
+      alert('Erreur lors du changement de visibilité');
+    }
+  };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<FaStar key={i} className="text-warning" />);
+    }
+    
+    if (hasHalfStar) {
+      stars.push(<FaStarHalfAlt key="half" className="text-warning" />);
+    }
+    
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<FaRegStar key={`empty-${i}`} className="text-muted" />);
+    }
+    
+    return stars;
   };
 
   const handleAdminAccountInputChange = (e) => {
@@ -223,6 +362,7 @@ const AdminSettings = () => {
   const tabs = [
     { id: 'employees', label: 'Employés', icon: FaBriefcase },
     { id: 'spa', label: 'Spa', icon: FaStore },
+    { id: 'reviews', label: 'Avis Clients', icon: FaStar },
     { id: 'account', label: 'Mon Compte', icon: FaUserShield },
   ];
 
@@ -607,7 +747,273 @@ const AdminSettings = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'reviews' && (
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+              <h5 className="mb-0 fw-bold">
+                <FaStar className="text-warning me-2" />
+                Gestion des Avis Clients
+              </h5>
+              <div className="d-flex align-items-center gap-3">
+                <small className="text-muted">
+                  {reviews.length}/3 avis
+                </small>
+                <motion.button
+                  className="btn btn-primary btn-sm"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => openReviewModal()}
+                  disabled={reviews.length >= 3}
+                  title={reviews.length >= 3 ? 'Limite de 3 avis atteinte' : 'Ajouter un avis'}
+                >
+                  <FaPlus className="me-1" />
+                  Nouvel avis
+                </motion.button>
+              </div>
+            </div>
+            <div className="card-body">
+              {loading ? (
+                <div className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Chargement...</span>
+                  </div>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-5">
+                  <FaStar className="text-muted mb-3" size={48} />
+                  <h6 className="text-muted">Aucun avis client</h6>
+                  <p className="text-muted mb-3">Commencez par ajouter votre premier avis client</p>
+                  <button
+                    className="btn btn-outline-primary"
+                    onClick={() => openReviewModal()}
+                  >
+                    <FaPlus className="me-2" />
+                    Ajouter un avis
+                  </button>
+                </div>
+              ) : (
+                <div className="row">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="col-md-6 col-lg-4 mb-4">
+                      <motion.div
+                        className="card h-100 border-0 shadow-sm"
+                        whileHover={{ y: -5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="card-body">
+                          <div className="d-flex justify-content-between align-items-start mb-3">
+                            <div className="d-flex align-items-center gap-2">
+                              {renderStars(review.note)}
+                              <span className="fw-bold text-primary">{review.note}/5</span>
+                            </div>
+                            <div className="d-flex gap-1">
+                              <button
+                                className={`btn btn-sm ${review.visible ? 'btn-success' : 'btn-outline-secondary'}`}
+                                onClick={() => toggleReviewVisibility(review.id, review.visible)}
+                                title={review.visible ? 'Masquer' : 'Afficher'}
+                              >
+                                {review.visible ? <FaEye size={12} /> : <FaEyeSlash size={12} />}
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => openReviewModal(review)}
+                                title="Modifier"
+                              >
+                                <FaEdit size={12} />
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => handleDeleteReview(review.id)}
+                                title="Supprimer"
+                              >
+                                <FaTrash size={12} />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="mb-3">
+                            <h6 className="mb-1 fw-bold">{review.client_nom}</h6>
+                            <small className="text-muted">{review.client_email}</small>
+                          </div>
+                          
+                          <p className="text-muted mb-3" style={{ fontSize: '0.9rem' }}>
+                            "{review.commentaire}"
+                          </p>
+                          
+                          {review.reponse_admin && (
+                            <div className="bg-light p-2 rounded mb-3">
+                              <small className="fw-bold text-primary d-block">Réponse admin:</small>
+                              <small className="text-muted">"{review.reponse_admin}"</small>
+                            </div>
+                          )}
+                          
+                          <div className="d-flex justify-content-between align-items-center">
+                            <small className="text-muted">
+                              {new Date(review.date_avis).toLocaleDateString('fr-FR')}
+                            </small>
+                            <span className={`badge ${review.visible ? 'bg-success' : 'bg-secondary'}`}>
+                              {review.visible ? 'Visible' : 'Masqué'}
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </motion.div>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <motion.div
+              className="modal-content"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">
+                  <FaStar className="text-warning me-2" />
+                  {editingReview ? 'Modifier l\'avis' : 'Nouvel avis client'}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowReviewModal(false)}
+                  disabled={loading}
+                />
+              </div>
+              
+              <form onSubmit={handleReviewSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Client <span className="text-danger">*</span></label>
+                        <select
+                          className="form-select"
+                          value={reviewForm.client_id}
+                          onChange={(e) => setReviewForm(prev => ({ ...prev, client_id: e.target.value }))}
+                          required
+                        >
+                          <option value="">Sélectionner un client</option>
+                          {clients.map(client => (
+                            <option key={client.id} value={client.id}>
+                              {client.prenom} {client.nom} ({client.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Note <span className="text-danger">*</span></label>
+                        <div className="d-flex align-items-center gap-3">
+                          <input
+                            type="range"
+                            className="form-range"
+                            min="1"
+                            max="5"
+                            step="0.5"
+                            value={reviewForm.note}
+                            onChange={(e) => setReviewForm(prev => ({ ...prev, note: parseFloat(e.target.value) }))}
+                          />
+                          <div className="d-flex align-items-center gap-2">
+                            {renderStars(reviewForm.note)}
+                            <span className="fw-bold text-primary">{reviewForm.note}/5</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="visible"
+                            checked={reviewForm.visible}
+                            onChange={(e) => setReviewForm(prev => ({ ...prev, visible: e.target.checked }))}
+                          />
+                          <label className="form-check-label" htmlFor="visible">
+                            Avis visible sur le site
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Commentaire <span className="text-danger">*</span></label>
+                        <textarea
+                          className="form-control"
+                          rows="4"
+                          value={reviewForm.commentaire}
+                          onChange={(e) => setReviewForm(prev => ({ ...prev, commentaire: e.target.value }))}
+                          placeholder="Commentaire du client..."
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Réponse admin (optionnelle)</label>
+                        <textarea
+                          className="form-control"
+                          rows="3"
+                          value={reviewForm.reponse_admin}
+                          onChange={(e) => setReviewForm(prev => ({ ...prev, reponse_admin: e.target.value }))}
+                          placeholder="Réponse de l'équipe..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {!editingReview && reviews.length >= 3 && (
+                    <div className="alert alert-warning">
+                      <strong>Attention:</strong> Vous avez atteint la limite de 3 avis. 
+                      Supprimez un avis existant pour en ajouter un nouveau.
+                    </div>
+                  )}
+                </div>
+                
+                <div className="modal-footer border-0">
+                  <div className="d-flex gap-2 w-100">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowReviewModal(false)}
+                      disabled={loading}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary d-flex align-items-center gap-2"
+                      disabled={loading || (!editingReview && reviews.length >= 3)}
+                    >
+                      {loading ? (
+                        <>
+                          <div className="spinner-border spinner-border-sm" role="status" />
+                          {editingReview ? 'Mise à jour...' : 'Création...'}
+                        </>
+                      ) : (
+                        <>
+                          <FaSave />
+                          {editingReview ? 'Mettre à jour' : 'Créer l\'avis'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        </div>
+      )}
 
       {/* User Modal */}
       {showUserModal && (

@@ -1,7 +1,7 @@
 const { executeQuery, executeTransaction } = require('../../config/database');
 
 class ProductModel {
-    // Get all products with filtering and pagination
+    // Get all products with filtering and pagination (Pre-order only system)
     static async getAllProducts(filters = {}, pagination = {}) {
         const {
             category_id,
@@ -10,8 +10,7 @@ class ProductModel {
             is_featured,
             search,
             min_price,
-            max_price,
-            in_stock_only = false
+            max_price
         } = filters;
 
         const {
@@ -57,12 +56,8 @@ class ProductModel {
             queryParams.push(max_price);
         }
 
-        if (in_stock_only) {
-            whereConditions.push('p.stock_quantity > 0');
-        }
-
-        // Valid sort columns
-        const validSortColumns = ['name', 'price', 'created_at', 'stock_quantity'];
+        // Valid sort columns (removed stock_quantity)
+        const validSortColumns = ['name', 'price', 'created_at'];
         const sortColumn = validSortColumns.includes(sort_by) ? sort_by : 'name';
         const sortDirection = sort_order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
@@ -186,9 +181,10 @@ class ProductModel {
             category_id,
             image_url,
             gallery_images,
-            stock_quantity = 0,
             is_active = true,
             is_featured = false,
+            is_preorder = true,
+            estimated_delivery_days = 14,
             weight = 0.00,
             dimensions,
             sku
@@ -210,9 +206,10 @@ class ProductModel {
         const query = `
             INSERT INTO products (
                 name, description, detailed_description, price, category, 
-                category_id, image_url, gallery_images, stock_quantity,
-                is_active, is_featured, weight, dimensions, sku
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                category_id, image_url, gallery_images,
+                is_active, is_featured, is_preorder, estimated_delivery_days,
+                weight, dimensions, sku
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const result = await executeQuery(query, [
@@ -224,9 +221,10 @@ class ProductModel {
             category_id || null,
             image_url || null,
             gallery_images ? JSON.stringify(gallery_images) : null,
-            stock_quantity,
             is_active,
             is_featured,
+            is_preorder,
+            estimated_delivery_days,
             weight,
             dimensions || null,
             sku || null
@@ -251,9 +249,10 @@ class ProductModel {
             category_id,
             image_url,
             gallery_images,
-            stock_quantity,
             is_active,
             is_featured,
+            is_preorder,
+            estimated_delivery_days,
             weight,
             dimensions,
             sku
@@ -277,9 +276,10 @@ class ProductModel {
                 category_id = COALESCE(?, category_id),
                 image_url = COALESCE(?, image_url),
                 gallery_images = COALESCE(?, gallery_images),
-                stock_quantity = COALESCE(?, stock_quantity),
                 is_active = COALESCE(?, is_active),
                 is_featured = COALESCE(?, is_featured),
+                is_preorder = COALESCE(?, is_preorder),
+                estimated_delivery_days = COALESCE(?, estimated_delivery_days),
                 weight = COALESCE(?, weight),
                 dimensions = COALESCE(?, dimensions),
                 sku = COALESCE(?, sku),
@@ -296,9 +296,10 @@ class ProductModel {
             category_id,
             image_url,
             gallery_images ? JSON.stringify(gallery_images) : null,
-            stock_quantity,
             is_active,
             is_featured,
+            is_preorder,
+            estimated_delivery_days,
             weight,
             dimensions,
             sku,
@@ -338,49 +339,8 @@ class ProductModel {
         return { success: true, message: 'Product deleted successfully' };
     }
 
-    // Update stock quantity
-    static async updateStock(id, quantity) {
-        const query = `
-            UPDATE products SET 
-                stock_quantity = ?, 
-                updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-        `;
-        
-        await executeQuery(query, [quantity, id]);
-        return this.getProductById(id);
-    }
-
-    // Reduce stock (for orders)
-    static async reduceStock(id, quantity) {
-        const product = await this.getProductById(id);
-        if (!product) {
-            throw new Error('Product not found');
-        }
-
-        if (product.stock_quantity < quantity) {
-            throw new Error('Insufficient stock');
-        }
-
-        const newQuantity = product.stock_quantity - quantity;
-        return this.updateStock(id, newQuantity);
-    }
-
-    // Get low stock products
-    static async getLowStockProducts(threshold = 5) {
-        const query = `
-            SELECT 
-                p.*,
-                pc.name as category_name
-            FROM products p
-            LEFT JOIN product_categories pc ON p.category_id = pc.id
-            WHERE p.stock_quantity <= ? AND p.is_active = true
-            ORDER BY p.stock_quantity ASC
-        `;
-        
-        const products = await executeQuery(query, [threshold]);
-        return products.map(this.formatProduct);
-    }
+    // Note: Stock management removed - all products are pre-order only
+    // Orders are saved without checking stock availability
 
     // Search products
     static async searchProducts(searchTerm, limit = 20) {
@@ -424,7 +384,8 @@ class ProductModel {
             category_name: product.category_name,
             image_url: product.image_url,
             gallery_images: product.gallery_images ? JSON.parse(product.gallery_images) : [],
-            stock_quantity: product.stock_quantity,
+            is_preorder: Boolean(product.is_preorder),
+            estimated_delivery_days: parseInt(product.estimated_delivery_days || 14),
             is_active: Boolean(product.is_active),
             is_featured: Boolean(product.is_featured),
             weight: parseFloat(product.weight || 0),

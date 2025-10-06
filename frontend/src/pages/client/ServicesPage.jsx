@@ -73,7 +73,7 @@ const ServicesPage = () => {
   }
 
   return (
-    <div className="services-page" style={{ marginTop: '76px' }}>
+    <div className="services-page">{/* services-page class already includes proper margin */}
       {/* Header */}
       <section className="py-5 text-white"
       style={{

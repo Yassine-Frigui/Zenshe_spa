@@ -1,12 +1,19 @@
-{
+  {
   "name": "lecreateur-root",
   "private": true,
   "devDependencies": {
     "bcryptjs": "^3.0.2",
     "concurrently": "^8.0.0",
-    "mysql2": "^3.14.1"
+    "jest": "^29.7.0",
+    "mysql2": "^3.14.1",
+    "supertest": "^6.3.3"
   },
   "scripts": {
-    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && nodemon src/app.js\""
+    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && nodemon src/app.js\"",
+    "test": "jest",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   }
 }

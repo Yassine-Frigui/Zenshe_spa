@@ -1,0 +1,77 @@
+/* JotformSubmissionView Component Styles */
+
+.jotform-submission-compact {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  margin: 0.5rem 0;
+}
+
+.jotform-submission-full {
+  padding: 1rem 0;
+}
+
+.jotform-submission-full .card {
+  border-radius: 10px;
+}
+
+.jotform-submission-full .card-header {
+  border-bottom: 2px solid #e0e0e0;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+}
+
+.jotform-submission-full table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.jotform-submission-full table td {
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+}
+
+.jotform-submission-full table tr:hover {
+  background-color: #f8f9fa;
+}
+
+details summary {
+  cursor: pointer;
+  user-select: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+details summary:hover {
+  background-color: #f0f0f0;
+}
+
+details[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+/* Badge styling */
+.badge {
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .jotform-submission-full table {
+    font-size: 0.9rem;
+  }
+
+  .jotform-submission-full table th,
+  .jotform-submission-full table td {
+    padding: 0.5rem;
+  }
+
+  .jotform-submission-compact {
+    padding: 0.5rem;
+  }
+}

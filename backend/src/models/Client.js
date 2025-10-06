@@ -1,6 +1,17 @@
 const { executeQuery, executeTransaction } = require('../../config/database');
+const ReferralCodeModel = require('./ReferralCode');
 
 class ClientModel {
+    // Generate a unique referral code
+    static generateReferralCode(length = 8) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
     // Créer un nouveau client
     static async createClient(clientData) {
         const {
@@ -17,29 +28,61 @@ class ClientModel {
             langue_preferee = 'fr'
         } = clientData;
 
-        const query = `
-            INSERT INTO clients 
-            (nom, prenom, email, telephone, date_naissance, adresse, notes, 
-             mot_de_passe, email_verifie, statut, langue_preferee)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        
-        // Convert undefined to null for MySQL
-        const result = await executeQuery(query, [
-            nom || null, 
-            prenom || null, 
-            email || null, 
-            telephone || null, 
-            date_naissance || null, 
-            adresse || null, 
-            notes || null,
-            mot_de_passe || null,
-            email_verifie,
-            statut,
-            langue_preferee
-        ]);
-        
-        return result.insertId;
+        return executeTransaction(async (connection) => {
+            // Create the client first
+            const clientQuery = `
+                INSERT INTO clients 
+                (nom, prenom, email, telephone, date_naissance, adresse, notes, 
+                 mot_de_passe, email_verifie, statut, langue_preferee)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+            
+            const clientResult = await connection(clientQuery, [
+                nom || null, 
+                prenom || null, 
+                email || null, 
+                telephone || null, 
+                date_naissance || null, 
+                adresse || null, 
+                notes || null,
+                mot_de_passe || null,
+                email_verifie,
+                statut,
+                langue_preferee
+            ]);
+
+            const clientId = clientResult.insertId;
+
+            // Generate unique referral code
+            let referralCode;
+            let isUnique = false;
+            let attempts = 0;
+            const maxAttempts = 10;
+
+            while (!isUnique && attempts < maxAttempts) {
+                referralCode = this.generateReferralCode();
+                const existing = await connection(
+                    'SELECT id FROM referral_codes WHERE code = ?',
+                    [referralCode]
+                );
+                isUnique = existing.length === 0;
+                attempts++;
+            }
+
+            if (!isUnique) {
+                throw new Error('Could not generate unique referral code');
+            }
+
+            // Create the referral code for this client
+            await connection(
+                `INSERT INTO referral_codes 
+                 (code, owner_client_id, discount_percentage, max_uses, is_active) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [referralCode, clientId, 10.00, null, true]
+            );
+
+            return clientId;
+        });
     }
 
     // Récupérer un client par ID
@@ -230,6 +273,20 @@ class ClientModel {
             montant_total: results[2][0].montant_total || 0,
             service_prefere: results[3][0] || null
         };
+    }
+
+    // Get client's referral code
+    static async getClientReferralCode(clientId) {
+        const query = `
+            SELECT 
+                id, code, discount_percentage, max_uses, 
+                current_uses, is_active, created_at, expires_at
+            FROM referral_codes 
+            WHERE owner_client_id = ? 
+            LIMIT 1
+        `;
+        const result = await executeQuery(query, [clientId]);
+        return result[0] || null;
     }
 }
 

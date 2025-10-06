@@ -203,7 +203,6 @@ class ProductCategoryModel {
                 COUNT(p.id) as total_products,
                 COUNT(CASE WHEN p.is_active = true THEN 1 END) as active_products,
                 COUNT(CASE WHEN p.is_featured = true AND p.is_active = true THEN 1 END) as featured_products,
-                SUM(CASE WHEN p.is_active = true THEN p.stock_quantity ELSE 0 END) as total_stock,
                 AVG(CASE WHEN p.is_active = true THEN p.price ELSE NULL END) as average_price,
                 MIN(CASE WHEN p.is_active = true THEN p.price ELSE NULL END) as min_price,
                 MAX(CASE WHEN p.is_active = true THEN p.price ELSE NULL END) as max_price
@@ -221,7 +220,6 @@ class ProductCategoryModel {
                 total_products: parseInt(category.total_products || 0),
                 active_products: parseInt(category.active_products || 0),
                 featured_products: parseInt(category.featured_products || 0),
-                total_stock: parseInt(category.total_stock || 0),
                 average_price: parseFloat(category.average_price || 0),
                 min_price: parseFloat(category.min_price || 0),
                 max_price: parseFloat(category.max_price || 0)

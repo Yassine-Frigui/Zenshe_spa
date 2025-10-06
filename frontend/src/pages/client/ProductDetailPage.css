@@ -22,19 +22,22 @@
 }
 
 .back-to-store-btn {
-    background: #8B4513;
+    background: #0ea5e9;
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
     margin-top: 1rem;
+    box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
 }
 
 .back-to-store-btn:hover {
-    background: #A0522D;
+    background: #0284c7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3);
 }
 
 /* Container */
@@ -56,13 +59,13 @@
 .breadcrumb-link {
     background: none;
     border: none;
-    color: #8B4513;
+    color: #0ea5e9;
     cursor: pointer;
     text-decoration: underline;
 }
 
 .breadcrumb-link:hover {
-    color: #A0522D;
+    color: #0284c7;
 }
 
 .breadcrumb-separator {
@@ -144,11 +147,11 @@
 }
 
 .gallery-thumbnail.active {
-    border-color: #8B4513;
+    border-color: #0ea5e9;
 }
 
 .gallery-thumbnail:hover {
-    border-color: #A0522D;
+    border-color: #0284c7;
 }
 
 .gallery-thumbnail img {
@@ -188,7 +191,7 @@
 .product-price {
     font-size: 2rem;
     font-weight: 700;
-    color: #8B4513;
+    color: #0ea5e9;
     margin: 1rem 0;
 }
 
@@ -225,7 +228,7 @@
 
 .cart-info {
     font-size: 0.9rem;
-    color: #8B4513;
+    color: #0ea5e9;
     font-weight: 500;
 }
 
@@ -396,16 +399,35 @@
 .related-product-price {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #8B4513;
+    color: #0ea5e9;
     margin: 0;
 }
 
-/* Fixed Cart Widget */
-.cart-widget--fixed {
+/* Fixed Cart Button */
+.fixed-cart-button {
     position: fixed;
     top: 100px;
     right: 20px;
-    z-index: 100;
+    z-index: 1000;
+}
+
+.cart-button {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(14, 165, 233, 0.3);
+    transition: all 0.2s ease;
+}
+
+.cart-button:hover {
+    background: #0284c7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
 }
 
 /* Responsive Design */

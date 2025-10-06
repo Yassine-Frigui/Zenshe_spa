@@ -79,9 +79,9 @@ const HomePage = () => {
   }
 
   return (
-    <div className="homepage">
+    <div className="homepage home-page">
       {/* Hero Section */}
-      <section className="hero-section position-relative overflow-hidden" style={{ marginTop: '76px', minHeight: '90vh' }}>
+      <section className="hero-section position-relative overflow-hidden" style={{ minHeight: '90vh' }}>
         <div className="position-absolute w-100 h-100" style={{
           background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
           zIndex: -2
