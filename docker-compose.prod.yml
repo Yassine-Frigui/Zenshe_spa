@@ -1,0 +1,98 @@
+version: '3.8'
+
+# Production docker-compose configuration
+# This compose file is designed for production deployment with external managed database
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      # Server config
+      PORT: ${PORT:-5000}
+      NODE_ENV: production
+      
+      # Database - point to external managed DB
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-zenshespa_database}
+      DB_PORT: ${DB_PORT:-3306}
+      
+      # Auth
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      BYPASS_AUTH: 0
+      
+      # Email service (Brevo)
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL}
+      BREVO_RESERVATION_API_KEY: ${BREVO_RESERVATION_API_KEY}
+      BREVO_RESERVATION_SENDER_EMAIL: ${BREVO_RESERVATION_SENDER_EMAIL}
+      
+      # JotForm
+      JOTFORM_API_KEY: ${JOTFORM_API_KEY}
+      JOTFORM_FORM_ID: ${JOTFORM_FORM_ID}
+      
+      # Telegram (optional)
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      
+      # Uploads
+      UPLOAD_DIR: /usr/src/app/uploads
+      MAX_FILE_SIZE: 5242880
+      
+      # CORS
+      FRONTEND_URL: ${FRONTEND_URL}
+      NGROK_DOMAIN: ${NGROK_DOMAIN:-}
+      
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    volumes:
+      - uploads_data:/usr/src/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-}
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  uploads_data:
+
+networks:
+  app-network:
+    driver: bridge
+
+# Production deployment notes:
+# 1. Create a .env.prod file with all required secrets (NEVER commit this)
+# 2. Use: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# 3. Ensure DB_HOST points to your managed database (RDS, Cloud SQL, etc.)
+# 4. Use a proper secrets manager in orchestrated environments (Kubernetes secrets, etc.)
+# 5. Terminate TLS at load balancer/reverse proxy, not in containers
+# 6. Monitor logs with: docker compose -f docker-compose.prod.yml logs -f
