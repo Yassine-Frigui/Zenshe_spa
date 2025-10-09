@@ -2,7 +2,6 @@ import axios from 'axios'
 import i18n from '../i18n'
 
 // Configuration de base d'axios
-// Use VITE_API_URL if set (for ngrok), otherwise use local proxy
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 if (API_BASE_URL) {
@@ -10,9 +9,6 @@ if (API_BASE_URL) {
 }
 
 axios.defaults.withCredentials = true
-
-// Add ngrok warning bypass header
-axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true'
 
 // Fonction pour obtenir la langue actuelle
 const getCurrentLanguage = () => {

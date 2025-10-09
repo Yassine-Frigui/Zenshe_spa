@@ -5,14 +5,12 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
-      MYSQL_DATABASE: ${DB_NAME:-zenshespa_database}
-      MYSQL_USER: ${DB_USER:-zenshe}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-zenshepass}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: zenshespa_database
     volumes:
       - db_data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
 
   backend:
     build:
@@ -20,6 +18,7 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+      - ./backend/.env.docker
     depends_on:
       - db
     ports:
@@ -31,7 +30,7 @@ services:
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=${VITE_API_URL}
+        - VITE_API_URL=https://rightly-wise-tadpole.ngrok-free.app
     ports:
       - "3000:80"
     depends_on:

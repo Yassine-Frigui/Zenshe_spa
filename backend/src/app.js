@@ -60,27 +60,22 @@ const corsOptions = {
         // Allow requests with no origin (mobile apps, etc.)
         if (!origin) return callback(null, true);
         
-        // For production, only allow specific domains
-        if (process.env.NODE_ENV === 'production') {
-            const productionOrigins = [
-                process.env.FRONTEND_URL,
-                'https://zenshespa.netlify.app'
-            ].filter(Boolean);
-            
-            if (productionOrigins.includes(origin)) {
+        // Allow configured origins
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            // Development mode - be more permissive
+            if (process.env.NODE_ENV !== 'production') {
                 callback(null, true);
             } else {
                 callback(new Error('Not allowed by CORS policy'));
             }
-        } else {
-            // Development mode - be more permissive for local development
-            callback(null, true);
         }
     },
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'ngrok-skip-browser-warning']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 app.use(cors(corsOptions));
