@@ -27,7 +27,8 @@
     "close": "Fermer",
     "yes": "Oui",
     "no": "Non",
-    "optional": "optionnel"
+    "optional": "optionnel",
+    "resendEmail": "Renvoyer l'email"
   },
   "auth": {
     "forgotPassword": {
@@ -115,8 +116,10 @@
         "emailRequired": "L'adresse e-mail est requise",
         "emailInvalid": "Veuillez entrer une adresse e-mail valide",
         "passwordRequired": "Le mot de passe est requis",
-        "invalidCredentials": "Identifiants invalides",
-        "serverError": "Une erreur est survenue. Veuillez réessayer plus tard."
+        "invalid": "Identifiants incorrects. Veuillez vérifier votre email et mot de passe.",
+        "invalidCredentials": "Identifiants incorrects. Veuillez vérifier votre email et mot de passe.",
+        "serverError": "Une erreur est survenue. Veuillez réessayer plus tard.",
+        "networkError": "Erreur de connexion au serveur. Veuillez réessayer."
       }
     },
     "profile": {
@@ -256,7 +259,8 @@
     "email": "E-mail",
     "hours": "Horaires d'ouverture",
     "getInTouch": "Entrer en contact",
-    "sendMessage": "Envoyer un message"
+    "sendMessage": "Envoyer le message",
+    "sendAnotherMessage": "Envoyer un autre message"
   },
   "about": {
     "hero": {
@@ -358,6 +362,110 @@
     "product": "Produit",
     "price": "Prix",
     "remove": "Retirer"
+  },
+  "form": {
+    "placeholder": "Saisir ici...",
+    "sendToPractitioner": "Envoyer à la Praticienne",
+    "pageIndicator": "Page {{current}} sur {{total}}",
+    "sections": {
+      "practitionerInfo": "Information sur la Praticienne",
+      "medicalInfo": "Informations Médicales",
+      "contraindications": "Contre-Indications",
+      "sensitivities": "Sensibilités",
+      "additionalQuestions": "Questions Complémentaires",
+      "signature": "Signature",
+      "protocol": "Section Praticienne - Protocole",
+      "recommendations": "Section Praticienne - Recommandations"
+    },
+    "labels": {
+      "practitionerFirstName": "Prenom de la Praticienne",
+      "company": "Compagnie (optionnel)",
+      "practitionerEmail": "Adresse Mail de la Praticienne",
+      "anatomyType": "D'un point de vue médical, avec quel type d'anatomie êtes-vous née ?",
+      "reproductiveOrgans": "Lequel des organes reproducteurs suivants aviez-vous à la naissance ?",
+      "anatomyModified": "Votre anatomie génitale a-t-elle été modifiée depuis la naissance en raison d'une chirurgie ou d'une intervention volontaire ou médicale ?",
+      "preferredPronouns": "Pronoms préférés :",
+      "contraindicationsUterine": "Contre-Indications Liées Aux Saignements Utérins",
+      "contraindicationsPregnancy": "Contre-Indications Liées à La Grossesse",
+      "additionalInfo": "Informations Complémentaires",
+      "contraindicationsMedical": "Contre-Indications Médicales",
+      "contraindicationsHeat": "Contre-Indication Liée à La Chaleur",
+      "sensitivitiesBleeding": "Sensibilités Aux Saignements Utérins",
+      "sensitivitiesHeat": "Sensibilités Liées à La Chaleur",
+      "steamExperience": "Quelle est votre expérience avec la vapeur périnéale ?",
+      "mainConcern": "Quel est le principal souci que vous aimeriez aborder ?",
+      "otherInfo": "Autres informations utiles ou Questions ?",
+      "initialsConfirmation": "Mes initiales ci-dessous confirment que j'ai reçu une copie des Recommandations avant la séance de vapeur",
+      "clientSignature": "Signature Cliente",
+      "guardianSignature": "Signature Tuteur/Parent (si moins de 18 ans)",
+      "signatureDate": "Date",
+      "steamDuration": "Durée de Vapeur",
+      "plants": "Plantes",
+      "practitionerNotes": "Notes Praticienne",
+      "essentialOils": "Autres Huiles Essentielles",
+      "stones": "Pierres",
+      "temperature": "Température",
+      "steam": "Vapeur",
+      "blankets": "Couvertures",
+      "recommendedTeas": "Tisanes Recommandées",
+      "healingStones": "Pierres pour Guérison",
+      "recommendedOils": "Huiles Recommandées",
+      "recommendedBooks": "Livres Recommandés",
+      "onlineResources": "Ressources en Ligne",
+      "otherRecommendations": "Autres Recommandations"
+    },
+    "questions": {
+      "q32_0": "Avez-vous actuellement vos règles ou des saignements frais (spotting) en cours de couleur rouge vive ?",
+      "q32_1": "Avez-vous eu des pertes de sang légères et fraîches au cours des dernières 24 heures ?",
+      "q32_2": "Avez-vous eu des saignements abondants spontanés au cours des 3 derniers mois ?",
+      "q32_3": "Avez-vous eu deux cycles menstruels par mois (c.-à-d. un cycle tous les 19 jours ou moins) au cours des 3 derniers mois ?",
+      "q33_0": "Êtes-vous enceinte ?",
+      "q33_1": "Y a-t-il une possibilité que vous soyez enceinte ?",
+      "q33_2": "Si vous suivez un traitement de fertilité, avez-vous déjà ovulé ou reçu un transfert (IAC/FIV) ?",
+      "q34_0": "Avez-vous subi une coagulation tubaire (brûlure des trompes de Fallope par laparoscopie via le nombril) ?",
+      "q34_1": "Avez-vous un implant contraceptif dans le bras ou un patch (par exemple Nexplanon) ?",
+      "q34_2": "Avez-vous eu une ablation de l'endomètre (procédure où les parois de l'utérus sont brûlées pour provoquer une cicatrisation) ?",
+      "q34_3": "Êtes-vous à moins de 6 semaines d'une chirurgie ?",
+      "q34_4": "Avez-vous subi une embolisation de fibrome utérin ?",
+      "q34_5": "Portez-vous un anneau vaginal contraceptif (type NuvaRing) ?",
+      "q36_0": "Avez-vous une infection génitale ou rectale accompagnée d'une sensation de brûlure ?",
+      "q40_0": "Vos cycles menstruels sont-ils actuellement, ou ont-ils déjà été dans le passé, de 27 jours ou moins ?",
+      "q40_1": "Avez-vous des antécédents de saignements spontanés ou de deux cycles menstruels par mois (il y a 3 mois ou plus dans le passé) ?",
+      "q42_0": "Avez-vous eu des bouffées de chaleur au cours du dernier mois ?",
+      "q42_1": "Avez-vous eu des sueurs nocturnes au cours du dernier mois ?",
+      "q42_2": "Avez-vous actuellement, ou avez-vous déjà eu au passé, des mycoses vaginales ?",
+      "q42_3": "Avez-vous actuellement, ou avez-vous déjà eu au passé, une vaginose bactérienne ?",
+      "q42_4": "Avez-vous actuellement, ou avez-vous déjà eu au passé, des infections urinaires (infections de la vessie) ?",
+      "q42_5": "Avez-vous de l'herpès actif ou dormant ?"
+    },
+    "options": {
+      "yes": "Oui",
+      "notSure": "Pas Sure",
+      "no": "Non",
+      "masculine": "Masculine",
+      "feminine": "Féminine",
+      "hot": "Chaude",
+      "medium": "Moyenne",
+      "soft": "Douce",
+      "strong": "Forte",
+      "light": "Légère"
+    },
+    "organs": {
+      "vagina": "Vagin",
+      "uterus": "Utérus",
+      "vulva": "Vulve",
+      "clitoris": "Clitoris",
+      "penis": "Pénis",
+      "scrotum": "Scrotum",
+      "prostate": "Prostate",
+      "noneAbove": "Aucun de ce qui précède"
+    }
+  },
+  "waiver": {
+    "title": "Formulaire de Décharge Post-Partum",
+    "noData": "Non fourni",
+    "loading": "Chargement du formulaire...",
+    "error": "Impossible de charger le formulaire de décharge"
   },
   "store": {
     "title": "Boutique",

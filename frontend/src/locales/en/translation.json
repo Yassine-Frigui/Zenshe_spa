@@ -27,7 +27,8 @@
     "close": "Close",
     "yes": "Yes",
     "no": "No",
-    "optional": "optional"
+    "optional": "optional",
+    "resendEmail": "Resend email"
   },
   "auth": {
     "forgotPassword": {
@@ -115,8 +116,10 @@
         "emailRequired": "Email address is required",
         "emailInvalid": "Please enter a valid email address",
         "passwordRequired": "Password is required",
-        "invalidCredentials": "Invalid credentials",
-        "serverError": "An error occurred. Please try again later."
+        "invalid": "Invalid credentials. Please check your email and password.",
+        "invalidCredentials": "Invalid credentials. Please check your email and password.",
+        "serverError": "An error occurred. Please try again later.",
+        "networkError": "Server connection error. Please try again."
       }
     },
     "profile": {
@@ -256,7 +259,8 @@
     "email": "Email",
     "hours": "Opening hours",
     "getInTouch": "Get in touch",
-    "sendMessage": "Send message"
+    "sendMessage": "Send message",
+    "sendAnotherMessage": "Send another message"
   },
   "about": {
     "hero": {
@@ -358,6 +362,110 @@
     "product": "Product",
     "price": "Price",
     "remove": "Remove"
+  },
+  "form": {
+    "placeholder": "Type here...",
+    "sendToPractitioner": "Send to Practitioner",
+    "pageIndicator": "Page {{current}} of {{total}}",
+    "sections": {
+      "practitionerInfo": "Practitioner Information",
+      "medicalInfo": "Medical Information",
+      "contraindications": "Contraindications",
+      "sensitivities": "Sensitivities",
+      "additionalQuestions": "Additional Questions",
+      "signature": "Signature",
+      "protocol": "Practitioner Section - Protocol",
+      "recommendations": "Practitioner Section - Recommendations"
+    },
+    "labels": {
+      "practitionerFirstName": "Practitioner's First Name",
+      "company": "Company (optional)",
+      "practitionerEmail": "Practitioner's Email Address",
+      "anatomyType": "From a medical point of view, what type of anatomy were you born with?",
+      "reproductiveOrgans": "Which of the following reproductive organs did you have at birth?",
+      "anatomyModified": "Has your genital anatomy been modified since birth due to voluntary or medical surgery or intervention?",
+      "preferredPronouns": "Preferred pronouns:",
+      "contraindicationsUterine": "Contraindications Related to Uterine Bleeding",
+      "contraindicationsPregnancy": "Contraindications Related to Pregnancy",
+      "additionalInfo": "Additional Information",
+      "contraindicationsMedical": "Medical Contraindications",
+      "contraindicationsHeat": "Heat-Related Contraindications",
+      "sensitivitiesBleeding": "Sensitivities to Uterine Bleeding",
+      "sensitivitiesHeat": "Heat-Related Sensitivities",
+      "steamExperience": "What is your experience with perineal steaming?",
+      "mainConcern": "What is the main concern you would like to address?",
+      "otherInfo": "Other useful information or Questions?",
+      "initialsConfirmation": "My initials below confirm that I have received a copy of the Recommendations before the steaming session",
+      "clientSignature": "Client Signature",
+      "guardianSignature": "Guardian/Parent Signature (if under 18)",
+      "signatureDate": "Date",
+      "steamDuration": "Steam Duration",
+      "plants": "Plants",
+      "practitionerNotes": "Practitioner Notes",
+      "essentialOils": "Other Essential Oils",
+      "stones": "Stones",
+      "temperature": "Temperature",
+      "steam": "Steam",
+      "blankets": "Blankets",
+      "recommendedTeas": "Recommended Teas",
+      "healingStones": "Stones for Healing",
+      "recommendedOils": "Recommended Oils",
+      "recommendedBooks": "Recommended Books",
+      "onlineResources": "Online Resources",
+      "otherRecommendations": "Other Recommendations"
+    },
+    "questions": {
+      "q32_0": "Are you currently on your period or having fresh spotting that is bright red in color?",
+      "q32_1": "Have you had light fresh blood loss in the last 24 hours?",
+      "q32_2": "Have you had heavy spontaneous bleeding in the last 3 months?",
+      "q32_3": "Have you had two menstrual cycles per month (i.e., a cycle every 19 days or less) in the last 3 months?",
+      "q33_0": "Are you pregnant?",
+      "q33_1": "Is there a possibility that you are pregnant?",
+      "q33_2": "If you are undergoing fertility treatment, have you already ovulated or received a transfer (IUI/IVF)?",
+      "q34_0": "Have you had tubal coagulation (burning of the fallopian tubes by laparoscopy via the navel)?",
+      "q34_1": "Do you have a contraceptive implant in your arm or a patch (e.g., Nexplanon)?",
+      "q34_2": "Have you had endometrial ablation (procedure where the walls of the uterus are burned to cause scarring)?",
+      "q34_3": "Are you less than 6 weeks from surgery?",
+      "q34_4": "Have you had uterine fibroid embolization?",
+      "q34_5": "Are you wearing a contraceptive vaginal ring (NuvaRing type)?",
+      "q36_0": "Do you have a genital or rectal infection accompanied by a burning sensation?",
+      "q40_0": "Are your menstrual cycles currently, or have they ever been in the past, 27 days or less?",
+      "q40_1": "Do you have a history of spontaneous bleeding or two menstrual cycles per month (3 months or more in the past)?",
+      "q42_0": "Have you had hot flashes in the last month?",
+      "q42_1": "Have you had night sweats in the last month?",
+      "q42_2": "Do you currently have, or have you ever had in the past, vaginal yeast infections?",
+      "q42_3": "Do you currently have, or have you ever had in the past, bacterial vaginosis?",
+      "q42_4": "Do you currently have, or have you ever had in the past, urinary tract infections (bladder infections)?",
+      "q42_5": "Do you have active or dormant herpes?"
+    },
+    "options": {
+      "yes": "Yes",
+      "notSure": "Not Sure",
+      "no": "No",
+      "masculine": "Masculine",
+      "feminine": "Feminine",
+      "hot": "Hot",
+      "medium": "Medium",
+      "soft": "Soft",
+      "strong": "Strong",
+      "light": "Light"
+    },
+    "organs": {
+      "vagina": "Vagina",
+      "uterus": "Uterus",
+      "vulva": "Vulva",
+      "clitoris": "Clitoris",
+      "penis": "Penis",
+      "scrotum": "Scrotum",
+      "prostate": "Prostate",
+      "noneAbove": "None of the above"
+    }
+  },
+  "waiver": {
+    "title": "Postpartum Waiver Form",
+    "noData": "Not provided",
+    "loading": "Loading form...",
+    "error": "Unable to load waiver form"
   },
   "store": {
     "title": "Store",

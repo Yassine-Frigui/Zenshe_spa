@@ -1,0 +1,119 @@
+/* ZensheForm Component Styles */
+
+.zenshe-form-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.zenshe-form-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 2rem;
+}
+
+.zenshe-form-loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1.2rem;
+}
+
+.zenshe-form-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.zenshe-form-content {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+  min-height: 400px;
+}
+
+/* Custom scrollbar for the card */
+.zenshe-form-card::-webkit-scrollbar {
+  width: 12px;
+}
+
+.zenshe-form-card::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.zenshe-form-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.zenshe-form-card::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Submit Button */
+.zenshe-submit-button {
+  width: 100%;
+  padding: 18px 40px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.zenshe-submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.zenshe-submit-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.zenshe-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .zenshe-form-container {
+    padding: 10px;
+  }
+
+  .zenshe-form-card {
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .zenshe-form-title {
+    font-size: 1.5rem;
+  }
+
+  .zenshe-submit-button {
+    padding: 15px 30px;
+    font-size: 16px;
+  }
+}
+
+/* JotForm iframe styling */
+.zenshe-form-content iframe {
+  width: 100%;
+  border: none;
+  min-height: 500px;
+}

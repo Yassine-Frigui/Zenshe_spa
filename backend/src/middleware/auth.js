@@ -89,26 +89,35 @@ const hashPassword = async (password) => {
 // Fonction pour vérifier les mots de passe
 const verifyPassword = async (password, hashedPassword) => {
     try {
-        // Added logging for debugging
-        console.log('Password verification attempt');
-        console.log('Plain password length:', password.length);
-        console.log('Hashed password:', hashedPassword.substring(0, 20) + '...');
+        console.log('╔════════════════════════════════════════╗');
+        console.log('║   PASSWORD VERIFICATION DETAILS        ║');
+        console.log('╠════════════════════════════════════════╣');
+        console.log('  Plain password provided:', password ? 'YES' : 'NO');
+        console.log('  Plain password length:', password ? password.length : 0);
+        console.log('  Plain password sample:', password ? password.substring(0, 3) + '***' : 'NONE');
+        console.log('  Hashed password provided:', hashedPassword ? 'YES' : 'NO');
+        console.log('  Hash format valid:', hashedPassword ? (hashedPassword.startsWith('$2') ? 'YES ✅' : 'NO ❌') : 'N/A');
+        console.log('  Hash preview:', hashedPassword ? hashedPassword.substring(0, 30) + '...' : 'NULL');
+        console.log('╚════════════════════════════════════════╝');
         
         // Standard bcrypt verification
         const isValid = await bcrypt.compare(password, hashedPassword);
         
-        // Log outcome
-        console.log('Password verification result:', isValid);
+        // Log outcome with visual indicator
+        console.log('');
+        console.log('🔐 PASSWORD VERIFICATION RESULT:', isValid ? '✅ MATCH' : '❌ NO MATCH');
+        console.log('');
         
         // For hard-coded admin from schema (admin123)
         if (!isValid && password === 'admin123' && hashedPassword === '$2b$12$rOz8kWKKU5PjU7eGBEtNruQcL4M2FT8Vh5XGjGVOhKQnhK5M4C4sO') {
-            console.log('Special case: Using hardcoded admin password');
+            console.log('⚠️  Special case: Using hardcoded admin password');
             return true;
         }
         
         return isValid;
     } catch (error) {
-        console.error('Password verification error:', error);
+        console.error('❌ PASSWORD VERIFICATION ERROR:', error.message);
+        console.error('Error details:', error);
         return false;
     }
 };

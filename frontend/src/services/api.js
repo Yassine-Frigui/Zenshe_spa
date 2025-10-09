@@ -2,10 +2,13 @@ import axios from 'axios'
 import i18n from '../i18n'
 
 // Configuration de base d'axios
-// Use the backend URL directly in production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// Use VITE_API_URL if set (for ngrok), otherwise use local proxy
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
-axios.defaults.baseURL = API_BASE_URL
+if (API_BASE_URL) {
+  axios.defaults.baseURL = API_BASE_URL
+}
+
 axios.defaults.withCredentials = true
 
 // Add ngrok warning bypass header
@@ -112,6 +115,9 @@ export const publicAPI = {
   saveDraft: (data) => axios.post('/api/reservations/save-draft', data),
   getDraft: (sessionId) => axios.get(`/api/reservations/get-draft/${sessionId}`),
   deleteDraft: (sessionId) => axios.delete(`/api/reservations/delete-draft/${sessionId}`),
+
+  // JotForm submission (waiver forms)
+  submitJotForm: (data) => axios.post('/api/jotform/submit-local', data),
 
   // Store/Boutique API
   getProducts: (params = {}) => axios.get('/api/store/products', { params }),
@@ -255,7 +261,12 @@ export const adminAPI = {
   getStoreOrders: (params = {}) => axios.get('/api/admin/store/orders', { params }),
   getStoreOrder: (id) => axios.get(`/api/admin/store/orders/${id}`),
   updateStoreOrderStatus: (id, status) => axios.put(`/api/admin/store/orders/${id}/status`, { status }),
-  getStoreStats: () => axios.get('/api/admin/store/stats')
+  getStoreStats: () => axios.get('/api/admin/store/stats'),
+
+  // JotForm Submissions
+  getJotFormSubmission: (submissionId) => axios.get(`/api/jotform/submission/${submissionId}`, {
+    headers: { 'Accept': 'application/json' }
+  })
 }
 
 // Intercepteur pour gérer les erreurs d'authentification

@@ -334,7 +334,7 @@ router.post('/reservations/create-with-client', async (req, res) => {
 router.get('/utilisateurs', requireRole('super_admin'), async (req, res) => {
     try {
         const utilisateurs = await executeQuery(
-            'SELECT id, nom, email, role, actif, date_creation FROM utilisateurs ORDER BY nom'
+            'SELECT id, nom, email, role, actif, permissions, date_creation FROM utilisateurs ORDER BY nom'
         );
         
         res.json({
@@ -350,7 +350,7 @@ router.get('/utilisateurs', requireRole('super_admin'), async (req, res) => {
 // Create new administrator
 router.post('/utilisateurs', requireRole('super_admin'), async (req, res) => {
     try {
-        const { nom, email, password, role = 'admin', actif = true } = req.body;
+        const { nom, email, password, role = 'employe', actif = true, permissions = null } = req.body;
 
         if (!nom || !email || !password) {
             return res.status(400).json({ message: 'Nom, email et mot de passe requis' });
@@ -370,15 +370,18 @@ router.post('/utilisateurs', requireRole('super_admin'), async (req, res) => {
         const bcrypt = require('bcrypt');
         const hashedPassword = await bcrypt.hash(password, 12);
 
+        // Prepare permissions JSON
+        const permissionsJson = permissions ? JSON.stringify(permissions) : null;
+
         // Create user
         const result = await executeQuery(
-            'INSERT INTO utilisateurs (nom, email, mot_de_passe, role, actif) VALUES (?, ?, ?, ?, ?)',
-            [nom, email, hashedPassword, role, actif]
+            'INSERT INTO utilisateurs (nom, email, mot_de_passe, role, actif, permissions) VALUES (?, ?, ?, ?, ?, ?)',
+            [nom, email, hashedPassword, role, actif, permissionsJson]
         );
 
         // Return created user (without password)
         const newUser = await executeQuery(
-            'SELECT id, nom, email, role, actif, date_creation FROM utilisateurs WHERE id = ?',
+            'SELECT id, nom, email, role, actif, permissions, date_creation FROM utilisateurs WHERE id = ?',
             [result.insertId]
         );
 
@@ -398,7 +401,7 @@ router.post('/utilisateurs', requireRole('super_admin'), async (req, res) => {
 router.put('/utilisateurs/:id', requireRole('super_admin'), async (req, res) => {
     try {
         const { id } = req.params;
-        const { nom, email, role, actif, password } = req.body;
+        const { nom, email, role, actif, password, permissions } = req.body;
 
         if (!nom || !email) {
             return res.status(400).json({ message: 'Nom et email requis' });
@@ -414,8 +417,11 @@ router.put('/utilisateurs/:id', requireRole('super_admin'), async (req, res) => 
             return res.status(400).json({ message: 'Cet email est déjà utilisé' });
         }
 
-        let updateQuery = 'UPDATE utilisateurs SET nom = ?, email = ?, role = ?, actif = ?';
-        let updateParams = [nom, email, role, actif];
+        // Prepare permissions JSON
+        const permissionsJson = permissions ? JSON.stringify(permissions) : null;
+
+        let updateQuery = 'UPDATE utilisateurs SET nom = ?, email = ?, role = ?, actif = ?, permissions = ?';
+        let updateParams = [nom, email, role, actif, permissionsJson];
 
         // If password is provided, update it too
         if (password) {
@@ -432,7 +438,7 @@ router.put('/utilisateurs/:id', requireRole('super_admin'), async (req, res) => 
 
         // Return updated user (without password)
         const updatedUser = await executeQuery(
-            'SELECT id, nom, email, role, actif, date_creation FROM utilisateurs WHERE id = ?',
+            'SELECT id, nom, email, role, actif, permissions, date_creation FROM utilisateurs WHERE id = ?',
             [id]
         );
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, Button, Badge, Modal, Form, Alert, Spinner, Table, Pagination } from 'react-bootstrap';
 import { FaGift, FaPlus, FaEye, FaUserFriends, FaPercent, FaTimes, FaCheck } from 'react-icons/fa';
-import api from '../../services/api';
+import { adminAPI } from '../../services/api';
 
 const AdminReferrals = () => {
     const [referralCodes, setReferralCodes] = useState([]);
@@ -36,7 +36,8 @@ const AdminReferrals = () => {
     const fetchReferralCodes = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/admin/referral-codes?page=${currentPage}&limit=${itemsPerPage}`);
+            const offset = (currentPage - 1) * itemsPerPage;
+            const response = await adminAPI.getReferralCodes(itemsPerPage, offset);
             setReferralCodes(response.data.data);
             setTotalPages(response.data.pagination.totalPages);
         } catch (error) {
@@ -49,7 +50,7 @@ const AdminReferrals = () => {
 
     const fetchClients = async () => {
         try {
-            const response = await api.get('/admin/clients');
+            const response = await adminAPI.getClients();
             setClients(response.data.clients || []);
         } catch (error) {
             console.error('Error fetching clients:', error);
@@ -58,7 +59,7 @@ const AdminReferrals = () => {
 
     const fetchCodeStats = async (codeId) => {
         try {
-            const response = await api.get(`/admin/referral-codes/${codeId}/stats`);
+            const response = await adminAPI.getReferralCodeStats(codeId);
             setCodeStats(response.data.stats);
         } catch (error) {
             console.error('Error fetching code stats:', error);
@@ -77,7 +78,7 @@ const AdminReferrals = () => {
                 expiresAt: newCodeData.expiresAt || null
             };
 
-            await api.post('/admin/referral-codes/create-for-client', payload);
+            await adminAPI.createReferralCodeForClient(payload);
             setSuccess('Code de parrainage créé avec succès');
             setShowCreateModal(false);
             setNewCodeData({
@@ -99,7 +100,7 @@ const AdminReferrals = () => {
         }
 
         try {
-            await api.put(`/admin/referral-codes/${codeId}/deactivate`);
+            await adminAPI.deactivateReferralCode(codeId);
             setSuccess('Code désactivé avec succès');
             fetchReferralCodes();
         } catch (error) {

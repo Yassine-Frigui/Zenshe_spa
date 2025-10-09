@@ -9,6 +9,7 @@ const router = express.Router();
 // Get all services with basic information
 router.get('/', async (req, res) => {
     try {
+        console.log('📥 GET /api/public/services called with query:', req.query);
         const { category, search, limit = 50, offset = 0, lang = 'fr' } = req.query;
         
         // Use multilingual service for translated content
@@ -16,13 +17,15 @@ router.get('/', async (req, res) => {
         if (category) filters.category_id = category;
         if (search) filters.search = search;
         
+        console.log('🔍 Fetching services with filters:', filters, 'lang:', lang);
         const allServices = await MultilingualService.getServicesWithTranslations(lang, filters);
+        console.log('✅ Found', allServices.length, 'services');
         
         // Apply pagination
         const total = allServices.length;
         const paginatedServices = allServices.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
         
-        res.json({
+        const response = {
             services: paginatedServices,
             pagination: {
                 total,
@@ -30,9 +33,12 @@ router.get('/', async (req, res) => {
                 offset: parseInt(offset),
                 hasMore: (parseInt(offset) + parseInt(limit)) < total
             }
-        });
+        };
+        
+        console.log('📤 Sending response with', paginatedServices.length, 'services');
+        res.json(response);
     } catch (error) {
-        console.error('Erreur lors de la récupération des services publics:', error);
+        console.error('❌ Erreur lors de la récupération des services publics:', error);
         res.status(500).json({ 
             message: 'Erreur lors de la récupération des services',
             error: error.message 

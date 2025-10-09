@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
+import { getImageUrl } from '../../utils/apiConfig';
 
 const ProductDetailPage = () => {
   const { productId } = useParams();
@@ -75,7 +76,7 @@ const ProductDetailPage = () => {
             >
               {product.image_url ? (
                 <img
-                  src={`http://localhost:5000${product.image_url}`}
+                  src={getImageUrl(product.image_url)}
                   alt={product.name}
                   style={{ width: '100%', borderRadius: '15px' ,objectFit : 'contain', height: '500px' }}
                 />

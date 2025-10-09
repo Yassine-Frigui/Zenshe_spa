@@ -292,7 +292,7 @@ const ReservationConfirmation = ({
                     onClick={sendVerificationEmail}
                     disabled={loading}
                   >
-                    Renvoyer l'email
+                    {t('common.resendEmail')}
                   </button>
                 </motion.div>
               </div>

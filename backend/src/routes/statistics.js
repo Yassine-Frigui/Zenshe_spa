@@ -31,21 +31,21 @@ router.get('/', authenticateAdmin, async (req, res) => {
         // 1. Financial Revenue Analysis - Actual vs Potential vs Lost
         const revenueAnalysisQuery = `
             SELECT 
-                -- Actual Revenue (completed + confirmed by admin)
-                SUM(CASE WHEN statut IN ('terminee', 'confirmee') THEN prix_final ELSE 0 END) as revenue_completed,
-                COUNT(CASE WHEN statut IN ('terminee', 'confirmee') THEN 1 END) as bookings_completed,
+                -- Actual Revenue (completed bookings only - x value)
+                SUM(CASE WHEN statut = 'terminee' THEN prix_final ELSE 0 END) as revenue_completed,
+                COUNT(CASE WHEN statut = 'terminee' THEN 1 END) as bookings_completed,
                 
-                -- Potential Revenue (confirmed but not completed yet)
-                SUM(CASE WHEN statut = 'en_cours' THEN prix_final ELSE 0 END) as revenue_potential,
-                COUNT(CASE WHEN statut = 'en_cours' THEN 1 END) as bookings_confirmed,
+                -- Potential Revenue (confirmed but not completed yet - y value)
+                SUM(CASE WHEN statut = 'confirmee' THEN prix_final ELSE 0 END) as revenue_potential,
+                COUNT(CASE WHEN statut = 'confirmee' THEN 1 END) as bookings_confirmed,
                 
                 -- Lost Revenue (cancelled or no-show)
                 SUM(CASE WHEN statut IN ('annulee', 'no_show') THEN prix_final ELSE 0 END) as revenue_lost,
                 COUNT(CASE WHEN statut IN ('annulee', 'no_show') THEN 1 END) as bookings_lost,
                 
-                -- Manual Conversions (draft to confirmed - admin intervention)
-                COUNT(CASE WHEN statut != 'draft' AND reservation_status = 'confirmed' THEN 1 END) as admin_conversions,
-                SUM(CASE WHEN statut != 'draft' AND reservation_status = 'confirmed' THEN prix_final ELSE 0 END) as admin_conversion_value,
+                -- Manual Conversions (draft to confirmed/terminee - admin intervention)
+                COUNT(CASE WHEN reservation_status = 'draft' AND statut IN ('confirmee', 'terminee') THEN 1 END) as admin_conversions,
+                SUM(CASE WHEN reservation_status = 'draft' AND statut IN ('confirmee', 'terminee') THEN prix_final ELSE 0 END) as admin_conversion_value,
                 
                 -- Total Draft Impact (all drafts created)
                 (SELECT COUNT(*) FROM reservations 

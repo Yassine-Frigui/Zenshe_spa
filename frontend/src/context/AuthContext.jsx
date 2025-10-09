@@ -94,10 +94,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('🔐 AuthContext: Attempting login with:', { email, passwordLength: password?.length });
+      
       const response = await axios.post('/api/auth/login', {
         email,
         password
       })
+
+      console.log('✅ AuthContext: Login successful', response.data);
 
       const { admin: adminData, token: authToken } = response.data
 
@@ -107,8 +111,22 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, admin: adminData }
     } catch (error) {
-      const message = error.response?.data?.message || 'Erreur de connexion'
-      return { success: false, message }
+      console.error('❌ AuthContext: Login failed', error);
+      console.error('Error response:', error.response);
+      
+      // Handle validation errors from express-validator
+      if (error.response?.data?.details && Array.isArray(error.response.data.details)) {
+        const validationErrors = error.response.data.details
+          .map(err => `${err.field}: ${err.message}`)
+          .join(', ');
+        const message = `Erreur de validation: ${validationErrors}`;
+        console.error('Validation errors:', validationErrors);
+        return { success: false, message };
+      }
+      
+      // Handle regular error messages
+      const message = error.response?.data?.message || 'Erreur de connexion';
+      return { success: false, message };
     }
   }
 

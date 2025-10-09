@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, Image, Form, Alert, ListGroup } from
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
+import { getImageUrl } from '../../utils/apiConfig';
 
 const CartPage = () => {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart();
@@ -57,7 +58,7 @@ const CartPage = () => {
                     <Col xs={3} md={2}>
                       <div className="bg-light rounded d-flex align-items-center justify-content-center" style={{ width: 80, height: 80, overflow: 'hidden' }}>
                         {item.image_url ? (
-                          <Image   src={`http://localhost:5000${item.image_url}`}
+                          <Image   src={getImageUrl(item.image_url)}
                           alt={item.name} fluid style={{ maxHeight: 80, maxWidth: 80 }} />
                         ) : (
                           <span className="text-muted small">Image</span>

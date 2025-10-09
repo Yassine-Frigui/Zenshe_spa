@@ -245,6 +245,7 @@ class ReservationModel {
                 r.date_creation,
                 r.session_id,
                 r.couleurs_choisies,
+                r.jotform_submission_id,
                 -- For regular reservations, use client table data
                 CASE 
                     WHEN r.client_id IS NOT NULL THEN CONCAT(c.prenom, ' ', c.nom)

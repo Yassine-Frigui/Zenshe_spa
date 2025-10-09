@@ -1,8 +1,8 @@
 .cart-page {
     min-height: 100vh;
     background-color: #fafafa;
-    padding-top: 80px;
     padding-bottom: 2rem;
+    /* Navbar spacing handled by ClientLayout */
 }
 
 .container {
@@ -475,9 +475,7 @@
 }
 
 @media (max-width: 768px) {
-    .cart-page {
-        padding-top: 60px;
-    }
+    /* Navbar spacing handled by ClientLayout */
     
     .cart-header {
         flex-direction: column;

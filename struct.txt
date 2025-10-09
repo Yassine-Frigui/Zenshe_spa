@@ -1,1 +1,8 @@
 cd "C:\Users\yassi\Downloads\ngrok-v3-stable-windows-amd64" && ngrok http --domain=rightly-wise-tadpole.ngrok-free.app 5000
+
+
+
+
+
+can you now clean up the project , can you remove the unnecessary files that are not used ? and that includes files in backend routes and the .sql files , I don't need them 
+additionally I'm going to ship this project to production very soon , so can you remove any hardcoded values ? 

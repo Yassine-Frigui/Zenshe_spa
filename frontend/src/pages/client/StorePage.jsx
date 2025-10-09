@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { useCart } from '../../context/CartContext';
+import { getImageUrl } from '../../utils/apiConfig';
 
 const StorePage = () => {
   const [products, setProducts] = useState([]);
@@ -146,7 +147,7 @@ const StorePage = () => {
                       <Link to={`/boutique/produit/${product.id}`}>
                         <Card.Img
                           variant="top"
-                          src={product.image_url ? `http://localhost:5000${product.image_url}` : '/placeholder.jpg'}
+                          src={getImageUrl(product.image_url)}
                           alt={product.name}
                           style={{ height: '260px', objectFit: 'cover' }}
                         />

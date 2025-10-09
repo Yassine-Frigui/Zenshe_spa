@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
+import { getImageUrl } from '../../utils/apiConfig';
 
 const ConfirmationPage = () => {
   const location = useLocation();
@@ -96,7 +97,7 @@ const ConfirmationPage = () => {
                       {cartItems.map(item => (
                         <ListGroup.Item key={item.id} className="d-flex align-items-center">
                           <img 
-                            src={item.image_url ? `http://localhost:5000${item.image_url}` : '/placeholder.jpg'} 
+                            src={getImageUrl(item.image_url)} 
                             alt={item.name} 
                             style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8, marginRight: 12 }} 
                           />

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaCalendarAlt, FaClock, FaUser, FaPhone, FaEnvelope, FaCheck, FaStar, FaInfoCircle, FaSave } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaUser, FaPhone, FaEnvelope, FaCheck, FaStar, FaInfoCircle, FaSave, FaFileSignature } from 'react-icons/fa';
 import { publicAPI } from '../../services/api';
 import ReservationConfirmation from './ReservationConfirmation';
+import CompleteJotForm from '../../components/CompleteJotForm';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -36,6 +37,9 @@ const BookingPage = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [reservationData, setReservationData] = useState(null);
   const [error, setError] = useState('');
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
+  const [waiverSubmitted, setWaiverSubmitted] = useState(false);
+  const [waiverData, setWaiverData] = useState(null);
 
   // horrairex horaires disponibles
   const timeSlots = [
@@ -98,16 +102,26 @@ const BookingPage = () => {
 
   const fetchServices = async () => {
     try {
+      console.log('🔄 Fetching services and categories...');
       // Use the same API calls as ServicesPage
       const [servicesRes, categoriesRes] = await Promise.all([
         publicAPI.getServices(),
         publicAPI.getCategories()
       ]);
 
-      setServices(servicesRes.data.services || servicesRes.data || []);
-      setCategories(categoriesRes.data || []);
+      console.log('📦 Services response:', servicesRes);
+      console.log('📦 Categories response:', categoriesRes);
+      
+      const servicesData = servicesRes.data.services || servicesRes.data || [];
+      const categoriesData = categoriesRes.data.data || categoriesRes.data || [];
+      
+      console.log('✅ Setting services:', servicesData.length, 'items');
+      console.log('✅ Setting categories:', categoriesData.length, 'items');
+      
+      setServices(servicesData);
+      setCategories(categoriesData);
     } catch (error) {
-      console.error('Erreur lors du chargement des services:', error);
+      console.error('❌ Erreur lors du chargement des services:', error);
       setServices([]); // Set empty array on error
       setCategories([]); // Set empty array on error
     }
@@ -352,37 +366,79 @@ const BookingPage = () => {
   };
 
   const handleConfirmReservation = async (reservation, method = 'code') => {
-    // Delete the draft after confirmation
-    if (sessionId) {
-      try {
-        await publicAPI.deleteDraft(sessionId);
-        sessionStorage.removeItem('zenshe_booking_session');
-      } catch (error) {
-        console.error('Erreur lors de la suppression du brouillon:', error);
+    try {
+      // If waiver data exists, submit it now along with the reservation
+      if (waiverData) {
+        console.log('📤 Submitting waiver data to backend...');
+        
+        try {
+          const waiverSubmissionData = {
+            sessionId: sessionId || null,
+            formId: waiverData.form_id,
+            submission: waiverData
+          };
+          
+          const waiverResponse = await publicAPI.submitJotForm(waiverSubmissionData);
+          console.log('✅ Waiver submitted successfully:', waiverResponse.data);
+        } catch (waiverError) {
+          console.error('❌ Waiver submission error:', waiverError);
+          // Don't block reservation confirmation if waiver fails
+          alert('⚠️ La décharge n\'a pas pu être enregistrée, mais votre réservation est confirmée.');
+        }
       }
+      
+      // Delete the draft after confirmation
+      if (sessionId) {
+        try {
+          await publicAPI.deleteDraft(sessionId);
+          sessionStorage.removeItem('zenshe_booking_session');
+        } catch (error) {
+          console.error('Erreur lors de la suppression du brouillon:', error);
+        }
+      }
+      
+      // Reset form and show success
+      setFormData({
+        nom: '',
+        prenom: '',
+        email: '',
+        telephone: '',
+        date_reservation: '',
+        heure_reservation: '',
+        notes: ''
+      });
+      setSelectedService('');
+      setAvailableSlots([]);
+      setWaiverData(null);
+      setWaiverSubmitted(false);
+      
+      setShowConfirmation(false);
+      setSuccess(true);
+    } catch (error) {
+      console.error('❌ Error in confirmation process:', error);
+      alert('Une erreur s\'est produite. Veuillez réessayer.');
     }
-    
-    // Reset form and show success
-    setFormData({
-      nom: '',
-      prenom: '',
-      email: '',
-      telephone: '',
-      date_reservation: '',
-      heure_reservation: '',
-      notes: ''
-    });
-    setSelectedService('');
-    setAvailableSlots([]);
-    
-    setShowConfirmation(false);
-    setSuccess(true);
   };
 
   const handleCancelReservation = () => {
     setShowConfirmation(false);
     setReservationData(null);
     // Optionally delete the reservation from backend
+  };
+
+  // Waiver modal handlers
+  const handleWaiverDataReady = (formDataFromJotForm) => {
+    console.log('✅ Waiver form data collected (NOT submitted yet):', formDataFromJotForm);
+    setWaiverData(formDataFromJotForm);
+    setWaiverSubmitted(true);
+    setShowWaiverModal(false);
+    setAutoSaveStatus('📄 Données de décharge prêtes');
+    setTimeout(() => setAutoSaveStatus(''), 3000);
+  };
+
+  const handleWaiverError = (error) => {
+    console.error('❌ Waiver data collection error:', error);
+    alert('Erreur lors de la collecte des données de décharge. Veuillez réessayer.');
   };
 
   // Show confirmation page
@@ -833,6 +889,28 @@ const BookingPage = () => {
                           />
                         </motion.div>
 
+                        {/* Waiver Button */}
+                        <motion.div
+                          className="text-center mb-3"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 1.4, duration: 0.6 }}
+                        >
+                          <button
+                            type="button"
+                            className={`btn ${waiverSubmitted ? 'btn-success' : 'btn-outline-green'} btn-lg px-4 me-3`}
+                            onClick={() => setShowWaiverModal(true)}
+                          >
+                            <FaFileSignature className="me-2" />
+                            {waiverSubmitted ? '✅ Décharge complétée' : 'Remplir la décharge'}
+                          </button>
+                          {waiverSubmitted && (
+                            <small className="text-success d-block mt-2">
+                              ✓ Votre décharge a été enregistrée avec succès
+                            </small>
+                          )}
+                        </motion.div>
+
                         {/* Submit Button */}
                         <motion.div
                           className="text-center"
@@ -929,6 +1007,48 @@ const BookingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Waiver Modal */}
+      {showWaiverModal && (
+        <div 
+          className="modal fade show d-block" 
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowWaiverModal(false)}
+        >
+          <div 
+            className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content">
+              <div className="modal-header bg-green text-white">
+                <h5 className="modal-title">
+                  <FaFileSignature className="me-2" />
+                  Formulaire de décharge - Waiver
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowWaiverModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body p-0">
+                <CompleteJotForm
+                  onFormReady={handleWaiverDataReady}
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowWaiverModal(false)}
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -23,14 +23,19 @@ import {
   FaRegStar
 } from 'react-icons/fa';
 import { adminAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminSettings = () => {
+  const { changePassword, admin } = useAuth();
   const [activeTab, setActiveTab] = useState('employees');
   const [users, setUsers] = useState([]);
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState([]);
@@ -50,8 +55,23 @@ const AdminSettings = () => {
     email: '',
     password: '',
     role: 'employe',
-    actif: true
+    actif: true,
+    permissions: {
+      pages: []
+    }
   });
+
+  // Available admin pages for permissions
+  const availablePages = [
+    { id: 'clients', label: 'Clients', icon: FaUsers },
+    { id: 'services', label: 'Services', icon: FaBriefcase },
+    { id: 'reservations', label: 'Réservations', icon: FaCalendarDay },
+    { id: 'inventory', label: 'Inventaire', icon: FaStore },
+    { id: 'store', label: 'Boutique', icon: FaStore },
+    { id: 'statistics', label: 'Statistiques', icon: FaPaperPlane },
+    { id: 'reviews', label: 'Avis', icon: FaStar },
+    { id: 'settings', label: 'Paramètres', icon: FaCog }
+  ];
 
   const [spaSettings, setSpaSettings] = useState({
     nom_spa: '',
@@ -67,9 +87,7 @@ const AdminSettings = () => {
   const [adminAccountForm, setAdminAccountForm] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: '',
-    email: '',
-    nom: ''
+    confirmPassword: ''
   });
 
   useEffect(() => {
@@ -250,25 +268,44 @@ const AdminSettings = () => {
   const handleAdminAccountSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!adminAccountForm.currentPassword || !adminAccountForm.newPassword || !adminAccountForm.confirmPassword) {
+      alert('Veuillez remplir tous les champs de mot de passe');
+      return;
+    }
+    
+    // Validate password match
     if (adminAccountForm.newPassword !== adminAccountForm.confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+      alert('Les nouveaux mots de passe ne correspondent pas');
+      return;
+    }
+    
+    // Validate password strength
+    if (adminAccountForm.newPassword.length < 6) {
+      alert('Le nouveau mot de passe doit contenir au moins 6 caractères');
       return;
     }
     
     try {
       setLoading(true);
-      // Update password and email logic here
-      alert('Compte administrateur mis à jour avec succès !');
-      setAdminAccountForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-        email: '',
-        nom: ''
-      });
+      const result = await changePassword(
+        adminAccountForm.currentPassword, 
+        adminAccountForm.newPassword
+      );
+      
+      if (result.success) {
+        alert('✅ Mot de passe modifié avec succès !');
+        setAdminAccountForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        alert(`❌ ${result.message || 'Erreur lors du changement de mot de passe'}`);
+      }
     } catch (error) {
       console.error('Erreur lors de la mise à jour du compte:', error);
-      alert('Erreur lors de la mise à jour');
+      alert('❌ Erreur lors de la mise à jour du mot de passe');
     } finally {
       setLoading(false);
     }
@@ -323,12 +360,26 @@ const AdminSettings = () => {
 
   const handleEditUser = (user) => {
     setEditingUser(user);
+    
+    // Parse permissions from database
+    let permissions = { pages: [] };
+    if (user.permissions) {
+      try {
+        permissions = typeof user.permissions === 'string' 
+          ? JSON.parse(user.permissions) 
+          : user.permissions;
+      } catch (e) {
+        console.error('Error parsing permissions:', e);
+      }
+    }
+    
     setUserForm({
       nom: user.nom || '',
       email: user.email || '',
       password: '',
-      role: user.role || 'admin',
-      actif: user.actif !== false
+      role: user.role || 'employe',
+      actif: user.actif !== false,
+      permissions: permissions
     });
     setShowUserModal(true);
   };
@@ -348,8 +399,11 @@ const AdminSettings = () => {
       nom: '',
       email: '',
       password: '',
-      role: 'admin',
-      actif: true
+      role: 'employe',
+      actif: true,
+      permissions: {
+        pages: []
+      }
     });
   };
 
@@ -357,6 +411,23 @@ const AdminSettings = () => {
     resetUserForm();
     setEditingUser(null);
     setShowUserModal(true);
+  };
+
+  // Handle permission checkbox change
+  const handlePermissionChange = (pageId) => {
+    setUserForm(prev => {
+      const currentPages = prev.permissions?.pages || [];
+      const newPages = currentPages.includes(pageId)
+        ? currentPages.filter(p => p !== pageId)
+        : [...currentPages, pageId];
+      
+      return {
+        ...prev,
+        permissions: {
+          pages: newPages
+        }
+      };
+    });
   };
 
   const tabs = [
@@ -447,7 +518,7 @@ const AdminSettings = () => {
                     <thead className="bg-light">
                       <tr>
                         <th className="border-0 px-4 py-3">Utilisateur</th>
-                        <th className="border-0 py-3">Rôle</th>
+                        <th className="border-0 py-3">Pages autorisées</th>
                         <th className="border-0 py-3">Statut</th>
                         <th className="border-0 py-3">Actions</th>
                       </tr>
@@ -466,53 +537,85 @@ const AdminSettings = () => {
                           </td>
                         </tr>
                       ) : (
-                        users.map((user, index) => (
-                          <motion.tr
-                            key={user.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1, duration: 0.4 }}
-                          >
-                            <td className="px-4 py-3">
-                              <div>
-                                <strong className="text-dark">
-                                  {user.nom}
-                                </strong>
-                                <div className="small text-muted">
-                                  {user.email}
+                        users.map((user, index) => {
+                          // Parse permissions
+                          let userPermissions = { pages: [] };
+                          if (user.permissions) {
+                            try {
+                              userPermissions = typeof user.permissions === 'string' 
+                                ? JSON.parse(user.permissions) 
+                                : user.permissions;
+                            } catch (e) {
+                              console.error('Error parsing permissions:', e);
+                            }
+                          }
+
+                          return (
+                            <motion.tr
+                              key={user.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1, duration: 0.4 }}
+                            >
+                              <td className="px-4 py-3">
+                                <div>
+                                  <strong className="text-dark">
+                                    {user.nom}
+                                  </strong>
+                                  <div className="small text-muted">
+                                    {user.email}
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="py-3">
-                              <span className={`badge ${user.role === 'super_admin' ? 'bg-danger' : 'bg-primary'}`}>
-                                {user.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-                              </span>
-                            </td>
-                            <td className="py-3">
-                              <span className={`badge ${user.actif ? 'bg-success' : 'bg-secondary'}`}>
-                                {user.actif ? 'Actif' : 'Inactif'}
-                              </span>
-                            </td>
-                            <td className="py-3">
-                              <div className="d-flex gap-1">
-                                <button
-                                  className="btn btn-sm btn-outline-primary"
-                                  onClick={() => handleEditUser(user)}
-                                  title="Modifier"
-                                >
-                                  <FaEdit size={12} />
-                                </button>
-                                <button
-                                  className={`btn btn-sm ${user.actif ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                                  onClick={() => handleToggleUserStatus(user.id)}
-                                  title={user.actif ? 'Désactiver' : 'Activer'}
-                                >
-                                  {user.actif ? <FaTimes size={12} /> : <FaUser size={12} />}
-                                </button>
-                              </div>
-                            </td>
-                          </motion.tr>
-                        ))
+                              </td>
+                              <td className="py-3">
+                                {user.role === 'super_admin' ? (
+                                  <span className="badge bg-danger">
+                                    <FaUserShield className="me-1" size={12} />
+                                    Accès total
+                                  </span>
+                                ) : (
+                                  <div className="d-flex flex-wrap gap-1">
+                                    {userPermissions.pages?.length > 0 ? (
+                                      userPermissions.pages.map(pageId => {
+                                        const page = availablePages.find(p => p.id === pageId);
+                                        return page ? (
+                                          <span key={pageId} className="badge bg-primary" style={{ fontSize: '0.7rem' }}>
+                                            {page.label}
+                                          </span>
+                                        ) : null;
+                                      })
+                                    ) : (
+                                      <span className="text-muted small">Aucune page</span>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3">
+                                <span className={`badge ${user.actif ? 'bg-success' : 'bg-secondary'}`}>
+                                  {user.actif ? 'Actif' : 'Inactif'}
+                                </span>
+                              </td>
+                              <td className="py-3">
+                                <div className="d-flex gap-1">
+                                  <button
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={() => handleEditUser(user)}
+                                    title="Modifier"
+                                  >
+                                    <FaEdit size={12} />
+                                  </button>
+                                  <button
+                                    className={`btn btn-sm ${user.actif ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                                    onClick={() => handleToggleUserStatus(user.id)}
+                                    title={user.actif ? 'Désactiver' : 'Activer'}
+                                  >
+                                    {user.actif ? <FaTimes size={12} /> : <FaUser size={12} />}
+                                  </button>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -632,116 +735,156 @@ const AdminSettings = () => {
             <div className="card-header bg-light border-0">
               <h5 className="mb-0 fw-bold">
                 <FaUserShield className="text-primary me-2" />
-                Gestion du Compte Super Admin
+                Mon Compte Super Admin
               </h5>
             </div>
             <div className="card-body">
-              <div className="row">
-                {/* Connection Test Section */}
-                <div className="col-12 mb-4">
-                  <h6 className="fw-bold mb-3">
-                    <FaPaperPlane className="text-success me-2" />
-                    Test de Connexion
-                  </h6>
-                  <div className="d-flex align-items-center gap-3">
-                    <motion.button
-                      type="button"
-                      className="btn btn-success"
-                      disabled={telegramState.testing}
-                      onClick={testTelegramConnection}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {telegramState.testing ? (
-                        <>
-                          <div className="spinner-border spinner-border-sm me-2" role="status" />
-                          Test en cours...
-                        </>
-                      ) : (
-                        <>
-                          <FaPaperPlane className="me-2" />
-                          Tester la connexion
-                        </>
-                      )}
-                    </motion.button>
-                    
-                    {telegramState.lastTestResult && (
-                      <div className={`alert alert-${telegramState.lastTestResult.success ? 'success' : 'danger'} mb-0 py-2 px-3`}>
-                        <small>
-                          <strong>{telegramState.lastTestResult.success ? '✅' : '❌'}</strong> {telegramState.lastTestResult.message}
-                          <br />
-                          <em className="text-muted">
-                            {telegramState.lastTestResult.timestamp.toLocaleString('fr-FR')}
-                          </em>
-                        </small>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Daily Summary Section */}
-                <div className="col-12 mb-4">
-                  <h6 className="fw-bold mb-3">
-                    <FaCalendarDay className="text-info me-2" />
-                    Résumé Journalier
-                  </h6>
-                  <div className="d-flex align-items-center gap-3">
-                    <motion.button
-                      type="button"
-                      className="btn btn-info"
-                      disabled={telegramState.sendingSummary}
-                      onClick={sendDailySummary}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {telegramState.sendingSummary ? (
-                        <>
-                          <div className="spinner-border spinner-border-sm me-2" role="status" />
-                          Envoi en cours...
-                        </>
-                      ) : (
-                        <>
-                          <FaCalendarDay className="me-2" />
-                          Envoyer résumé du jour
-                        </>
-                      )}
-                    </motion.button>
-                    
-                    {telegramState.lastSummaryResult && (
-                      <div className={`alert alert-${telegramState.lastSummaryResult.success ? 'success' : 'danger'} mb-0 py-2 px-3`}>
-                        <small>
-                          <strong>{telegramState.lastSummaryResult.success ? '✅' : '❌'}</strong> {telegramState.lastSummaryResult.message}
-                          {telegramState.lastSummaryResult.reservations !== undefined && (
-                            <span> ({telegramState.lastSummaryResult.reservations} réservations)</span>
-                          )}
-                          <br />
-                          <em className="text-muted">
-                            {telegramState.lastSummaryResult.timestamp.toLocaleString('fr-FR')}
-                          </em>
-                        </small>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Configuration Guide */}
+              {/* Account Info Section */}
+              <div className="row mb-4">
                 <div className="col-12">
-                  <h6 className="fw-bold mb-3">Configuration</h6>
-                  <div className="bg-light p-3 rounded">
-                    <p className="mb-2"><strong>Pour configurer votre bot Telegram :</strong></p>
-                    <ol className="mb-2">
-                      <li>Contactez <strong>@BotFather</strong> sur Telegram</li>
-                      <li>Créez un nouveau bot avec <code>/newbot</code></li>
-                      <li>Copiez le token dans votre fichier <code>.env</code></li>
-                      <li>Ajoutez le bot à votre groupe/chat</li>
-                      <li>Copiez le Chat ID dans votre fichier <code>.env</code></li>
-                    </ol>
-                    <div className="small text-muted">
-                      <strong>Variables d'environnement requises :</strong><br />
-                      <code>TELEGRAM_BOT_TOKEN=votre_token</code><br />
-                      <code>TELEGRAM_CHAT_ID=votre_chat_id</code>
+                  <div className="bg-light p-4 rounded">
+                    <h6 className="fw-bold mb-3">
+                      <FaUser className="text-primary me-2" />
+                      Informations du compte
+                    </h6>
+                    <div className="row">
+                      <div className="col-md-6 mb-2">
+                        <strong>Nom:</strong> <span className="text-muted">{admin?.nom || 'N/A'}</span>
+                      </div>
+                      <div className="col-md-6 mb-2">
+                        <strong>Email:</strong> <span className="text-muted">{admin?.email || 'N/A'}</span>
+                      </div>
+                      <div className="col-md-6 mb-2">
+                        <strong>Rôle:</strong> 
+                        <span className="badge bg-danger ms-2">
+                          <FaUserShield className="me-1" />
+                          Super Admin
+                        </span>
+                      </div>
+                      <div className="col-md-6 mb-2">
+                        <strong>Statut:</strong> 
+                        <span className="badge bg-success ms-2">
+                          Actif
+                        </span>
+                      </div>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Password Change Section */}
+              <div className="row">
+                <div className="col-12">
+                  <h6 className="fw-bold mb-3">
+                    <FaKey className="text-warning me-2" />
+                    Changer le mot de passe
+                  </h6>
+                  
+                  <form onSubmit={handleAdminAccountSubmit}>
+                    <div className="row">
+                      <div className="col-md-12 mb-3">
+                        <label className="form-label">Mot de passe actuel *</label>
+                        <div className="input-group">
+                          <input
+                            type={showCurrentPassword ? 'text' : 'password'}
+                            className="form-control"
+                            name="currentPassword"
+                            value={adminAccountForm.currentPassword}
+                            onChange={handleAdminAccountInputChange}
+                            required
+                            placeholder="Entrez votre mot de passe actuel"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          >
+                            {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">Nouveau mot de passe *</label>
+                        <div className="input-group">
+                          <input
+                            type={showNewPassword ? 'text' : 'password'}
+                            className="form-control"
+                            name="newPassword"
+                            value={adminAccountForm.newPassword}
+                            onChange={handleAdminAccountInputChange}
+                            required
+                            placeholder="Nouveau mot de passe"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                          >
+                            {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+                        <small className="text-muted">Minimum 6 caractères</small>
+                      </div>
+
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">Confirmer le mot de passe *</label>
+                        <div className="input-group">
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            className="form-control"
+                            name="confirmPassword"
+                            value={adminAccountForm.confirmPassword}
+                            onChange={handleAdminAccountInputChange}
+                            required
+                            placeholder="Confirmez le mot de passe"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="col-12">
+                        <div className="alert alert-info">
+                          <FaKey className="me-2" />
+                          <strong>Conseils de sécurité:</strong>
+                          <ul className="mb-0 mt-2">
+                            <li>Utilisez un mot de passe unique</li>
+                            <li>Combinez lettres majuscules, minuscules et chiffres</li>
+                            <li>Évitez les informations personnelles</li>
+                            <li>Changez régulièrement votre mot de passe</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="col-12">
+                        <motion.button
+                          type="submit"
+                          className="btn btn-primary"
+                          disabled={loading}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {loading ? (
+                            <>
+                              <div className="spinner-border spinner-border-sm me-2" role="status" />
+                              Mise à jour en cours...
+                            </>
+                          ) : (
+                            <>
+                              <FaSave className="me-2" />
+                              Enregistrer le nouveau mot de passe
+                            </>
+                          )}
+                        </motion.button>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
@@ -1083,21 +1226,8 @@ const AdminSettings = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Rôle</label>
-                      <select
-                        className="form-select"
-                        name="role"
-                        value={userForm.role}
-                        onChange={handleUserInputChange}
-                      >
-                        <option value="employe">Employé</option>
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                      </select>
-                    </div>
-                    <div className="col-md-6 mb-3">
-                      <div className="form-check mt-4">
+                    <div className="col-12 mb-3">
+                      <div className="form-check">
                         <input
                           className="form-check-input"
                           type="checkbox"
@@ -1108,6 +1238,48 @@ const AdminSettings = () => {
                         <label className="form-check-label">
                           Utilisateur actif
                         </label>
+                      </div>
+                    </div>
+
+                    <div className="col-12 mb-3">
+                      <label className="form-label fw-bold">
+                        <FaKey className="me-2 text-primary" />
+                        Pages autorisées
+                      </label>
+                      <div className="card border">
+                        <div className="card-body">
+                          <div className="row">
+                            {availablePages.map((page) => {
+                              const Icon = page.icon;
+                              const isChecked = userForm.permissions?.pages?.includes(page.id) || false;
+                              
+                              return (
+                                <div key={page.id} className="col-md-6 mb-2">
+                                  <div className="form-check">
+                                    <input
+                                      className="form-check-input"
+                                      type="checkbox"
+                                      id={`page-${page.id}`}
+                                      checked={isChecked}
+                                      onChange={() => handlePermissionChange(page.id)}
+                                    />
+                                    <label 
+                                      className="form-check-label d-flex align-items-center" 
+                                      htmlFor={`page-${page.id}`}
+                                    >
+                                      <Icon className="me-2 text-muted" size={14} />
+                                      {page.label}
+                                    </label>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <small className="text-muted mt-2 d-block">
+                            <FaKey className="me-1" size={12} />
+                            Les employés ne peuvent accéder qu'aux pages sélectionnées
+                          </small>
+                        </div>
                       </div>
                     </div>
                   </div>

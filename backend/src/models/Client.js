@@ -139,13 +139,17 @@ class ClientModel {
 
         const query = `
             SELECT 
-                id, nom, prenom, email, telephone, date_naissance,
-                adresse, date_creation,
-                (SELECT COUNT(*) FROM reservations WHERE client_id = clients.id) as nombre_reservations,
-                (SELECT MAX(date_reservation) FROM reservations WHERE client_id = clients.id) as derniere_visite
-            FROM clients 
-            ${whereClause}
-            ORDER BY date_creation DESC
+                c.id, c.nom, c.prenom, c.email, c.telephone, c.date_naissance,
+                c.adresse, c.date_creation, c.statut,
+                COUNT(DISTINCT CASE WHEN r.statut IN ('confirmee', 'terminee') THEN r.id END) as nombre_visites,
+                COUNT(DISTINCT r.id) as nombre_reservations,
+                COALESCE(SUM(CASE WHEN r.statut = 'terminee' THEN r.prix_final ELSE 0 END), 0) as total_depense,
+                MAX(r.date_reservation) as derniere_visite
+            FROM clients c
+            LEFT JOIN reservations r ON c.id = r.client_id
+            ${whereClause.replace('WHERE actif', 'WHERE c.actif').replace('AND (nom', 'AND (c.nom').replace('OR prenom', 'OR c.prenom').replace('OR email', 'OR c.email').replace('OR telephone', 'OR c.telephone')}
+            GROUP BY c.id
+            ORDER BY c.date_creation DESC
             LIMIT ? OFFSET ?
         `;
         

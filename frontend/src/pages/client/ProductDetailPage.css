@@ -1,8 +1,8 @@
 .product-detail-page {
     min-height: 100vh;
     background-color: #fafafa;
-    padding-top: 80px; /* Account for navbar */
     padding-bottom: 2rem;
+    /* Navbar spacing handled by ClientLayout */
 }
 
 /* Loading and Error States */
@@ -446,9 +446,7 @@
 }
 
 @media (max-width: 768px) {
-    .product-detail-page {
-        padding-top: 60px;
-    }
+    /* Navbar spacing handled by ClientLayout */
     
     .product-content {
         grid-template-columns: 1fr;

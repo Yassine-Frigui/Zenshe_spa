@@ -165,7 +165,7 @@ router.post('/', reservationLimiter, validateInput([
                         statut = 'en_attente',
                         reservation_status = 'reserved',
                         prix_service = ?,
-                        prix_addons = ?,
+                        addon_price = ?,
                         prix_final = ?,
                         session_id = NULL,
                         referral_code_id = ?,
@@ -173,7 +173,7 @@ router.post('/', reservationLimiter, validateInput([
                         addon_price = ?,
                         date_modification = NOW()
                     WHERE id = ?
-                `, [client_id, prix_service, addonPrice, prix_service + addonPrice, referralCodeId, hasHealingAddon, addonPrice, existingDraft[0].id]);
+                `, [client_id, prix_service, addon_price, prix_service + addon_price, referral_code_id, has_healing_addon, addon_price, existingDraft[0].id]);
                 
                 reservationId = existingDraft[0].id;
                 convertedFromDraft = true;
@@ -195,7 +195,7 @@ router.post('/', reservationLimiter, validateInput([
                 heure_fin,
                 notes_client,
                 prix_service,
-                prix_addons: addonPrice,
+                addon_price: addonPrice,
                 prix_final: prix_service + addonPrice,
                 statut: 'en_attente',
                 reservation_status: 'reserved',

@@ -109,7 +109,7 @@ router.post('/register', validateClientRegistration, async (req, res) => {
 // Client login
 router.post('/login', async (req, res) => {
     try {
-        console.log('=== LOGIN ATTEMPT ===');
+        console.log('=== CLIENT LOGIN ATTEMPT ===');
         console.log('Request body:', req.body);
         
         const { email, mot_de_passe } = req.body;

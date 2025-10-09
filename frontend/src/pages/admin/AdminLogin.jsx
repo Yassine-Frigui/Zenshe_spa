@@ -18,20 +18,50 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Handle redirect from client login with pre-filled email
+  // Handle redirect from client login with pre-filled credentials
   useEffect(() => {
-    if (location.state?.email) {
-      setFormData(prev => ({
-        ...prev,
-        email: location.state.email
-      }));
-    }
-    if (location.state?.message) {
-      setError(location.state.message);
-      // Clear the message after 5 seconds
-      setTimeout(() => setError(''), 5000);
-    }
-  }, [location.state]);
+    const autoLogin = async () => {
+      if (location.state?.autoSubmit && location.state?.email && location.state?.password) {
+        // Clear the state immediately to prevent re-runs
+        window.history.replaceState({}, document.title);
+        
+        setFormData({
+          email: location.state.email,
+          password: location.state.password
+        });
+        
+        setLoading(true);
+        setError('');
+        
+        try {
+          const result = await login(location.state.email, location.state.password);
+          
+          if (result.success) {
+            navigate('/admin', { replace: true });
+          } else {
+            setError(result.message || 'Identifiants incorrects. Veuillez réessayer.');
+          }
+        } catch (error) {
+          setError('Erreur de connexion. Veuillez vérifier vos identifiants et réessayer.');
+        } finally {
+          setLoading(false);
+        }
+      } else if (location.state?.email) {
+        setFormData(prev => ({
+          ...prev,
+          email: location.state.email
+        }));
+      }
+      
+      if (location.state?.message) {
+        setError(location.state.message);
+        setTimeout(() => setError(''), 5000);
+      }
+    };
+    
+    autoLogin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -48,10 +78,19 @@ const AdminLogin = () => {
     setError('');
 
     try {
-      await login(formData.email, formData.password);
-      navigate('/admin');
+      const result = await login(formData.email, formData.password);
+      
+      if (result.success) {
+        // Successful login - redirect to admin dashboard
+        navigate('/admin');
+      } else {
+        // Login failed - show error message from backend
+        setError(result.message || 'Identifiants incorrects. Veuillez réessayer.');
+      }
     } catch (error) {
-      setError('Email ou mot de passe incorrect');
+      // Network or unexpected error
+      console.error('Login error:', error);
+      setError('Erreur de connexion. Veuillez vérifier vos identifiants et réessayer.');
     } finally {
       setLoading(false);
     }

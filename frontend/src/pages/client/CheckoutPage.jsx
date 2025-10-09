@@ -3,6 +3,7 @@ import { Container, Form, Button, Row, Col, Card, Alert, ListGroup } from 'react
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
+import { getImageUrl } from '../../utils/apiConfig';
 
 const CheckoutPage = () => {
   const { cartItems, getCartTotal } = useCart();
@@ -75,7 +76,7 @@ const CheckoutPage = () => {
                     <ListGroup.Item key={item.id} className="d-flex align-items-center border-0 px-0 py-3">
                       <div style={{ width: 60, height: 60, borderRadius: 16, overflow: 'hidden', marginRight: 16, background: '#f3f3f3' }}>
                         {item.image_url ? (
-                          <img src={`http://localhost:5000${item.image_url}`} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={getImageUrl(item.image_url)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <div className="d-flex align-items-center justify-content-center h-100 text-muted">
                             <span style={{ fontSize: '12px' }}>Image</span>

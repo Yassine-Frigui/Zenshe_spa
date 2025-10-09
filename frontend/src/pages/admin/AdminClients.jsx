@@ -90,7 +90,8 @@ const AdminClients = () => {
       'inactif': { bg: 'secondary', text: 'Inactif', icon: null }
     };
     
-    const config = statusConfig[statut] || { bg: 'secondary', text: 'Inconnu', icon: null };
+    // Default to 'actif' if no status specified
+    const config = statusConfig[statut] || statusConfig['actif'];
     return (
       <span className={`badge bg-${config.bg} d-flex align-items-center gap-1`}>
         {config.icon}
@@ -303,7 +304,9 @@ const AdminClients = () => {
             <div className="card-body">
               <FaHeart className="text-success mb-2" size={32} />
               <h4 className="fw-bold">
-                {Math.round(clients.reduce((sum, c) => sum + c.total_depense, 0) / clients.length)}DT
+                {clients.length > 0 
+                  ? Math.round(clients.reduce((sum, c) => sum + (c.total_depense || 0), 0) / clients.length) 
+                  : 0}DT
               </h4>
               <p className="text-muted mb-0">Panier moyen</p>
             </div>

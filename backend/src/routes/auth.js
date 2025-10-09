@@ -7,9 +7,16 @@ const { authLimiter, validateInput, emailValidation, passwordValidation } = requ
 const router = express.Router();
 
 // Connexion administrateur
-router.post('/login', authLimiter, validateInput([emailValidation, passwordValidation]), async (req, res) => {
+// NOTE: We only validate email format, not password complexity for login
+// Password validation should only be enforced during registration/reset, not login
+router.post('/login', authLimiter, validateInput([emailValidation]), async (req, res) => {
     try {
-        console.log('LOGIN ATTEMPT:', req.body);
+        console.log('========================');
+        console.log('🔐 LOGIN ATTEMPT');
+        console.log('  - Email:', req.body.email);
+        console.log('  - Password provided:', req.body.password ? 'YES (length: ' + req.body.password.length + ')' : 'NO');
+        console.log('  - Request body:', req.body);
+        console.log('========================');
         const { email, password } = req.body;
 
         // SECURITY: Authentication bypass removed for production security
@@ -34,33 +41,60 @@ router.post('/login', authLimiter, validateInput([emailValidation, passwordValid
             'SELECT id, nom, email, mot_de_passe, role, actif FROM utilisateurs WHERE email = ? AND actif = TRUE',
             [actualEmail]
         );
-        console.log('ADMIN FOUND:', admin.length > 0 ? 'YES' : 'NO');
+        console.log('========================');
+        console.log('ADMIN SEARCH RESULT:', admin.length > 0 ? 'USER FOUND ✅' : 'USER NOT FOUND ❌');
+        
+        if (admin.length > 0) {
+            console.log('Found admin details:');
+            console.log('  - ID:', admin[0].id);
+            console.log('  - Email:', admin[0].email);
+            console.log('  - Name:', admin[0].nom);
+            console.log('  - Role:', admin[0].role);
+            console.log('  - Active:', admin[0].actif);
+            console.log('  - Has password hash:', admin[0].mot_de_passe ? 'YES' : 'NO');
+            console.log('  - Password hash preview:', admin[0].mot_de_passe ? admin[0].mot_de_passe.substring(0, 30) + '...' : 'NULL');
+        } else {
+            console.log('❌ No admin found with email:', actualEmail);
+        }
+        console.log('========================');
 
         if (!admin.length) {
             if (isAdminLogin) {
                 return res.status(401).json({ 
-                    message: 'Accès administrateur refusé. Utilisateur non trouvé ou pas autorisé.',
+                    message: 'Email ou mot de passe incorrect. Veuillez réessayer.',
                     isAdminLoginAttempt: true
                 });
             } else {
-                return res.status(401).json({ message: 'Identifiants invalides' });
+                return res.status(401).json({ message: 'Email ou mot de passe incorrect. Veuillez réessayer.' });
             }
         }
 
         // If this is an admin login attempt, ensure the user has admin role
         if (isAdminLogin && (!admin[0].role || admin[0].role === 'client')) {
             return res.status(403).json({ 
-                message: 'Accès administrateur refusé. Privilèges insuffisants.',
+                message: 'Accès administrateur refusé. Ce compte ne dispose pas des privilèges requis.',
                 isAdminLoginAttempt: true
             });
         }
 
         // Vérifier le mot de passe
+        console.log('========================');
+        console.log('PASSWORD VERIFICATION:');
+        console.log('  - Provided password length:', password ? password.length : 0);
+        console.log('  - Provided password:', password ? '***' + password.slice(-3) : 'EMPTY');
+        console.log('  - Stored hash:', admin[0].mot_de_passe ? admin[0].mot_de_passe.substring(0, 30) + '...' : 'NULL');
+        
         const isValidPassword = await verifyPassword(password, admin[0].mot_de_passe);
-        console.log('PASSWORD VALID:', isValidPassword);
+        
+        console.log('  - Password match result:', isValidPassword ? '✅ VALID' : '❌ INVALID');
+        console.log('========================');
+        
         if (!isValidPassword) {
-            return res.status(401).json({ message: 'Identifiants invalides' });
+            console.log('❌ LOGIN FAILED: Invalid password for', actualEmail);
+            return res.status(401).json({ message: 'Email ou mot de passe incorrect. Veuillez réessayer.' });
         }
+        
+        console.log('✅ LOGIN SUCCESS for', actualEmail);
 
         // Générer le token
         const token = generateToken({

@@ -16,9 +16,11 @@ import {
   FaCalendarCheck,
   FaSave,
   FaUser,
-  FaClipboardCheck
+  FaClipboardCheck,
+  FaFileSignature
 } from 'react-icons/fa';
 import { adminAPI } from '../../services/api';
+import WaiverModal from '../../components/WaiverModal';
 
 const AdminReservations = () => {
   const [reservations, setReservations] = useState([]);
@@ -43,6 +45,8 @@ const AdminReservations = () => {
     heure_debut: '',
     heure_fin: ''
   });
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState(null);
   const [createFormData, setCreateFormData] = useState({
     service_id: '',
     date_reservation: '',
@@ -133,7 +137,8 @@ const AdminReservations = () => {
         notes: reservation.notes_client || '',
         is_draft: reservation.is_draft || reservation.statut === 'draft',
         session_id: reservation.session_id,
-        created_at: reservation.date_creation
+        created_at: reservation.date_creation,
+        jotform_submission_id: reservation.jotform_submission_id // ADD THIS LINE!
       }));
       
       setReservations(transformedReservations);
@@ -742,6 +747,18 @@ const AdminReservations = () => {
               </div>
               <div className="modal-footer border-0">
                 <div className="d-flex gap-2 w-100">
+                  {selectedReservation.jotform_submission_id && (
+                    <button 
+                      className="btn btn-info"
+                      onClick={() => {
+                        setCurrentSubmissionId(selectedReservation.jotform_submission_id);
+                        setShowWaiverModal(true);
+                      }}
+                    >
+                      <FaFileSignature className="me-2" />
+                      Voir Décharge
+                    </button>
+                  )}
                   <button className="btn btn-outline-success">
                     <FaPhone className="me-2" />
                     Appeler
@@ -1184,6 +1201,17 @@ const AdminReservations = () => {
             </motion.div>
           </div>
         </div>
+      )}
+
+      {/* Waiver Modal */}
+      {showWaiverModal && currentSubmissionId && (
+        <WaiverModal
+          submissionId={currentSubmissionId}
+          onClose={() => {
+            setShowWaiverModal(false);
+            setCurrentSubmissionId(null);
+          }}
+        />
       )}
     </div>
   );

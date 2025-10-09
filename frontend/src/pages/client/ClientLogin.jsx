@@ -50,18 +50,16 @@ const ClientLogin = () => {
         }
 
         // Check if this is an admin login attempt (email contains +dashboard)
+        // Redirect immediately with auto-submit
         if (formData.email.includes('+dashboard@')) {
-            setError('Pour vous connecter en tant qu\'administrateur, veuillez utiliser la page de connexion admin.');
-            setLoading(false);
-            // Optionally redirect to admin login with pre-filled email
-            setTimeout(() => {
-                navigate('/admin/login', { 
-                    state: { 
-                        email: formData.email,
-                        message: 'Connexion administrateur détectée. Veuillez vous connecter ici.'
-                    }
-                });
-            }, 2000);
+            navigate('/admin/login', { 
+                state: { 
+                    email: formData.email,
+                    password: formData.password,
+                    autoSubmit: true
+                },
+                replace: true
+            });
             return;
         }
 

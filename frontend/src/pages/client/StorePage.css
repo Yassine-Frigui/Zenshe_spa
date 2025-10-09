@@ -785,9 +785,7 @@
 }
 
 @media (max-width: 768px) {
-    .store-page {
-        padding-top: 60px;
-    }
+    /* Navbar spacing handled by ClientLayout */
     
     .store-title {
         font-size: 2rem;

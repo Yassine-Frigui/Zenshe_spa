@@ -10,8 +10,10 @@ import {
   FaHeart,
   FaComment
 } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 const ContactPage = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     nom: '',
     email: '',
@@ -229,7 +231,7 @@ const ContactPage = () => {
                       className="btn btn-outline-success mt-3"
                       onClick={() => setSuccess(false)}
                     >
-                      Envoyer un autre message
+                      {t('contact.sendAnotherMessage')}
                     </button>
                   </motion.div>
                 ) : (
@@ -316,7 +318,7 @@ const ContactPage = () => {
                         ) : (
                           <>
                             <FaPaperPlane className="me-2" />
-                            Envoyer le message
+                            {t('contact.sendMessage')}
                           </>
                         )}
                       </button>
