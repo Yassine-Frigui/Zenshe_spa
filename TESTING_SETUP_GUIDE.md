@@ -104,7 +104,7 @@ DB_NAME=zenshespa_database_test
 # ===================================
 # EMAIL SERVICE (BREVO) - EXISTING KEY
 # ===================================
-BREVO_API_KEY=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
+BREVO_API_KEY=brevo_api_key_dummy
 
 # ===================================
 # JOTFORM API (GET YOUR KEY)

@@ -3,7 +3,7 @@
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.DB_NAME = 'zenshespa_database';
-process.env.BREVO_API_KEY = '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';
+process.env.BREVO_API_KEY = 'brevo_api_key_dummy';
 process.env.JOTFORM_API_KEY = 'test-jotform-api-key'; // Mock JotForm API key for testing
 process.env.JOTFORM_FORM_ID = 'test-form-id'; // Mock JotForm form ID for testing
 
