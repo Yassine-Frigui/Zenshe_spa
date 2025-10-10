@@ -485,7 +485,7 @@ const BookingPage = () => {
                   <FaCheck className="text-success" style={{ fontSize: '4rem' }} />
                 </div>
                 <h2 className="text-green fw-bold mb-3">
-                  ✨ Réservation confirmée ! ✨
+                  <FaStar className="me-2" /> {t('booking.confirmedTitle', 'Réservation confirmée !')} <FaStar className="ms-2" />
                 </h2>
                 <p className="lead text-muted mb-4">
                   Votre rendez-vous a été enregistré avec succès. Vous recevrez un email de confirmation avec tous les détails.
@@ -493,17 +493,17 @@ const BookingPage = () => {
                 
                 {/* Reservation Details */}
                 <div className="bg-light border-left border-green p-4 rounded mb-4 text-start">
-                  <h5 className="text-green mb-3">📋 Détails de votre réservation</h5>
+                  <h5 className="text-green mb-3"><FaFileSignature className="me-2" /> {t('booking.detailsTitle', "Détails de votre réservation")}</h5>
                   <div className="row">
                     <div className="col-md-6">
-                      <p><strong>🎯 Service :</strong> {service?.nom}</p>
-                      <p><strong>📅 Date :</strong> {reservationDate}</p>
-                      <p><strong>⏰ Heure :</strong> {reservation.heure_debut}</p>
+                      <p><strong><FaBullseye className="me-2" /> Service :</strong> {service?.nom}</p>
+                      <p><strong><FaCalendarAlt className="me-2" /> Date :</strong> {reservationDate}</p>
+                      <p><strong><FaClock className="me-2" /> Heure :</strong> {reservation.heure_debut}</p>
                     </div>
                     <div className="col-md-6">
-                      <p><strong>👤 Client :</strong> {clientData.prenom} {clientData.nom}</p>
-                      <p><strong>📧 Email :</strong> {clientData.email}</p>
-                      <p><strong>💰 Prix :</strong> {service?.prix} DT</p>
+                      <p><strong><FaUser className="me-2" /> Client :</strong> {clientData.prenom} {clientData.nom}</p>
+                      <p><strong><FaEnvelope className="me-2" /> Email :</strong> {clientData.email}</p>
+                      <p><strong><FaMoneyBill className="me-2" /> Prix :</strong> {service?.prix} DT</p>
                     </div>
                   </div>
                 </div>
@@ -956,9 +956,9 @@ const BookingPage = () => {
                 viewport={{ once: true }}
               >
                 <FaCalendarAlt className="text-green mb-3" size={40} />
-                <h5 className="fw-bold text-green">Réservation facile</h5>
+                <h5 className="fw-bold text-green">{t('booking.easyBooking.title')}</h5>
                 <p className="text-muted">
-                  Choisissez votre horraire en ligne, recevez une confirmation immédiate
+                  {t('booking.easyBooking.description')}
                 </p>
               </motion.div>
             </div>
@@ -970,9 +970,9 @@ const BookingPage = () => {
                 viewport={{ once: true }}
               >
                 <FaPhone className="text-green mb-3" size={40} />
-                <h5 className="fw-bold text-green">Support disponible</h5>
+                <h5 className="fw-bold text-green">{t('booking.supportAvailable.title')}</h5>
                 <p className="text-muted">
-                  Une question ? Contactez-nous au 01 23 45 67 89
+                  {t('booking.supportAvailable.description')}
                 </p>
               </motion.div>
             </div>
@@ -984,9 +984,9 @@ const BookingPage = () => {
                 viewport={{ once: true }}
               >
                 <FaSave className="text-green mb-3" size={40} />
-                <h5 className="fw-bold text-green">Sauvegarde intelligente</h5>
+                <h5 className="fw-bold text-green">{t('booking.smartSave.title')}</h5>
                 <p className="text-muted">
-                  Vos informations sont automatiquement sauvegardées dès que vous saisissez votre téléphone - pas besoin de vous inquiéter de perdre vos données
+                  {t('booking.smartSave.description')}
                 </p>
               </motion.div>
             </div>
@@ -998,9 +998,9 @@ const BookingPage = () => {
                 viewport={{ once: true }}
               >
                 <FaCheck className="text-green mb-3" size={40} />
-                <h5 className="fw-bold text-green">Rappel automatique</h5>
+                <h5 className="fw-bold text-green">{t('booking.autoReminder.title')}</h5>
                 <p className="text-muted">
-                  Recevez un rappel 24h avant votre rendez-vous
+                  {t('booking.autoReminder.description')}
                 </p>
               </motion.div>
             </div>
@@ -1023,7 +1023,7 @@ const BookingPage = () => {
               <div className="modal-header bg-green text-white">
                 <h5 className="modal-title">
                   <FaFileSignature className="me-2" />
-                  Formulaire de décharge - Waiver
+                  {t('booking.waiver.title')}
                 </h5>
                 <button
                   type="button"
@@ -1042,7 +1042,7 @@ const BookingPage = () => {
                   className="btn btn-secondary"
                   onClick={() => setShowWaiverModal(false)}
                 >
-                  Fermer
+                  {t('booking.waiver.close')}
                 </button>
               </div>
             </div>

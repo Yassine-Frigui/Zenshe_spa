@@ -1,7 +1,7 @@
 // Integration test for Store API
 
 const request = require('supertest');
-const app = require('../../../backend/src/app');
+const app = require('../../backend/src/app');
 
 describe('Store API Integration Tests', () => {
     describe('GET /api/store/products', () => {

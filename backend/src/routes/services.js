@@ -192,11 +192,11 @@ router.post('/:serviceId/packages', requireRole(['super_admin', 'admin']), async
         };
         
         const packageId = await ServiceModel.createService(packageData);
-        const package = await ServiceModel.getServiceById(packageId);
+        const createdPackage = await ServiceModel.getServiceById(packageId);
         
         res.status(201).json({
             message: 'Package created successfully',
-            package
+            package: createdPackage
         });
     } catch (error) {
         console.error('Error creating package:', error);

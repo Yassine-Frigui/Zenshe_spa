@@ -82,12 +82,12 @@ describe('Product Model - Pre-order System', () => {
         });
     });
 
-    describe('getProducts', () => {
-        test('should retrieve products without stock filter', async () => {
+    describe('getAllProducts', () => {
+        it('should retrieve products without stock filter', async () => {
             const mockProducts = [sampleProducts[0], sampleProducts[1]];
             executeQuery.mockResolvedValue([mockProducts, []]);
 
-            const result = await ProductModel.getProducts();
+            const result = await ProductModel.getAllProducts();
 
             expect(executeQuery).toHaveBeenCalled();
             expect(result.products).toBeDefined();
@@ -97,7 +97,7 @@ describe('Product Model - Pre-order System', () => {
         test('should handle pagination parameters', async () => {
             executeQuery.mockResolvedValue([[sampleProducts[0]], []]);
 
-            await ProductModel.getProducts({ page: 1, limit: 10 });
+            await ProductModel.getAllProducts({}, { page: 1, limit: 10 });
 
             expect(executeQuery).toHaveBeenCalled();
             const query = executeQuery.mock.calls[0][0];
@@ -108,7 +108,7 @@ describe('Product Model - Pre-order System', () => {
         test('should filter by category_id', async () => {
             executeQuery.mockResolvedValue([[sampleProducts[0]], []]);
 
-            await ProductModel.getProducts({ category_id: 1 });
+            await ProductModel.getAllProducts({ category_id: 1 });
 
             const query = executeQuery.mock.calls[0][0];
             expect(query).toContain('category_id');
@@ -117,7 +117,7 @@ describe('Product Model - Pre-order System', () => {
         test('should search by term', async () => {
             executeQuery.mockResolvedValue([[sampleProducts[0]], []]);
 
-            await ProductModel.getProducts({ search: 'Spa' });
+            await ProductModel.getAllProducts({ search: 'Spa' });
 
             const query = executeQuery.mock.calls[0][0];
             expect(query).toContain('name LIKE');
@@ -126,14 +126,23 @@ describe('Product Model - Pre-order System', () => {
 
     describe('getProductById', () => {
         test('should retrieve product by id with pre-order fields', async () => {
-            const mockProduct = sampleProducts[0];
-            executeQuery.mockResolvedValue([[mockProduct]]);
+            // Simulate MySQL response with numeric boolean (1/0 instead of true/false)
+            const mockProduct = {
+                ...sampleProducts[0],
+                is_preorder: 1, // MySQL returns 1 for true
+                is_active: 1,
+                is_featured: 1,
+                price: '2500.00', // MySQL returns as string
+                weight: '0.00', // MySQL returns as string
+                estimated_delivery_days: '21' // MySQL returns as string
+            };
+            executeQuery.mockResolvedValue([mockProduct]); // Note: Single array, not nested
 
-            const result = await ProductModel.getProductById(1);
+            const result = await ProductModel.getProductById(1, 'fr');
 
             expect(executeQuery).toHaveBeenCalledWith(
                 expect.stringContaining('WHERE p.id = ?'),
-                [1]
+                ['fr', 'fr', 1]
             );
             expect(result).toBeDefined();
             expect(result.is_preorder).toBe(true);
@@ -141,7 +150,7 @@ describe('Product Model - Pre-order System', () => {
         });
 
         test('should return null if product not found', async () => {
-            executeQuery.mockResolvedValue([[]]);
+            executeQuery.mockResolvedValue([]);
 
             const result = await ProductModel.getProductById(999);
 
@@ -149,12 +158,8 @@ describe('Product Model - Pre-order System', () => {
         });
     });
 
-    describe('create', () => {
+    describe('createProduct', () => {
         test('should create product with pre-order fields', async () => {
-            executeQuery.mockResolvedValue([{ insertId: 1 }, []]);
-            executeQuery.mockResolvedValueOnce([{ insertId: 1 }])
-                        .mockResolvedValueOnce([[sampleProducts[0]]]);
-
             const productData = {
                 name: 'New Product',
                 description: 'Description',
@@ -166,10 +171,16 @@ describe('Product Model - Pre-order System', () => {
                 sku: 'NEW-001'
             };
 
-            const result = await ProductModel.create(productData);
+            // Mock getProductBySku (SKU check) - return null (SKU doesn't exist)
+            executeQuery.mockResolvedValueOnce([]) // getProductBySku returns empty
+                        .mockResolvedValueOnce([{ insertId: 1 }]) // INSERT query
+                        .mockResolvedValueOnce([[sampleProducts[0]]]); // getProductById
+
+            const result = await ProductModel.createProduct(productData);
 
             expect(executeQuery).toHaveBeenCalled();
-            const insertQuery = executeQuery.mock.calls[0][0];
+            const skuCheckQuery = executeQuery.mock.calls[0][0];
+            const insertQuery = executeQuery.mock.calls[1][0];
             expect(insertQuery).toContain('INSERT INTO products');
             expect(insertQuery).toContain('is_preorder');
             expect(insertQuery).toContain('estimated_delivery_days');
@@ -177,19 +188,21 @@ describe('Product Model - Pre-order System', () => {
         });
     });
 
-    describe('update', () => {
+    describe('updateProduct', () => {
         test('should update product with pre-order fields', async () => {
-            executeQuery.mockResolvedValueOnce([{ affectedRows: 1 }])
-                        .mockResolvedValueOnce([[sampleProducts[0]]]);
-
             const updates = {
                 name: 'Updated Product',
                 estimated_delivery_days: 30
             };
 
-            await ProductModel.update(1, updates);
+            // Mock getProductById (check if product exists)
+            executeQuery.mockResolvedValueOnce([[sampleProducts[0]]]) // getProductById
+                        .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE query
+                        .mockResolvedValueOnce([[{ ...sampleProducts[0], ...updates }]]); // getProductById again
 
-            const updateQuery = executeQuery.mock.calls[0][0];
+            await ProductModel.updateProduct(1, updates);
+
+            const updateQuery = executeQuery.mock.calls[1][0]; // Second call is the UPDATE
             expect(updateQuery).toContain('UPDATE products');
             expect(updateQuery).not.toContain('stock_quantity');
         });
@@ -202,7 +215,7 @@ describe('Product Model - Pre-order System', () => {
             expect(ProductModel.getLowStockProducts).toBeUndefined();
         });
 
-        test('should have pre-order related fields in create', async () => {
+        test('should have pre-order related fields in createProduct', async () => {
             executeQuery.mockResolvedValueOnce([{ insertId: 1 }])
                         .mockResolvedValueOnce([[{ ...sampleProducts[0], id: 1 }]]);
 
@@ -213,7 +226,7 @@ describe('Product Model - Pre-order System', () => {
                 estimated_delivery_days: 14
             };
 
-            await ProductModel.create(productData);
+            await ProductModel.createProduct(productData);
 
             const params = executeQuery.mock.calls[0][1];
             expect(params).toContain(true); // is_preorder

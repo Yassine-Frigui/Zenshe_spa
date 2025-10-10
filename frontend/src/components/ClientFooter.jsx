@@ -2,6 +2,7 @@ import React from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { 
   FaPhone, 
   FaEnvelope, 
@@ -14,6 +15,7 @@ import {
 
 const ClientFooter = () => {
   const currentYear = new Date().getFullYear()
+  const { t } = useTranslation()
 
   const socialLinks = [
     { icon: FaInstagram, url: '#', label: 'Instagram' },
@@ -22,11 +24,11 @@ const ClientFooter = () => {
   ]
 
   const quickLinks = [
-    { to: '/', label: 'Accueil' },
-    { to: '/services', label: 'Nos Services' },
-    { to: '/reservation', label: 'Réserver' },
-    { to: '/a-propos', label: 'À Propos' },
-    { to: '/contact', label: 'Contact' }
+    { to: '/', label: t('footer.links.home') },
+    { to: '/services', label: t('footer.links.services') },
+    { to: '/booking', label: t('footer.links.booking') },
+    { to: '/about', label: t('footer.links.about') },
+    { to: '/contact', label: t('footer.links.contact') }
   ]
 
   return (
@@ -56,7 +58,7 @@ const ClientFooter = () => {
                 </h4>
               </div>
               <p className="mb-3">
-                Your premier destination for intimate wellness and holistic healing, creating unforgettable moments of peace and reconnection.
+                {t('footer.description')}
               </p>
               <div className="d-flex gap-3">
                 {socialLinks.map((social, index) => {
@@ -85,7 +87,7 @@ const ClientFooter = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <h5 className="fw-bold mb-3">Liens Rapides</h5>
+              <h5 className="fw-bold mb-3">{t('footer.quickLinks')}</h5>
               <ul className="list-unstyled">
                 {quickLinks.map((link, index) => (
                   <li key={index} className="mb-2">
@@ -111,23 +113,23 @@ const ClientFooter = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <h5 className="fw-bold mb-3">Horaires d'Ouverture</h5>
+              <h5 className="fw-bold mb-3">{t('footer.openingHours')}</h5>
               <div className="small">
                 <div className="d-flex justify-content-between mb-1">
-                  <span>Lundi - Mercredi</span>
-                  <span>9h - 19h</span>
+                  <span>{t('footer.days.mondayWednesday')}</span>
+                  <span>{t('footer.hours.mondayWednesday')}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-1">
-                  <span>Jeudi - Vendredi</span>
-                  <span>9h - 20h</span>
+                  <span>{t('footer.days.thursdayFriday')}</span>
+                  <span>{t('footer.hours.thursdayFriday')}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-1">
-                  <span>Samedi</span>
-                  <span>9h - 18h</span>
+                  <span>{t('footer.days.saturday')}</span>
+                  <span>{t('footer.hours.saturday')}</span>
                 </div>
                 <div className="d-flex justify-content-between">
-                  <span>Dimanche</span>
-                  <span className="text-warning">Fermé</span>
+                  <span>{t('footer.days.sunday')}</span>
+                  <span className="text-warning">{t('footer.hours.closed')}</span>
                 </div>
               </div>
             </motion.div>
@@ -140,7 +142,7 @@ const ClientFooter = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <h5 className="fw-bold mb-3">Contact</h5>
+              <h5 className="fw-bold mb-3">{t('footer.contact')}</h5>
               <div className="d-flex align-items-center mb-2">
                 <FaMapMarkerAlt className="me-3" />
                 <small>9777 Yonge Street, Richmond Hill, ON L4C 1T9, Canada</small>
@@ -155,7 +157,7 @@ const ClientFooter = () => {
               </div>
               <Link to="/booking" className="btn btn-outline-light btn-sm rounded-pill px-3">
                 <FaHeart className="me-2" />
-                Prendre RDV
+                {t('footer.bookAppointment')}
               </Link>
             </motion.div>
           </Col>
@@ -172,9 +174,9 @@ const ClientFooter = () => {
               transition={{ duration: 0.6, delay: 0.4 }}
             >
               <small>
-                © {currentYear} ZenShe Spa. Tous droits réservés. 
+                © {currentYear} ZenShe Spa. {t('footer.allRightsReserved')}
                 <span className="ms-2">
-                  Fait avec <FaHeart className="text-danger" /> pour votre bien-être
+                  {t('footer.madeWithLove')} <FaHeart className="text-danger" /> {t('footer.forYourWellbeing')}
                 </span>
               </small>
             </motion.div>

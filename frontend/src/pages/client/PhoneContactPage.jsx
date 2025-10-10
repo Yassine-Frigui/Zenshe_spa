@@ -37,42 +37,42 @@ const PhoneContactPage = () => {
                                     <div className="mb-3">
                                         <FaPhone className="text-pink" size={60} />
                                     </div>
-                                    <h2 className="text-pink mb-3">Vérification par téléphone</h2>
+                                    <h2 className="text-pink mb-3">{t('phoneContact.title')}</h2>
                                     <p className="text-muted">
-                                        Ne vous inquiétez pas ! Notre équipe peut vous aider à récupérer l'accès à votre compte par téléphone pour vérifier votre identité.
+                                        {t('phoneContact.description')}
                                     </p>
                                 </div>
 
                                 <div className="bg-light p-4 rounded mb-4">
                                     <div className="d-flex align-items-center mb-3">
                                         <FaClock className="text-muted me-2" />
-                                        <strong>Heures de contact :</strong>
+                                        <strong>{t('phoneContact.contactHours')}:</strong>
                                     </div>
                                     <ul className="list-unstyled mb-0">
-                                        <li>• Lundi - Vendredi : 9h00 - 18h00</li>
-                                        <li>• Samedi : 9h00 - 16h00</li>
-                                        <li>• Dimanche : Fermé</li>
+                                        <li>• {t('phoneContact.mondayFriday')}</li>
+                                        <li>• {t('phoneContact.saturday')}</li>
+                                        <li>• {t('phoneContact.sunday')}</li>
                                     </ul>
                                 </div>
 
                                 <div className="alert alert-info" role="alert">
-                                    <strong>Comment ça marche :</strong><br />
-                                    Appelez-nous directement au <strong>+216 24 157 715</strong> pendant nos heures d'ouverture. Notre équipe vérifiera votre identité et vous aidera à récupérer l'accès à votre compte.
+                                    <strong>{t('phoneContact.howItWorks')}:</strong><br />
+                                    {t('phoneContact.howItWorksDesc')}
                                 </div>
 
                                 <div className="d-grid gap-2 mb-3">
                                     <Link to="/client/login" className="btn btn-pink">
                                         <FaArrowLeft className="me-2" />
-                                        Retour à la connexion
+                                        {t('phoneContact.backToLogin')}
                                     </Link>
                                 </div>
 
                                 <div className="text-center">
                                     <p className="text-muted small mb-2">
-                                        Vous avez retrouvé l'accès à votre email ?
+                                        {t('phoneContact.emailAccessRecovered')}
                                     </p>
                                     <Link to="/client/forgot-password" className="text-pink text-decoration-none">
-                                        Essayer la réinitialisation par email
+                                        {t('phoneContact.tryEmailReset')}
                                     </Link>
                                 </div>
                             </div>

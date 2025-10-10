@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Badge, Form } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/apiConfig';
 
 const StorePage = () => {
+  const { t, i18n } = useTranslation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -15,8 +17,9 @@ const StorePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch products
-    api.publicAPI.getProducts()
+    // Fetch products with language parameter
+    const currentLanguage = i18n.language || 'fr';
+    api.publicAPI.getProducts({ lang: currentLanguage })
       .then(response => {
         const productsData = response.data?.data || response.data || [];
         setProducts(Array.isArray(productsData) ? productsData : []);
@@ -31,7 +34,7 @@ const StorePage = () => {
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       })
       .catch(() => setCategories([]));
-  }, []);
+  }, [i18n.language]); // Re-fetch when language changes
 
   let filteredProducts = products.filter(product =>
     (!selectedCategory || product.category_id === parseInt(selectedCategory)) &&
@@ -47,7 +50,7 @@ const StorePage = () => {
   }
 
   const getPreorderBadge = () => {
-    return <Badge bg="info">Pré-commande</Badge>;
+    return <Badge bg="info">{t('store.preorder')}</Badge>;
   };
 
   const { addToCart } = useCart();
@@ -66,7 +69,7 @@ const StorePage = () => {
   const handleQuickOrder = (product) => {
     addToCart(product, 1);
     setAddedIds(prev => [...prev, product.id]);
-    addNotification(`${product.name} ajouté au panier`, '/boutique/panier');
+    addNotification(t('store.addedToCart', { name: product.name }), '/boutique/panier');
     setTimeout(() => setAddedIds(prev => prev.filter(id => id !== product.id)), 1500);
   };
 
@@ -75,7 +78,7 @@ const StorePage = () => {
       <motion.div
         className="py-5 mb-4"
         style={{
-          backgroundColor: '#343a40',
+          backgroundColor: '#6d8d8b',
           color: 'white',
         }}
         initial={{ opacity: 0, y: -30 }}
@@ -83,9 +86,9 @@ const StorePage = () => {
         transition={{ duration: 0.7 }}
       >
         <Container className="text-center">
-          <h1 className="display-4 fw-bold mb-3">Explorez Notre Collection</h1>
+          <h1 className="display-4 fw-bold mb-3">{t('store.title')}</h1>
           <p className="lead mx-auto text-black" style={{ maxWidth: 700 }}>
-            Découvrez Nos Produits et routines, formulés pour répondre aux besoins de chaque type de peau.
+            {t('store.description')}
           </p>
         </Container>
       </motion.div>
@@ -95,7 +98,7 @@ const StorePage = () => {
           <Col md={4} className="mb-3 mb-md-0">
             <Form.Control
               type="text"
-              placeholder="Rechercher un produit..."
+              placeholder={t('store.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -105,7 +108,7 @@ const StorePage = () => {
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
             >
-              <option value="">Toutes les catégories</option>
+              <option value="">{t('store.allCategories')}</option>
               {categories.map(category => (
                 <option key={category.id} value={category.id}>{category.name}</option>
               ))}
@@ -116,9 +119,9 @@ const StorePage = () => {
               value={sort}
               onChange={e => setSort(e.target.value)}
             >
-              <option value="newest">Nouveautés</option>
-              <option value="price-asc">Prix croissant</option>
-              <option value="price-desc">Prix décroissant</option>
+              <option value="newest">{t('store.newest')}</option>
+              <option value="price-asc">{t('store.priceAsc')}</option>
+              <option value="price-desc">{t('store.priceDesc')}</option>
             </Form.Select>
           </Col>
         </Row>
@@ -130,7 +133,7 @@ const StorePage = () => {
             </Col>
           ) : filteredProducts.length === 0 ? (
             <Col xs={12} className="text-center py-5">
-              <p className="text-muted">Aucun produit trouvé.</p>
+              <p className="text-muted">{t('store.noProducts')}</p>
             </Col>
           ) : (
             <AnimatePresence>
@@ -162,13 +165,13 @@ const StorePage = () => {
                         </div>
                         <div className="mt-auto d-flex flex-column align-items-center gap-2" style={{ paddingTop: 8 }}>
                           <Link to={`/boutique/produit/${product.id}`} className="btn btn-outline-primary btn-sm rounded-pill py-1 px-3">
-                            Détails
+                            {t('store.details')}
                           </Link>
                           <button
                             className="btn btn-success btn-sm rounded-pill py-1 px-3"
                             onClick={() => handleQuickOrder(product)}
                           >
-                            {addedIds.includes(product.id) ? 'Ajouté' : 'Commander (Pré-commande)'}
+                            {addedIds.includes(product.id) ? t('store.added') : t('store.orderPreorder')}
                           </button>
                         </div>
                       </Card.Body>
@@ -208,7 +211,7 @@ const StorePage = () => {
             >
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{n.message}</div>
-                <Link to={n.href} style={{ fontSize: 14, color: '#0d6efd', textDecoration: 'underline' }}>Voir le panier</Link>
+                <Link to={n.href} style={{ fontSize: 14, color: '#0d6efd', textDecoration: 'underline' }}>{t('store.viewCart')}</Link>
               </div>
               <div style={{ fontSize: 20, color: '#0d6efd' }}>🧺</div>
             </motion.div>

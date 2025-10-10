@@ -11,7 +11,7 @@ import './ZensheForm.css';
  * but when clicked, it will send data to our backend, NOT to JotForm.
  */
 function ZensheForm({ 
-  formTitle = '🌿 Formulaire Zenshe',
+  formTitle = 'Formulaire Zenshe',
   onFormDataReady,
   onError,
   customStyles = {},
@@ -22,22 +22,22 @@ function ZensheForm({
   const [isSubmitted, setIsSubmitted] = useState(false);
   
   if (!FORM_ID) {
-    console.error('❌ VITE_JOTFORM_FORM_ID must be set in environment variables');
+    console.error('VITE_JOTFORM_FORM_ID must be set in environment variables');
     throw new Error('Missing required JotForm Form ID configuration');
   }
 
   useEffect(() => {
-    console.log('✅ ZensheForm initialized with custom submission handler');
+    console.log('ZensheForm initialized with custom submission handler');
     
     // Create a custom form action that points to our backend
     const customActionUrl = `${BACKEND_URL}/api/jotform/submit-local`;
-    console.log('📍 Form will submit to:', customActionUrl);
+  console.log('Form will submit to:', customActionUrl);
     
     // Listen for iframe load to inject custom handler
     const iframe = document.getElementById(`JotFormIFrame-${FORM_ID}`);
-    if (iframe) {
+      if (iframe) {
       iframe.addEventListener('load', () => {
-        console.log('✅ JotForm loaded, attempting to override submission...');
+        console.log('JotForm loaded, attempting to override submission...');
         
         // Try to access iframe and override form action
         try {
@@ -45,7 +45,7 @@ function ZensheForm({
           const form = iframeDoc.querySelector('form');
           
           if (form) {
-            console.log('🎯 Found form, overriding action URL...');
+            console.log('Found form, overriding action URL...');
             
             // Override form action
             form.action = customActionUrl;

@@ -2,10 +2,12 @@ import React from 'react';
 import { Container, Row, Col, Card, Button, Image, Form, Alert, ListGroup } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/apiConfig';
 
 const CartPage = () => {
+  const { t } = useTranslation();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart();
   const navigate = useNavigate();
   console.log(localStorage.getItem('cart'));  
@@ -22,11 +24,11 @@ const CartPage = () => {
         >
           <Alert variant="secondary" className="mb-4">
             <i className="bi bi-cart-x fs-2 mb-2 d-block"></i>
-            Votre panier est vide
+            {t('cart.empty')}
           </Alert>
-          <p className="mb-4">Ajoutez vos produits préférés pour les retrouver ici !</p>
+          <p className="mb-4">{t('cart.emptyMessage')}</p>
           <Link to="/boutique" className="btn btn-primary">
-            Découvrir nos produits
+            {t('cart.discoverProducts')}
           </Link>
         </motion.div>
       </Container>
@@ -44,7 +46,7 @@ const CartPage = () => {
       >
         <Row className="g-4">
           <Col md={8}>
-            <h2 className="mb-4">Votre sélection</h2>
+            <h2 className="mb-4">{t('cart.yourSelection')}</h2>
             <ListGroup variant="flush">
               {cartItems.map(item => (
                 <motion.li
@@ -106,7 +108,7 @@ const CartPage = () => {
                         size="sm"
                         onClick={() => removeFromCart(item.id)}
                       >
-                        <i className="bi bi-trash"></i> Retirer
+                        <i className="bi bi-trash"></i> {t('cart.remove')}
                       </Button>
                     </Col>
                   </Row>
@@ -115,25 +117,25 @@ const CartPage = () => {
             </ListGroup>
             <div className="mt-4">
               <Link to="/boutique" className="btn btn-outline-primary">
-                Continuer vos achats
+                {t('cart.continueShopping')}
               </Link>
             </div>
           </Col>
           <Col md={4}>
             <Card className="shadow-sm sticky-top" style={{ top: 90, borderColor: '#e8f5e9' }}>
               <Card.Body>
-                <h4 className="mb-4">Résumé de la commande</h4>
+                <h4 className="mb-4">{t('cart.orderSummary')}</h4>
                 <div className="d-flex justify-content-between mb-2">
-                  <span>Sous-total</span>
+                  <span>{t('cart.subtotal')}</span>
                   <span>{getCartTotal().toFixed(2)} DT</span>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
-                  <span>Livraison</span>
-                  <span>À payer à la livraison</span>
+                  <span>{t('cart.delivery')}</span>
+                  <span>{t('cart.payOnDelivery')}</span>
                 </div>
                 <hr style={{ borderColor: '#e8f5e9' }} />
                 <div className="d-flex justify-content-between mb-4 fw-bold">
-                  <span>Total</span>
+                  <span>{t('cart.total')}</span>
                   <span>{getCartTotal().toFixed(2)} DT</span>
                 </div>
                 <motion.div
@@ -146,7 +148,7 @@ const CartPage = () => {
                     size="lg"
                     onClick={() => navigate('/boutique/checkout')}
                   >
-                    Passer la commande
+                    {t('cart.placeOrder')}
                   </Button>
                 </motion.div>
               </Card.Body>

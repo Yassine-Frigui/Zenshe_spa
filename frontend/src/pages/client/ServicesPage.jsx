@@ -296,7 +296,7 @@ const ServicesPage = () => {
                           to={`/services/${service.id}`}
                           className="btn btn-outline-green"
                         >
-                          View Details
+                          {t('services.viewDetails')}
                         </Link>
                         <Link 
                           to={`/booking?service=${service.id}`}

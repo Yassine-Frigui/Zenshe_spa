@@ -18,17 +18,33 @@ export const getApiUrl = () => {
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return '/placeholder.jpg';
   
-  const baseUrl = getApiUrl();
-  
   // If imagePath already starts with http, return as-is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
   
+  // If path starts with /images/ it's in the frontend public folder
+  if (imagePath.startsWith('/images/')) {
+    return imagePath; // Vite will serve from public folder
+  }
+  
+  // If path starts with /uploads/ it's on the backend
+  if (imagePath.startsWith('/uploads/')) {
+    const baseUrl = getApiUrl();
+    return `${baseUrl}${imagePath}`;
+  }
+  
   // Ensure imagePath starts with /
   const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   
-  return `${baseUrl}${path}`;
+  // Default: check if it's an upload or public image
+  if (path.includes('/uploads/')) {
+    const baseUrl = getApiUrl();
+    return `${baseUrl}${path}`;
+  }
+  
+  // Otherwise treat as frontend public file
+  return path;
 };
 
 export default {

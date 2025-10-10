@@ -17,10 +17,12 @@ import {
     FaHistory,
     FaSpinner
 } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import { useClientAuth } from '../../context/ClientAuthContext';
 import { clientAPI } from '../../services/api';
 
 const ClientProfile = () => {
+    const { t } = useTranslation();
     const { client, updateProfile, changePassword, logout } = useClientAuth();
     
     const [activeTab, setActiveTab] = useState('profile');

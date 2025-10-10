@@ -4,6 +4,9 @@ const ProductModel = require('../models/Product');
 const ProductCategoryModel = require('../models/ProductCategory');
 const StoreOrderModel = require('../models/StoreOrder');
 const StoreOrderItemModel = require('../models/StoreOrderItem');
+const { uploadSingle, uploadMultiple, handleUploadError } = require('../middleware/upload');
+const path = require('path');
+const fs = require('fs');
 
 // Note: This file assumes admin authentication middleware will be applied at the app level
 // All routes in this file should be protected by admin authentication
@@ -517,6 +520,98 @@ router.get('/analytics/products/:id/sales', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erreur lors de la récupération du résumé des ventes du produit'
+        });
+    }
+});
+
+// =====================================================
+// IMAGE UPLOAD ROUTES
+// =====================================================
+
+// POST /api/admin/store/upload/product-image - Upload single product image
+router.post('/upload/product-image', (req, res) => {
+    uploadSingle(req, res, (err) => {
+        handleUploadError(err, req, res, () => {
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No file uploaded'
+                });
+            }
+
+            // Return the relative path to store in database
+            const imageUrl = `/uploads/products/${req.file.filename}`;
+            
+            res.json({
+                success: true,
+                message: 'Image uploaded successfully',
+                data: {
+                    filename: req.file.filename,
+                    originalName: req.file.originalname,
+                    size: req.file.size,
+                    imageUrl: imageUrl,
+                    mimetype: req.file.mimetype
+                }
+            });
+        });
+    });
+});
+
+// POST /api/admin/store/upload/product-gallery - Upload multiple product gallery images
+router.post('/upload/product-gallery', (req, res) => {
+    uploadMultiple(req, res, (err) => {
+        handleUploadError(err, req, res, () => {
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No files uploaded'
+                });
+            }
+
+            // Return array of relative paths
+            const images = req.files.map(file => ({
+                filename: file.filename,
+                originalName: file.originalname,
+                size: file.size,
+                imageUrl: `/uploads/products/${file.filename}`,
+                mimetype: file.mimetype
+            }));
+            
+            res.json({
+                success: true,
+                message: `${req.files.length} image(s) uploaded successfully`,
+                data: images
+            });
+        });
+    });
+});
+
+// DELETE /api/admin/store/upload/product-image/:filename - Delete product image
+router.delete('/upload/product-image/:filename', async (req, res) => {
+    try {
+        const filename = req.params.filename;
+        const filePath = path.join(__dirname, '../../uploads/products', filename);
+        
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({
+                success: false,
+                message: 'Image not found'
+            });
+        }
+
+        // Delete the file
+        fs.unlinkSync(filePath);
+        
+        res.json({
+            success: true,
+            message: 'Image deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting image'
         });
     }
 });

@@ -10,7 +10,10 @@ import {
   FaLeaf,
   FaSpa,
   FaGift,
-  FaImages
+  FaImages,
+  FaGem,
+  FaSeedling,
+  FaBath
 } from 'react-icons/fa'
 
 import { publicAPI } from '../../services/api'
@@ -81,7 +84,7 @@ const HomePage = () => {
   return (
     <div className="homepage home-page">
       {/* Hero Section */}
-      <section className="hero-section position-relative overflow-hidden" style={{ minHeight: '90vh' }}>
+  <section className="hero-section position-relative overflow-hidden" style={{ minHeight: '60vh' }}>
         <div className="position-absolute w-100 h-100" style={{
           background: 'linear-gradient(135deg, var(--secondary-green) 0%, var(--accent-green) 100%)',
           zIndex: -2
@@ -139,8 +142,9 @@ const HomePage = () => {
                   <div 
                     className="rounded-circle mx-auto d-flex align-items-center justify-content-center overflow-hidden"
                     style={{
-                      width: '400px',
-                      height: '400px',
+                      width: '360px',
+                      height: '360px',
+                      marginTop: '35px',
                       background: 'rgba(255, 255, 255, 0.1)',
                       backdropFilter: 'blur(20px)',
                       border: '2px solid rgba(255, 255, 255, 0.2)'
@@ -154,31 +158,31 @@ const HomePage = () => {
                     />
                   </div>
                 </div>
-                
-                {/* Éléments décoratifs flottants */}
+
+                {/* Decorative floating icons (replaced emojis) */}
                 <motion.div
                   animate={{ y: [-10, 10, -10] }}
                   transition={{ duration: 4, repeat: Infinity }}
-                  className="position-absolute"
+                  className="position-absolute text-white"
                   style={{ top: '10%', right: '10%', fontSize: '30px' }}
                 >
-                  ✨
+                  <FaStar />
                 </motion.div>
                 <motion.div
                   animate={{ y: [10, -10, 10] }}
                   transition={{ duration: 3, repeat: Infinity }}
-                  className="position-absolute"
+                  className="position-absolute text-white"
                   style={{ bottom: '20%', left: '5%', fontSize: '25px' }}
                 >
-                  💎
+                  <FaGem />
                 </motion.div>
                 <motion.div
                   animate={{ y: [-5, 15, -5] }}
                   transition={{ duration: 5, repeat: Infinity }}
-                  className="position-absolute"
+                  className="position-absolute text-white"
                   style={{ top: '60%', right: '5%', fontSize: '20px' }}
                 >
-                  🌸
+                  <FaSeedling />
                 </motion.div>
               </motion.div>
             </Col>
@@ -215,10 +219,10 @@ const HomePage = () => {
                   <Card className="service-card h-100 border-0 shadow-sm">
                     <Card.Body className="text-center p-4">
                       <div className="mb-3" style={{ fontSize: '3rem' }}>
-                        {index === 0 && '💆‍♀️'}
-                        {index === 1 && '🌸'}
-                        {index === 2 && '🧴'}
-                        {index === 3 && '✨'}
+                        {index === 0 && <FaBath />}
+                        {index === 1 && <FaSeedling />}
+                        {index === 2 && <FaSpa />}
+                        {index === 3 && <FaGem />}
                       </div>
                       <Card.Title className="text-green fw-bold mb-3">
                         {service.nom}
@@ -336,7 +340,7 @@ const HomePage = () => {
 
           <Row className="g-4">
             {[
-              { name: 'zenshe_logo.jpg', title: 'Accueil ZenShe Spa' },
+              { name: 'zenshe_logo.png', title: 'Accueil ZenShe Spa' },
               { name: 'lashes.jpg', title: 'Salle V-Steam' },
               { name: 'nails_feet_1.jpg', title: 'Suite Vajacial' },
               { name: 'nailstudio_logo.jpg', title: 'Espace Relaxation' },
@@ -372,7 +376,7 @@ const HomePage = () => {
                       className="w-100 h-100 d-flex align-items-center justify-content-center bg-soft-green position-absolute top-0"
                       style={{ display: 'none', fontSize: '3rem' }}
                     >
-                      {index === 0 ? '🌿' : index === 1 ? '🌸' : index === 2 ? '💆‍♀️' : index === 3 ? '✨' : index === 4 ? '🧴' : '🪒'}
+                      {index === 0 ? <FaLeaf /> : index === 1 ? <FaSeedling /> : index === 2 ? <FaBath /> : index === 3 ? <FaGem /> : index === 4 ? <FaSpa /> : <FaBath />}
                     </div>
                     <div className="position-absolute bottom-0 start-0 w-100 p-3 text-white" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
                       <h6 className="mb-0">{item.title}</h6>

@@ -10,7 +10,7 @@ const dbConfig = {
     port: parseInt(process.env.DB_PORT) || 4306,
     charset: 'utf8mb4',
     connectTimeout: 30000,      // 30 seconds for remote connections
-    ssl: process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false
+    ssl: false  // Disable SSL for all connections
 };
 
 // Création du pool de connexions

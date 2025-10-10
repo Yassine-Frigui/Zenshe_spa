@@ -50,13 +50,17 @@ const authLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 1000, // Increased for admin dashboard usage - 1000 requests per 15 min
     message: {
         error: 'Too many requests from this IP, please try again later.',
         retryAfter: '15 minutes'
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    // Skip rate limiting for admin routes
+    skip: (req) => {
+        return req.path.startsWith('/api/admin');
+    }
 });
 
 const reservationLimiter = rateLimit({

@@ -33,7 +33,7 @@ import './ZensheForm.css';
  */
 function ZensheForm({ 
   backendUrl = import.meta.env.VITE_API_URL,
-  formTitle = '🌿 Formulaire Zenshe',
+  formTitle = 'Formulaire Zenshe',
   onSuccess,
   onError,
   submitButtonText = 'SOUMETTRE LE FORMULAIRE',
@@ -42,13 +42,13 @@ function ZensheForm({
 }) {
   // Validate required environment variable
   if (!backendUrl) {
-    console.error('❌ VITE_API_URL must be set in environment variables');
+    console.error('VITE_API_URL must be set in environment variables');
     throw new Error('Missing required API URL configuration');
   }
   
   const FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID;
   if (!FORM_ID) {
-    console.error('❌ VITE_JOTFORM_FORM_ID must be set in environment variables');
+    console.error('VITE_JOTFORM_FORM_ID must be set in environment variables');
     throw new Error('Missing required JotForm Form ID configuration');
   }
   

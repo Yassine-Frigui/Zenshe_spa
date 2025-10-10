@@ -117,7 +117,7 @@ export const publicAPI = {
 
   // Store/Boutique API
   getProducts: (params = {}) => axios.get('/api/store/products', { params }),
-  getProduct: (id) => axios.get(`/api/store/products/${id}`),
+  getProduct: (id, params = {}) => axios.get(`/api/store/products/${id}`, { params }),
   getCategories: () => axios.get('/api/store/categories'),
   createOrder: (data) => axios.post('/api/store/orders', data),
   getOrder: (id) => axios.get(`/api/store/orders/${id}`),
@@ -254,10 +254,28 @@ export const adminAPI = {
   createStoreProduct: (data) => axios.post('/api/admin/store/products', data),
   updateStoreProduct: (id, data) => axios.put(`/api/admin/store/products/${id}`, data),
   deleteStoreProduct: (id) => axios.delete(`/api/admin/store/products/${id}`),
+  getStoreCategories: () => axios.get('/api/admin/store/categories'),
   getStoreOrders: (params = {}) => axios.get('/api/admin/store/orders', { params }),
   getStoreOrder: (id) => axios.get(`/api/admin/store/orders/${id}`),
   updateStoreOrderStatus: (id, status) => axios.put(`/api/admin/store/orders/${id}/status`, { status }),
   getStoreStats: () => axios.get('/api/admin/store/stats'),
+  
+  // Image Upload for Store Products
+  uploadProductImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return axios.post('/api/admin/store/upload/product-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  uploadProductGallery: (files) => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('images', file));
+    return axios.post('/api/admin/store/upload/product-gallery', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  deleteProductImage: (filename) => axios.delete(`/api/admin/store/upload/product-image/${filename}`),
 
   // JotForm Submissions
   getJotFormSubmission: (submissionId) => axios.get(`/api/jotform/submission/${submissionId}`, {

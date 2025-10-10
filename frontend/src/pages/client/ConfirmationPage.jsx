@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Container, Card, Button, Alert, Spinner, ListGroup, Row, Col } from 'react-bootstrap';
 import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
 import { getImageUrl } from '../../utils/apiConfig';
 
 const ConfirmationPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { clearCart } = useCart();
@@ -45,7 +47,7 @@ const ConfirmationPage = () => {
       clearCart();
     } catch (err) {
       console.error('Order creation error:', err);
-      const errorMessage = err.response?.data?.message || 'Erreur lors de la commande. Veuillez réessayer.';
+      const errorMessage = err.response?.data?.message || t('confirmation.error');
       setErrorMsg(errorMessage);
     } finally {
       setLoading(false);
@@ -77,22 +79,22 @@ const ConfirmationPage = () => {
                 }}
               >
                 <i className="bi bi-clipboard-check text-white" style={{ fontSize: 48 }} />
-                <h2 className="text-white mt-2 mb-0 text-center">Vérification de la commande</h2>
+                <h2 className="text-white mt-2 mb-0 text-center">{t('confirmation.orderVerification')}</h2>
               </div>
               <Card.Body className="p-4">
                 <Row>
                   <Col md={6} className="mb-4 mb-md-0">
-                    <h5 className="mb-3 text-dark">Vos informations</h5>
+                    <h5 className="mb-3 text-dark">{t('confirmation.yourInfo')}</h5>
                     <ListGroup variant="flush">
-                      <ListGroup.Item><strong>Nom:</strong> {orderData.firstName} {orderData.lastName}</ListGroup.Item>
-                      <ListGroup.Item><strong>Email:</strong> {orderData.email}</ListGroup.Item>
-                      <ListGroup.Item><strong>Téléphone:</strong> {orderData.phone}</ListGroup.Item>
-                      <ListGroup.Item><strong>Adresse:</strong> {orderData.address}, {orderData.city}, {orderData.postalCode}</ListGroup.Item>
-                      {orderData.notes && <ListGroup.Item><strong>Notes:</strong> {orderData.notes}</ListGroup.Item>}
+                      <ListGroup.Item><strong>{t('confirmation.name')}:</strong> {orderData.firstName} {orderData.lastName}</ListGroup.Item>
+                      <ListGroup.Item><strong>{t('confirmation.email')}:</strong> {orderData.email}</ListGroup.Item>
+                      <ListGroup.Item><strong>{t('confirmation.phone')}:</strong> {orderData.phone}</ListGroup.Item>
+                      <ListGroup.Item><strong>{t('confirmation.address')}:</strong> {orderData.address}, {orderData.city}, {orderData.postalCode}</ListGroup.Item>
+                      {orderData.notes && <ListGroup.Item><strong>{t('confirmation.notes')}:</strong> {orderData.notes}</ListGroup.Item>}
                     </ListGroup>
                   </Col>
                   <Col md={6}>
-                    <h5 className="mb-3 text-dark">Votre panier</h5>
+                    <h5 className="mb-3 text-dark">{t('confirmation.yourCart')}</h5>
                     <ListGroup variant="flush">
                       {cartItems.map(item => (
                         <ListGroup.Item key={item.id} className="d-flex align-items-center">
@@ -110,7 +112,7 @@ const ConfirmationPage = () => {
                       ))}
                     </ListGroup>
                     <div className="d-flex justify-content-between mt-3">
-                      <span className="fw-bold">Total</span>
+                      <span className="fw-bold">{t('confirmation.total')}</span>
                       <span className="fw-bold text-dark">{cartItems.reduce((t, i) => t + i.price * i.quantity, 0).toFixed(2)} DT</span>
                     </div>
                   </Col>
@@ -120,28 +122,28 @@ const ConfirmationPage = () => {
                 {orderComplete ? (
                   <Alert variant="success" className="text-center">
                     <i className="bi bi-check-circle-fill fs-2 text-success" /> <br />
-                    Commande envoyée ! Merci pour votre achat.
+                    {t('confirmation.orderSent')}
                     <div className="mt-3">
                       <Link to="/" className="btn btn-success px-4">
-                        Retour à l'accueil
+                        {t('confirmation.backHome')}
                       </Link>
                     </div>
                   </Alert>
                 ) : (
                   <div className="d-flex justify-content-center gap-3">
                     <Button variant="outline-success" onClick={handleEdit} disabled={loading}>
-                      <i className="bi bi-pencil-square me-2" />Modifier
+                      <i className="bi bi-pencil-square me-2" />{t('confirmation.edit')}
                     </Button>
                     <Button variant="success" onClick={handleConfirm} disabled={loading} style={{ minWidth: 180 }}>
-                      {loading ? <Spinner animation="border" size="sm" /> : <><i className="bi bi-check2-circle me-2" />Confirmer la commande</>}
+                      {loading ? <Spinner animation="border" size="sm" /> : <><i className="bi bi-check2-circle me-2" />{t('confirmation.confirmOrder')}</>}
                     </Button>
                   </div>
                 )}
               </Card.Body>
             </Card>
             <div className="text-center mt-4">
-              <span className="text-muted">Des questions ? </span>
-              <Link to="/contact" className="text-decoration-none text-dark">Contactez-nous</Link>
+              <span className="text-muted">{t('confirmation.questions')} </span>
+              <Link to="/contact" className="text-decoration-none text-dark">{t('confirmation.contactUs')}</Link>
             </div>
           </motion.div>
         </Col>

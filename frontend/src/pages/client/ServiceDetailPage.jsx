@@ -8,7 +8,8 @@ import {
   FaArrowLeft, 
   FaStar,
   FaCheck,
-  FaInfoCircle
+  FaInfoCircle,
+  FaLeaf
 } from 'react-icons/fa';
 import { publicAPI } from '../../services/api';
 
@@ -103,7 +104,7 @@ const ServiceDetailPage = () => {
                   <div className="d-flex align-items-center mb-4">
                     <div className="service-icon bg-gradient-green text-white rounded-circle d-flex align-items-center justify-content-center me-3"
                          style={{ width: '60px', height: '60px', fontSize: '24px' }}>
-                      🌿
+                      <FaLeaf />
                     </div>
                     <div>
                       <h1 className="h2 text-green mb-1">{service.nom}</h1>

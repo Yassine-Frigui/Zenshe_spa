@@ -19,7 +19,8 @@ router.get('/products', async (req, res) => {
             search: req.query.search,
             min_price: req.query.min_price ? parseFloat(req.query.min_price) : undefined,
             max_price: req.query.max_price ? parseFloat(req.query.max_price) : undefined,
-            in_stock_only: req.query.in_stock_only === 'true'
+            in_stock_only: req.query.in_stock_only === 'true',
+            language: req.query.lang || req.query.language || 'fr' // Support language parameter
         };
 
         const pagination = {
@@ -56,7 +57,8 @@ router.get('/products', async (req, res) => {
 router.get('/products/featured', async (req, res) => {
     try {
         const limit = req.query.limit ? parseInt(req.query.limit) : 8;
-        const products = await ProductModel.getFeaturedProducts(limit);
+        const language = req.query.lang || req.query.language || 'fr';
+        const products = await ProductModel.getFeaturedProducts(limit, language);
         
         res.json({
             success: true,
@@ -112,7 +114,8 @@ router.get('/products/:id', async (req, res) => {
             });
         }
 
-        const product = await ProductModel.getProductById(productId);
+        const language = req.query.lang || req.query.language || 'fr';
+        const product = await ProductModel.getProductById(productId, language);
         
         if (!product) {
             return res.status(404).json({

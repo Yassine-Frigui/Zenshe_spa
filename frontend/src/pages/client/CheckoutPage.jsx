@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Row, Col, Card, Alert, ListGroup } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/apiConfig';
 
 const CheckoutPage = () => {
+  const { t } = useTranslation();
   const { cartItems, getCartTotal } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,7 +71,7 @@ const CheckoutPage = () => {
             <Card className="shadow-lg border-0" style={{ borderRadius: 24 }}>
               <Card.Body>
                 <h2 className="mb-4 text-center">
-                  <i className="bi bi-bag-check-fill text-dark" /> Récapitulatif
+                  <i className="bi bi-bag-check-fill text-dark" /> {t('checkout.summary')}
                 </h2>
                 <ListGroup variant="flush">
                   {cartItems.map(item => (
@@ -94,22 +96,22 @@ const CheckoutPage = () => {
                 </ListGroup>
                 <hr />
                 <div className="d-flex justify-content-between mb-2">
-                  <span>Sous-total</span>
+                  <span>{t('checkout.subtotal')}</span>
                   <span className="fw-bold">{getCartTotal().toFixed(2)} DT</span>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
-                  <span>Livraison</span>
-                  <span>À payer à la livraison</span>
+                  <span>{t('checkout.delivery')}</span>
+                  <span>{t('checkout.payOnDelivery')}</span>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-0 fw-bold fs-5">
-                  <span>Total</span>
+                  <span>{t('checkout.total')}</span>
                   <span>{getCartTotal().toFixed(2)} DT</span>
                 </div>
                 <div className="mt-4 bg-light p-3 rounded-3">
                   <p className="small mb-0">
                     <i className="bi bi-info-circle text-dark" /> 
-                    Cette commande sera traitée manuellement. Vous recevrez un appel pour confirmation et livraison.
+                    {t('checkout.manualProcessInfo')}
                   </p>
                 </div>
               </Card.Body>
@@ -129,7 +131,7 @@ const CheckoutPage = () => {
             }}>
               <Card.Body>
                 <h2 className="mb-4 text-center">
-                  <i className="bi bi-person-lines-fill text-dark" /> Vos coordonnées
+                  <i className="bi bi-person-lines-fill text-dark" /> {t('checkout.yourInfo')}
                 </h2>
                 <div className="mb-4 d-flex justify-content-center">
                   <div className="progress" style={{ width: 180, height: 10, background: '#e9ecef' }}>
@@ -141,7 +143,7 @@ const CheckoutPage = () => {
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label><i className="bi bi-person-fill" /> Prénom *</Form.Label>
+                        <Form.Label><i className="bi bi-person-fill" /> {t('checkout.firstName')} *</Form.Label>
                         <Form.Control
                           type="text"
                           name="firstName"
@@ -150,13 +152,13 @@ const CheckoutPage = () => {
                           required
                         />
                         <Form.Control.Feedback type="invalid">
-                          Veuillez entrer votre prénom.
+                          {t('checkout.validation.firstName')}
                         </Form.Control.Feedback>
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label><i className="bi bi-person-fill" /> Nom *</Form.Label>
+                        <Form.Label><i className="bi bi-person-fill" /> {t('checkout.lastName')} *</Form.Label>
                         <Form.Control
                           type="text"
                           name="lastName"
@@ -165,7 +167,7 @@ const CheckoutPage = () => {
                           required
                         />
                         <Form.Control.Feedback type="invalid">
-                          Veuillez entrer votre nom.
+                          {t('checkout.validation.lastName')}
                         </Form.Control.Feedback>
                       </Form.Group>
                     </Col>
@@ -173,7 +175,7 @@ const CheckoutPage = () => {
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label><i className="bi bi-telephone-fill" /> Téléphone *</Form.Label>
+                        <Form.Label><i className="bi bi-telephone-fill" /> {t('checkout.phone')} *</Form.Label>
                         <Form.Control
                           type="tel"
                           name="phone"
@@ -182,13 +184,13 @@ const CheckoutPage = () => {
                           required
                         />
                         <Form.Control.Feedback type="invalid">
-                          Veuillez entrer votre numéro de téléphone.
+                          {t('checkout.validation.phone')}
                         </Form.Control.Feedback>
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label><i className="bi bi-envelope-fill" /> Email *</Form.Label>
+                        <Form.Label><i className="bi bi-envelope-fill" /> {t('checkout.email')} *</Form.Label>
                         <Form.Control
                           type="email"
                           name="email"
@@ -197,13 +199,13 @@ const CheckoutPage = () => {
                           required
                         />
                         <Form.Control.Feedback type="invalid">
-                          Veuillez entrer une adresse email valide.
+                          {t('checkout.validation.email')}
                         </Form.Control.Feedback>
                       </Form.Group>
                     </Col>
                   </Row>
                   <Form.Group className="mb-3">
-                    <Form.Label><i className="bi bi-geo-alt-fill" /> Adresse *</Form.Label>
+                    <Form.Label><i className="bi bi-geo-alt-fill" /> {t('checkout.address')} *</Form.Label>
                     <Form.Control
                       type="text"
                       name="address"
@@ -212,13 +214,13 @@ const CheckoutPage = () => {
                       required
                     />
                     <Form.Control.Feedback type="invalid">
-                      Veuillez entrer votre adresse.
+                      {t('checkout.validation.address')}
                     </Form.Control.Feedback>
                       </Form.Group>
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label><i className="bi bi-building" /> Ville *</Form.Label>
+                        <Form.Label><i className="bi bi-building" /> {t('checkout.city')} *</Form.Label>
                         <Form.Control
                           type="text"
                           name="city"
@@ -227,13 +229,13 @@ const CheckoutPage = () => {
                           required
                         />
                         <Form.Control.Feedback type="invalid">
-                          Veuillez entrer votre ville.
+                          {t('checkout.validation.city')}
                         </Form.Control.Feedback>
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label><i className="bi bi-mailbox" /> Code postal *</Form.Label>
+                        <Form.Label><i className="bi bi-mailbox" /> {t('checkout.postalCode')} *</Form.Label>
                         <Form.Control
                           type="text"
                           name="postalCode"
@@ -242,13 +244,13 @@ const CheckoutPage = () => {
                           required
                         />
                         <Form.Control.Feedback type="invalid">
-                          Veuillez entrer votre code postal.
+                          {t('checkout.validation.postalCode')}
                         </Form.Control.Feedback>
                       </Form.Group>
                     </Col>
                   </Row>
                   <Form.Group className="mb-4">
-                    <Form.Label><i className="bi bi-chat-left-text" /> Instructions de livraison (optionnel)</Form.Label>
+                    <Form.Label><i className="bi bi-chat-left-text" /> {t('checkout.deliveryNotes')}</Form.Label>
                     <Form.Control
                       as="textarea"
                       rows={2}
@@ -259,7 +261,7 @@ const CheckoutPage = () => {
                   </Form.Group>
                   <div className="mb-3">
                     <p className="mb-0">
-                      <strong><i className="bi bi-cash-coin" /> Paiement:</strong> À la livraison
+                      <strong><i className="bi bi-cash-coin" /> {t('checkout.payment')}:</strong> {t('checkout.payOnDelivery')}
                     </p>
                   </div>
                   <motion.div
@@ -268,7 +270,7 @@ const CheckoutPage = () => {
                     className="d-grid"
                   >
                     <Button variant="dark" size="lg" type="submit">
-                      Continuer
+                      {t('checkout.continue')}
                     </Button>
                   </motion.div>
                 </Form>

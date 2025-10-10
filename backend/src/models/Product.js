@@ -10,7 +10,8 @@ class ProductModel {
             is_featured,
             search,
             min_price,
-            max_price
+            max_price,
+            language = 'fr' // Default to French
         } = filters;
 
         const {
@@ -64,15 +65,22 @@ class ProductModel {
         const query = `
             SELECT 
                 p.*,
-                pc.name as category_name,
-                pc.description as category_description
+                COALESCE(pt.name, p.name) as name,
+                COALESCE(pt.description, p.description) as description,
+                COALESCE(pt.detailed_description, p.detailed_description) as detailed_description,
+                COALESCE(pct.name, pc.name) as category_name,
+                COALESCE(pct.description, pc.description) as category_description
             FROM products p
             LEFT JOIN product_categories pc ON p.category_id = pc.id
+            LEFT JOIN product_translations pt ON p.id = pt.product_id AND pt.language_code = ?
+            LEFT JOIN product_category_translations pct ON pc.id = pct.category_id AND pct.language_code = ?
             WHERE ${whereConditions.join(' AND ')}
-            ORDER BY p.${sortColumn} ${sortDirection}
+            ORDER BY COALESCE(pt.name, p.name) ${sortDirection}
             LIMIT ? OFFSET ?
         `;
 
+        // Add language parameter twice (for product and category translations)
+        queryParams.unshift(language, language);
         queryParams.push(limit, offset);
         
         const products = await executeQuery(query, queryParams);
@@ -81,10 +89,11 @@ class ProductModel {
         const countQuery = `
             SELECT COUNT(*) as total
             FROM products p
+            LEFT JOIN product_translations pt ON p.id = pt.product_id AND pt.language_code = ?
             WHERE ${whereConditions.join(' AND ')}
         `;
         
-        const countParams = queryParams.slice(0, -2); // Remove LIMIT and OFFSET
+        const countParams = [language, ...queryParams.slice(2, -2)]; // Add language, remove first 2 language params and last 2 (LIMIT/OFFSET)
         const [{ total }] = await executeQuery(countQuery, countParams);
 
         return {
@@ -99,18 +108,23 @@ class ProductModel {
     }
 
     // Get product by ID
-    static async getProductById(id) {
+    static async getProductById(id, language = 'fr') {
         const query = `
             SELECT 
                 p.*,
-                pc.name as category_name,
-                pc.description as category_description
+                COALESCE(pt.name, p.name) as name,
+                COALESCE(pt.description, p.description) as description,
+                COALESCE(pt.detailed_description, p.detailed_description) as detailed_description,
+                COALESCE(pct.name, pc.name) as category_name,
+                COALESCE(pct.description, pc.description) as category_description
             FROM products p
             LEFT JOIN product_categories pc ON p.category_id = pc.id
+            LEFT JOIN product_translations pt ON p.id = pt.product_id AND pt.language_code = ?
+            LEFT JOIN product_category_translations pct ON pc.id = pct.category_id AND pct.language_code = ?
             WHERE p.id = ?
         `;
         
-        const [product] = await executeQuery(query, [id]);
+        const [product] = await executeQuery(query, [language, language, id]);
         return product ? this.formatProduct(product) : null;
     }
 
@@ -131,35 +145,45 @@ class ProductModel {
     }
 
     // Get featured products
-    static async getFeaturedProducts(limit = 8) {
+    static async getFeaturedProducts(limit = 8, language = 'fr') {
         const query = `
             SELECT 
                 p.*,
-                pc.name as category_name
+                COALESCE(pt.name, p.name) as name,
+                COALESCE(pt.description, p.description) as description,
+                COALESCE(pt.detailed_description, p.detailed_description) as detailed_description,
+                COALESCE(pct.name, pc.name) as category_name
             FROM products p
             LEFT JOIN product_categories pc ON p.category_id = pc.id
+            LEFT JOIN product_translations pt ON p.id = pt.product_id AND pt.language_code = ?
+            LEFT JOIN product_category_translations pct ON pc.id = pct.category_id AND pct.language_code = ?
             WHERE p.is_featured = true AND p.is_active = true
             ORDER BY p.created_at DESC
             LIMIT ?
         `;
         
-        const products = await executeQuery(query, [limit]);
+        const products = await executeQuery(query, [language, language, limit]);
         return products.map(this.formatProduct);
     }
 
     // Get products by category
-    static async getProductsByCategory(categoryId, limit = null) {
+    static async getProductsByCategory(categoryId, limit = null, language = 'fr') {
         let query = `
             SELECT 
                 p.*,
-                pc.name as category_name
+                COALESCE(pt.name, p.name) as name,
+                COALESCE(pt.description, p.description) as description,
+                COALESCE(pt.detailed_description, p.detailed_description) as detailed_description,
+                COALESCE(pct.name, pc.name) as category_name
             FROM products p
             LEFT JOIN product_categories pc ON p.category_id = pc.id
+            LEFT JOIN product_translations pt ON p.id = pt.product_id AND pt.language_code = ?
+            LEFT JOIN product_category_translations pct ON pc.id = pct.category_id AND pct.language_code = ?
             WHERE p.category_id = ? AND p.is_active = true
-            ORDER BY p.name ASC
+            ORDER BY COALESCE(pt.name, p.name) ASC
         `;
         
-        const params = [categoryId];
+        const params = [language, language, categoryId];
         
         if (limit) {
             query += ' LIMIT ?';

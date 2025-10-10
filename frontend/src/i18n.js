@@ -21,7 +21,7 @@ i18n
   .init({
     detection: detectionOptions,
     fallbackLng: 'fr', // French as default/fallback language
-    lng: 'fr', // Default language
+    // Don't set lng here - let the detector handle it from localStorage
     debug: process.env.NODE_ENV === 'development',
     
     interpolation: {

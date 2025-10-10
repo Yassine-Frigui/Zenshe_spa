@@ -87,11 +87,11 @@ const ResetPassword = () => {
             // Redirect to login after 3 seconds
             setTimeout(() => {
                 navigate('/client/login', { 
-                    state: { message: 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.' }
+                    state: { message: t('auth.resetPassword.resetSuccessLogin') }
                 });
             }, 3000);
         } catch (error) {
-            setError(error.response?.data?.message || 'Erreur lors de la réinitialisation');
+            setError(error.response?.data?.message || t('auth.resetPassword.errors.resetError'));
         } finally {
             setLoading(false);
         }
@@ -115,7 +115,7 @@ const ResetPassword = () => {
             <div className="py-5 bg-light d-flex align-items-center justify-content-center" style={{ minHeight: '80vh' }}>
                 <div className="text-center">
                     <div className="spinner-border text-pink" role="status">
-                        <span className="visually-hidden">Vérification...</span>
+                        <span className="visually-hidden">{t('auth.resetPassword.verifyingToken')}</span>
                     </div>
                     <p className="mt-3 text-muted">{t('auth.resetPassword.verifying')}</p>
                 </div>
@@ -180,16 +180,16 @@ const ResetPassword = () => {
                                         <div className="mb-3">
                                             <FaExclamationTriangle className="text-warning" size={60} />
                                         </div>
-                                        <h2 className="text-pink mb-3">Token invalide</h2>
+                                        <h2 className="text-pink mb-3">{t('auth.resetPassword.invalidToken')}</h2>
                                         <p className="text-muted mb-4">
-                                            {error || 'Le lien de réinitialisation est invalide ou a expiré.'}
+                                            {error || t('auth.resetPassword.invalidTokenMessage')}
                                         </p>
                                         <div className="d-grid gap-2">
                                             <Link to="/client/forgot-password" className="btn btn-pink">
-                                                Demander un nouveau lien
+                                                {t('auth.resetPassword.requestNewLink')}
                                             </Link>
                                             <Link to="/client/login" className="btn btn-outline-secondary">
-                                                Retour à la connexion
+                                                {t('auth.resetPassword.backToLogin')}
                                             </Link>
                                         </div>
                                     </div>
@@ -233,7 +233,7 @@ const ResetPassword = () => {
                                 <form onSubmit={handleSubmit}>
                                     <div className="mb-3">
                                         <label htmlFor="newPassword" className="form-label text-dark fw-bold">
-                                            Nouveau mot de passe
+                                            {t('auth.resetPassword.newPassword')}
                                         </label>
                                         <div className="input-group">
                                             <span className="input-group-text bg-pink text-white">
@@ -246,7 +246,7 @@ const ResetPassword = () => {
                                                 name="newPassword"
                                                 value={formData.newPassword}
                                                 onChange={handleChange}
-                                                placeholder="Au moins 6 caractères"
+                                                placeholder={t('auth.resetPassword.passwordPlaceholder')}
                                                 required
                                                 disabled={loading}
                                             />
@@ -263,7 +263,7 @@ const ResetPassword = () => {
 
                                     <div className="mb-4">
                                         <label htmlFor="confirmPassword" className="form-label text-dark fw-bold">
-                                            Confirmer le mot de passe
+                                            {t('auth.resetPassword.confirmPassword')}
                                         </label>
                                         <div className="input-group">
                                             <span className="input-group-text bg-pink text-white">
@@ -276,7 +276,7 @@ const ResetPassword = () => {
                                                 name="confirmPassword"
                                                 value={formData.confirmPassword}
                                                 onChange={handleChange}
-                                                placeholder="Confirmez votre mot de passe"
+                                                placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
                                                 required
                                                 disabled={loading}
                                             />
@@ -300,12 +300,12 @@ const ResetPassword = () => {
                                             {loading ? (
                                                 <>
                                                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                    Réinitialisation...
+                                                    {t('auth.resetPassword.resetting')}
                                                 </>
                                             ) : (
                                                 <>
                                                     <FaCheck className="me-2" />
-                                                    Réinitialiser le mot de passe
+                                                    {t('auth.resetPassword.resetPasswordButton')}
                                                 </>
                                             )}
                                         </button>
@@ -314,7 +314,7 @@ const ResetPassword = () => {
 
                                 <div className="text-center">
                                     <Link to="/client/login" className="text-muted text-decoration-none">
-                                        Retour à la connexion
+                                        {t('auth.resetPassword.backToLogin')}
                                     </Link>
                                 </div>
                             </div>

@@ -60,16 +60,32 @@
       "instruction": "Entrez votre nouveau mot de passe ci-dessous.",
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le mot de passe",
+      "passwordPlaceholder": "Au moins 6 caractères",
+      "confirmPasswordPlaceholder": "Confirmez votre mot de passe",
       "resetPassword": "Réinitialiser le mot de passe",
+      "resetPasswordButton": "Réinitialiser le mot de passe",
+      "resetting": "Réinitialisation...",
+      "verifying": "Vérification...",
+      "verifyingToken": "Vérification...",
       "success": "Succès !",
       "successMessage": "Votre mot de passe a été réinitialisé avec succès.",
       "redirecting": "Redirection vers la page de connexion...",
+      "resetSuccessLogin": "Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.",
+      "invalidToken": "Token invalide",
+      "invalidTokenMessage": "Le lien de réinitialisation est invalide ou a expiré.",
+      "requestNewLink": "Demander un nouveau lien",
+      "backToLogin": "Retour à la connexion",
       "errors": {
         "missingToken": "Token de réinitialisation manquant",
         "invalidToken": "Le lien de réinitialisation n'est pas valide ou a expiré. Veuillez demander un nouveau lien.",
+        "verificationError": "Erreur de vérification du token.",
         "passwordRequired": "Le nouveau mot de passe est requis",
         "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
+        "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+        "passwordMismatch": "Les mots de passe ne correspondent pas",
         "passwordsMatch": "Les mots de passe doivent être identiques",
+        "allFieldsRequired": "Tous les champs sont requis",
+        "resetError": "Erreur lors de la réinitialisation",
         "serverError": "Une erreur est survenue. Veuillez réessayer plus tard."
       }
     },
@@ -171,6 +187,7 @@
     "duration": "Durée",
     "price": "Prix",
     "bookService": "Réserver ce soin",
+    "viewDetails": "Voir les détails",
     "learnMore": "En savoir plus",
     "includes": "Inclus",
     "minutes": "minutes",
@@ -250,7 +267,27 @@
     "selectDate": "Choisir une date",
     "selectTime": "Choisir un horaire",
     "personalInfo": "Informations personnelles",
-    "confirmBooking": "Confirmer la réservation"
+    "confirmBooking": "Confirmer la réservation",
+    "easyBooking": {
+      "title": "Réservation facile",
+      "description": "Choisissez votre horraire en ligne, recevez une confirmation immédiate"
+    },
+    "supportAvailable": {
+      "title": "Support disponible",
+      "description": "Une question ? Contactez-nous au 01 23 45 67 89"
+    },
+    "smartSave": {
+      "title": "Sauvegarde intelligente",
+      "description": "Vos informations sont automatiquement sauvegardées dès que vous saisissez votre téléphone - pas besoin de vous inquiéter de perdre vos données"
+    },
+    "autoReminder": {
+      "title": "Rappel automatique",
+      "description": "Recevez un rappel 24h avant votre rendez-vous"
+    },
+    "waiver": {
+      "title": "Formulaire de décharge - Waiver",
+      "close": "Fermer"
+    }
   },
   "contact": {
     "title": "Contactez-nous",
@@ -258,9 +295,71 @@
     "phone": "Téléphone",
     "email": "E-mail",
     "hours": "Horaires d'ouverture",
+    "schedule": "Lun - Sam: 9h00 - 19h00",
     "getInTouch": "Entrer en contact",
     "sendMessage": "Envoyer le message",
-    "sendAnotherMessage": "Envoyer un autre message"
+    "sendAnotherMessage": "Envoyer un autre message",
+    "hero": {
+      "title": "Contactez-nous",
+      "description": "Nous sommes là pour répondre à toutes vos questions et vous aider à planifier votre prochaine expérience beauté.",
+      "responseTime": "Nous répondons sous 24h maximum"
+    },
+    "form": {
+      "title": "Envoyez-nous un message",
+      "name": "Nom complet *",
+      "namePlaceholder": "Votre nom complet",
+      "email": "Email *",
+      "emailPlaceholder": "votre@email.com",
+      "subject": "Sujet *",
+      "selectSubject": "Choisir un sujet",
+      "subjects": {
+        "reservation": "Réservation",
+        "information": "Demande d'information",
+        "complaint": "Réclamation",
+        "partnership": "Partenariat",
+        "other": "Autre"
+      },
+      "message": "Message *",
+      "messagePlaceholder": "Votre message...",
+      "sending": "Envoi en cours...",
+      "successTitle": "Message envoyé avec succès !",
+      "successMessage": "Merci pour votre message. Nous vous répondrons dans les plus brefs délais.",
+      "error": "Une erreur est survenue lors de l'envoi du message. Veuillez réessayer."
+    },
+    "map": {
+      "title": "Notre emplacement",
+      "accessible": "Facilement accessible",
+      "accessInfo": "en métro (ligne 1, 6, 9) et en bus. Parking public à proximité."
+    },
+    "social": {
+      "title": "Suivez-nous",
+      "description": "Découvrez nos dernières créations et restez informée de nos actualités",
+      "followers": "abonnés"
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "description": "Trouvez rapidement les réponses à vos questions",
+      "q1": {
+        "question": "Comment prendre rendez-vous ?",
+        "answer": "Vous pouvez réserver en ligne via notre page de réservation, nous appeler directement ou nous écrire par email."
+      },
+      "q2": {
+        "question": "Puis-je annuler ou modifier ma réservation ?",
+        "answer": "Oui, vous pouvez modifier ou annuler votre réservation jusqu'à 4h avant l'heure prévue en nous contactant."
+      },
+      "q3": {
+        "question": "Quels moyens de paiement acceptez-vous ?",
+        "answer": "Nous acceptons les espèces, cartes bancaires, et les paiements sans contact."
+      },
+      "q4": {
+        "question": "Proposez-vous des forfaits ou des cartes de fidélité ?",
+        "answer": "Oui, nous avons plusieurs forfaits avantageux et un programme de fidélité pour nos clientes régulières."
+      }
+    },
+    "emergency": {
+      "title": "Besoin d'aide urgente ?",
+      "description": "Pour toute urgence ou question de dernière minute, n'hésitez pas à nous appeler directement."
+    }
   },
   "about": {
     "hero": {
@@ -269,9 +368,12 @@
     },
     "mission": {
       "title": "Notre Mission",
-      "description": "Chez ZenShe Spa, nous créons un espace sacré où chaque femme peut se reconnecter avec son essence féminine et retrouver son équilibre naturel."
+      "description": "Chez ZenShe Spa, nous créons un espace sacré où chaque femme peut se reconnecter avec son essence féminine à travers des soins spécialisés de bien-être intime. Nos services allient sagesse ancestrale et techniques modernes pour offrir une expérience de guérison complète.",
+      "belief": "Nous croyons que le bien-être intime est essentiel à l'épanouissement global de la femme. C'est pourquoi nous offrons un environnement sûr, confidentiel et bienveillant où vous pouvez vous détendre, vous ressourcer et célébrer votre féminité."
     },
     "values": {
+      "title": "Nos Valeurs",
+      "subtitle": "Les principes qui guident chaque aspect de notre pratique",
       "feminine_wellness": {
         "title": "Bien-être Féminin",
         "description": "Nous nous spécialisons dans les soins dédiés au bien-être intime et à l'épanouissement féminin."
@@ -292,6 +394,16 @@
     "team": {
       "title": "Notre Équipe",
       "description": "Des professionnelles formées et passionnées, dédiées à votre bien-être et votre confort."
+    },
+    "testimonials": {
+      "title": "Témoignages de Nos Clientes",
+      "subtitle": "Découvrez les expériences transformatrices de nos clientes"
+    },
+    "contactSection": {
+      "title": "Nous Contacter",
+      "phone": "Téléphone",
+      "instagram": "Instagram",
+      "bookButton": "Prendre Rendez-Vous"
     }
   },
   "profile": {
@@ -321,11 +433,35 @@
     "emailVerified": "Email vérifié"
   },
   "footer": {
-    "quickLinks": "Liens rapides",
+    "quickLinks": "Liens Rapides",
     "contactInfo": "Informations de contact",
     "followUs": "Suivez-nous",
     "bookAppointment": "Prendre RDV",
-    "allRightsReserved": "Tous droits réservés"
+    "allRightsReserved": "Tous droits réservés",
+    "description": "Votre destination privilégiée pour le bien-être intime et la guérison holistique, créant des moments inoubliables de paix et de reconnexion.",
+    "openingHours": "Horaires d'Ouverture",
+    "contact": "Contact",
+    "madeWithLove": "Fait avec",
+    "forYourWellbeing": "pour votre bien-être",
+    "days": {
+      "mondayWednesday": "Lundi - Mercredi",
+      "thursdayFriday": "Jeudi - Vendredi",
+      "saturday": "Samedi",
+      "sunday": "Dimanche"
+    },
+    "hours": {
+      "mondayWednesday": "9h - 19h",
+      "thursdayFriday": "9h - 20h",
+      "saturday": "9h - 18h",
+      "closed": "Fermé"
+    },
+    "links": {
+      "home": "Accueil",
+      "services": "Nos Services",
+      "booking": "Réserver",
+      "about": "À Propos",
+      "contact": "Contact"
+    }
   },
   "errors": {
     "pageNotFound": "Page non trouvée",
@@ -337,6 +473,9 @@
   "cart": {
     "title": "Panier",
     "empty": "Votre panier est vide",
+    "emptyMessage": "Ajoutez vos produits préférés...",
+    "discoverProducts": "Découvrir nos produits",
+    "yourSelection": "Votre sélection",
     "continueShopping": "Continuer les achats",
     "addToCart": "Ajouter au panier",
     "addMore": "Ajouter plus",
@@ -351,6 +490,10 @@
     "decreaseQuantity": "Diminuer la quantité",
     "total": "Total",
     "subtotal": "Sous-total",
+    "delivery": "Livraison",
+    "payOnDelivery": "À payer à la livraison",
+    "placeOrder": "Passer la commande",
+    "orderSummary": "Résumé de la commande",
     "checkout": "Passer commande",
     "clear": "Vider le panier",
     "confirmClear": "Êtes-vous sûr de vouloir vider votre panier ?",
@@ -469,14 +612,20 @@
   },
   "store": {
     "title": "Boutique",
+    "description": "Découvrez Nos Produits...",
+    "searchPlaceholder": "Rechercher un produit...",
     "products": "Produits",
     "categories": "Catégories",
     "allCategories": "Toutes les catégories",
     "search": "Rechercher des produits...",
     "searchResults": "Résultats de recherche",
     "noResults": "Aucun produit trouvé",
+    "noProducts": "Aucun produit trouvé.",
     "noResultsDescription": "Essayez d'ajuster votre recherche ou vos filtres",
     "sortBy": "Trier par",
+    "newest": "Nouveautés",
+    "priceAsc": "Prix croissant",
+    "priceDesc": "Prix décroissant",
     "sortOptions": {
       "newest": "Plus récent",
       "oldest": "Plus ancien",
@@ -494,6 +643,14 @@
       "outOfStock": "Rupture de stock",
       "clearAll": "Tout effacer"
     },
+    "preorder": "Pré-commande",
+    "addedToCart": "{{name}} ajouté au panier",
+    "details": "Détails",
+    "added": "Ajouté",
+    "orderPreorder": "Commander (Pré-commande)",
+    "viewCart": "Voir le panier",
+    "addToCart": "Ajouter au panier",
+    "outOfStock": "Rupture de stock",
     "product": {
       "details": "Détails du produit",
       "description": "Description",
@@ -507,5 +664,82 @@
       "outOfStock": "Rupture de stock",
       "limitedStock": "Stock limité"
     }
+  },
+  "checkout": {
+    "summary": "Récapitulatif",
+    "subtotal": "Sous-total",
+    "delivery": "Livraison",
+    "payOnDelivery": "À payer à la livraison",
+    "total": "Total",
+    "manualProcessInfo": "Cette commande sera traitée manuellement. Nous vous contacterons pour confirmer.",
+    "yourInfo": "Vos coordonnées",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "phone": "Téléphone",
+    "email": "Email",
+    "address": "Adresse",
+    "city": "Ville",
+    "postalCode": "Code postal",
+    "deliveryNotes": "Instructions de livraison (optionnel)",
+    "payment": "Paiement",
+    "continue": "Continuer",
+    "validation": {
+      "firstName": "Veuillez entrer votre prénom.",
+      "lastName": "Veuillez entrer votre nom.",
+      "phone": "Veuillez entrer votre téléphone.",
+      "email": "Veuillez entrer votre email.",
+      "address": "Veuillez entrer votre adresse.",
+      "city": "Veuillez entrer votre ville.",
+      "postalCode": "Veuillez entrer votre code postal."
+    }
+  },
+  "productDetail": {
+    "preorder": "Pré-commande (Livraison: {{days}} jours)",
+    "loading": "Chargement...",
+    "notFound": "Produit introuvable",
+    "addedToCart": "Produit ajouté au panier avec succès!",
+    "viewCart": "Voir le panier",
+    "noImage": "Image non disponible",
+    "quantity": "Quantité",
+    "orderPreorder": "Commander (Pré-commande)",
+    "delivery": "Livraison",
+    "workingDays": "jours ouvrables",
+    "status": "Statut",
+    "payment": "Paiement",
+    "payOnDelivery": "À la livraison",
+    "details": "Détails du produit",
+    "volumeWeight": "Volume / Poids",
+    "ingredients": "Ingrédients"
+  },
+  "confirmation": {
+    "orderVerification": "Vérification de la commande",
+    "yourInfo": "Vos informations",
+    "name": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "notes": "Notes",
+    "yourCart": "Votre panier",
+    "total": "Total",
+    "error": "Erreur lors de la commande. Veuillez réessayer.",
+    "orderSent": "Commande envoyée ! Merci pour votre achat.",
+    "backHome": "Retour à l'accueil",
+    "edit": "Modifier",
+    "confirmOrder": "Confirmer la commande",
+    "questions": "Des questions ?",
+    "contactUs": "Contactez-nous"
+  },
+  "phoneContact": {
+    "title": "Vérification par téléphone",
+    "description": "Ne vous inquiétez pas ! Notre équipe peut vous aider à récupérer l'accès à votre compte par téléphone pour vérifier votre identité.",
+    "contactHours": "Heures de contact",
+    "mondayFriday": "Lundi - Vendredi : 9h00 - 18h00",
+    "saturday": "Samedi : 9h00 - 16h00",
+    "sunday": "Dimanche : Fermé",
+    "howItWorks": "Comment ça marche",
+    "howItWorksDesc": "Appelez-nous directement au +216 24 157 715 pendant nos heures d'ouverture. Notre équipe vérifiera votre identité et vous aidera à récupérer l'accès à votre compte.",
+    "backToLogin": "Retour à la connexion",
+    "emailAccessRecovered": "Vous avez retrouvé l'accès à votre email ?",
+    "tryEmailReset": "Essayer la réinitialisation par email"
   }
 }

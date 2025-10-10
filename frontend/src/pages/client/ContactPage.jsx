@@ -48,7 +48,7 @@ const ContactPage = () => {
         message: ''
       });
     } catch (error) {
-      setError('Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.');
+      setError(t('contact.form.error'));
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ const ContactPage = () => {
   const contactInfo = [
     {
       icon: <FaMapMarkerAlt className="text-green" size={24} />,
-      title: "Adresse",
+      title: t('contact.address'),
       details: [
         "Avenue De La Bourse,Lac2,",
         " Tunis, Tunisie",
@@ -65,7 +65,7 @@ const ContactPage = () => {
     },
     {
       icon: <FaPhone className="text-green" size={24} />,
-      title: "Téléphone",
+      title: t('contact.phone'),
       details: [
         "01 23 45 67 89",
         "06 12 34 56 78"
@@ -73,7 +73,7 @@ const ContactPage = () => {
     },
     {
       icon: <FaEnvelope className="text-green" size={24} />,
-      title: "Email",
+      title: t('contact.email'),
       details: [
         "contact@zenshe-spa.tn",
         "reservation@zenshe-spa.tn"
@@ -81,9 +81,9 @@ const ContactPage = () => {
     },
     {
       icon: <FaClock className="text-green" size={24} />,
-      title: "Horaires",
+      title: t('contact.hours'),
       details: [
-        "Mon - Sat: 9h00 - 19h00", 
+        t('contact.schedule'), 
         ""
       ]
     }
@@ -102,20 +102,20 @@ const ContactPage = () => {
 
   const faqItems = [
     {
-      question: "Comment prendre rendez-vous ?",
-      answer: "Vous pouvez réserver en ligne via notre page de réservation, nous appeler directement ou nous écrire par email."
+      question: t('contact.faq.q1.question'),
+      answer: t('contact.faq.q1.answer')
     },
     {
-      question: "Puis-je annuler ou modifier ma réservation ?",
-      answer: "Oui, vous pouvez modifier ou annuler votre réservation jusqu'à 4h avant l'heure prévue en nous contactant."
+      question: t('contact.faq.q2.question'),
+      answer: t('contact.faq.q2.answer')
     },
     {
-      question: "Quels moyens de paiement acceptez-vous ?",
-      answer: "Nous acceptons les espèces, cartes bancaires, et les paiements sans contact."
+      question: t('contact.faq.q3.question'),
+      answer: t('contact.faq.q3.answer')
     },
     {
-      question: "Proposez-vous des forfaits ou des cartes de fidélité ?",
-      answer: "Oui, nous avons plusieurs forfaits avantageux et un programme de fidélité pour nos clientes régulières."
+      question: t('contact.faq.q4.question'),
+      answer: t('contact.faq.q4.answer')
     }
   ];
 
@@ -140,15 +140,14 @@ const ContactPage = () => {
                 transition={{ delay: 0.3, duration: 0.8 }}
               >
                 <h1 className="display-4 fw-bold text-white mb-4">
-                  Contactez-nous
+                  {t('contact.hero.title')}
                 </h1>
                 <p className="lead text-white mb-4">
-                  Nous sommes là pour répondre à toutes vos questions et vous aider 
-                  à planifier votre prochaine expérience beauté.
+                  {t('contact.hero.description')}
                 </p>
                 <div className="d-flex align-items-center text-white">
                   <FaHeart className="me-2" />
-                  <span>Nous répondons sous 24h maximum</span>
+                  <span>{t('contact.hero.responseTime')}</span>
                 </div>
               </motion.div>
             </div>
@@ -213,7 +212,7 @@ const ContactPage = () => {
               >
                 <h2 className="fw-bold text-green mb-4">
                   <FaComment className="me-3" />
-                  Envoyez-nous un message
+                  {t('contact.form.title')}
                 </h2>
                 
                 {success ? (
@@ -223,9 +222,9 @@ const ContactPage = () => {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.4 }}
                   >
-                    <h5 className="fw-bold mb-2">Message envoyé avec succès !</h5>
+                    <h5 className="fw-bold mb-2">{t('contact.form.successTitle')}</h5>
                     <p className="mb-0">
-                      Merci pour votre message. Nous vous répondrons dans les plus brefs délais.
+                      {t('contact.form.successMessage')}
                     </p>
                     <button
                       className="btn btn-outline-success mt-3"
@@ -238,7 +237,7 @@ const ContactPage = () => {
                   <div className="contact-form bg-white rounded-3 shadow-sm p-4">
                     <form onSubmit={handleSubmit}>
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Nom complet *</label>
+                        <label className="form-label fw-semibold">{t('contact.form.name')}</label>
                         <input
                           type="text"
                           className="form-control form-control-lg"
@@ -246,12 +245,12 @@ const ContactPage = () => {
                           value={formData.nom}
                           onChange={handleInputChange}
                           required
-                          placeholder="Votre nom complet"
+                          placeholder={t('contact.form.namePlaceholder')}
                         />
                       </div>
                       
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Email *</label>
+                        <label className="form-label fw-semibold">{t('contact.form.email')}</label>
                         <input
                           type="email"
                           className="form-control form-control-lg"
@@ -259,12 +258,12 @@ const ContactPage = () => {
                           value={formData.email}
                           onChange={handleInputChange}
                           required
-                          placeholder="votre@email.com"
+                          placeholder={t('contact.form.emailPlaceholder')}
                         />
                       </div>
                       
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Sujet *</label>
+                        <label className="form-label fw-semibold">{t('contact.form.subject')}</label>
                         <select
                           className="form-select form-select-lg"
                           name="sujet"
@@ -272,17 +271,17 @@ const ContactPage = () => {
                           onChange={handleInputChange}
                           required
                         >
-                          <option value="">Choisir un sujet</option>
-                          <option value="reservation">Réservation</option>
-                          <option value="information">Demande d'information</option>
-                          <option value="reclamation">Réclamation</option>
-                          <option value="partenariat">Partenariat</option>
-                          <option value="autre">Autre</option>
+                          <option value="">{t('contact.form.selectSubject')}</option>
+                          <option value="reservation">{t('contact.form.subjects.reservation')}</option>
+                          <option value="information">{t('contact.form.subjects.information')}</option>
+                          <option value="reclamation">{t('contact.form.subjects.complaint')}</option>
+                          <option value="partenariat">{t('contact.form.subjects.partnership')}</option>
+                          <option value="autre">{t('contact.form.subjects.other')}</option>
                         </select>
                       </div>
                       
                       <div className="mb-4">
-                        <label className="form-label fw-semibold">Message *</label>
+                        <label className="form-label fw-semibold">{t('contact.form.message')}</label>
                         <textarea
                           className="form-control"
                           name="message"
@@ -290,7 +289,7 @@ const ContactPage = () => {
                           onChange={handleInputChange}
                           required
                           rows="5"
-                          placeholder="Votre message..."
+                          placeholder={t('contact.form.messagePlaceholder')}
                         />
                       </div>
 
@@ -313,7 +312,7 @@ const ContactPage = () => {
                         {loading ? (
                           <>
                             <span className="spinner-border spinner-border-sm me-2" />
-                            Envoi en cours...
+                            {t('contact.form.sending')}
                           </>
                         ) : (
                           <>
@@ -337,7 +336,7 @@ const ContactPage = () => {
                 viewport={{ once: true }}
                 className="h-100"
               >
-                <h2 className="fw-bold text-green mb-4">Notre emplacement</h2>
+                <h2 className="fw-bold text-green mb-4">{t('contact.map.title')}</h2>
                 <div className="map-container bg-white rounded-3 shadow-sm p-3" style={{ height: '400px' }}>
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d798.1997010008397!2d10.265970295246431!3d36.84729431399712!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd4b0063432e01%3A0x43cd73a6b6d294de!2sZenShe%20Spa!5e0!3m2!1sen!2stn!4v1751655335818!5m2!1sen!2stn"
@@ -353,8 +352,7 @@ const ContactPage = () => {
                 <div className="mt-3 p-3 bg-soft-green rounded-3 border border-green">
                   <p className="mb-0 text-green">
                     <FaMapMarkerAlt className="me-2" />
-                    <strong>Facilement accessible</strong> en métro (ligne 1, 6, 9) 
-                    et en bus. Parking public à proximité.
+                    <strong>{t('contact.map.accessible')}</strong> {t('contact.map.accessInfo')}
                   </p>
                 </div>
               </motion.div>
@@ -373,9 +371,9 @@ const ContactPage = () => {
             viewport={{ once: true }}
             className="text-center mb-5"
           >
-            <h2 className="fw-bold text-green mb-4">Suivez-nous</h2>
+            <h2 className="fw-bold text-green mb-4">{t('contact.social.title')}</h2>
             <p className="lead text-muted">
-              Découvrez nos dernières créations et restez informée de nos actualités
+              {t('contact.social.description')}
             </p>
           </motion.div>
 
@@ -407,7 +405,7 @@ const ContactPage = () => {
                     <span className="text-white fs-4">{social.icon}</span>
                   </div>
                   <h5 className="fw-bold text-dark mb-2">{social.name}</h5>
-                  <p className="text-muted mb-0">{social.followers} abonnés</p>
+                  <p className="text-muted mb-0">{social.followers} {t('contact.social.followers')}</p>
                 </motion.a>
               </motion.div>
             ))}
@@ -425,9 +423,9 @@ const ContactPage = () => {
             viewport={{ once: true }}
             className="text-center mb-5"
           >
-            <h2 className="fw-bold text-green mb-4">Questions fréquentes</h2>
+            <h2 className="fw-bold text-green mb-4">{t('contact.faq.title')}</h2>
             <p className="lead text-muted">
-              Trouvez rapidement les réponses à vos questions
+              {t('contact.faq.description')}
             </p>
           </motion.div>
 
@@ -482,9 +480,9 @@ const ContactPage = () => {
             className="row align-items-center text-center text-md-start"
           >
             <div className="col-md-8">
-              <h5 className="text-white fw-bold mb-2">Besoin d'aide urgente ?</h5>
+              <h5 className="text-white fw-bold mb-2">{t('contact.emergency.title')}</h5>
               <p className="text-white mb-0 opacity-90">
-                Pour toute urgence ou question de dernière minute, n'hésitez pas à nous appeler directement.
+                {t('contact.emergency.description')}
               </p>
             </div>
             <div className="col-md-4 text-md-end mt-3 mt-md-0">

@@ -14,7 +14,7 @@ import './ZensheForm.css';
  * @param {Object} props.customStyles - Custom CSS styles
  */
 function ZensheForm({ 
-  formTitle = '🌿 Formulaire Zenshe',
+  formTitle = 'Formulaire Zenshe',
   onFormDataReady,
   onError,
   customStyles = {}
@@ -24,12 +24,12 @@ function ZensheForm({
   const [isCollecting, setIsCollecting] = useState(false);
   
   if (!FORM_ID) {
-    console.error('❌ VITE_JOTFORM_FORM_ID must be set in environment variables');
+    console.error('VITE_JOTFORM_FORM_ID must be set in environment variables');
     throw new Error('Missing required JotForm Form ID configuration');
   }
 
   useEffect(() => {
-    console.log('✅ ZensheForm initialized (data collector mode)');
+  console.log('ZensheForm initialized (data collector mode)');
     
     // Listen for form submission attempts from iframe
     const handleIFrameMessage = function(e) {

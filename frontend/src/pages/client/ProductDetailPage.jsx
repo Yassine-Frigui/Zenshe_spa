@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Form, Alert, Badge } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
 import { getImageUrl } from '../../utils/apiConfig';
 
 const ProductDetailPage = () => {
+  const { t, i18n } = useTranslation();
   const { productId } = useParams();
   const id = productId;
   const navigate = useNavigate();
@@ -17,7 +19,8 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.publicAPI.getProduct(id)
+    const currentLanguage = i18n.language || 'fr';
+    api.publicAPI.getProduct(id, { lang: currentLanguage })
       .then(response => {
         console.log('Product API response:', response.data);
         // Backend returns { success: true, data: product }
@@ -29,7 +32,7 @@ const ProductDetailPage = () => {
         setProduct(null);
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, i18n.language]); // Re-fetch when language changes
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
@@ -39,7 +42,7 @@ const ProductDetailPage = () => {
   };
 
   const getPreorderStatus = () => {
-    return <Badge bg="info">Pré-commande (Livraison: {product.estimated_delivery_days || 14} jours)</Badge>;
+    return <Badge bg="info">{t('productDetail.preorder', { days: product.estimated_delivery_days || 14 })}</Badge>;
   };
 
   const handleAddToCart = () => {
@@ -48,8 +51,8 @@ const ProductDetailPage = () => {
     setTimeout(() => setAddedToCart(false), 3000);
   };
 
-  if (loading) return <Container className="py-5"><p>Chargement...</p></Container>;
-  if (!product) return <Container className="py-5"><Alert variant="danger">Produit introuvable</Alert></Container>;
+  if (loading) return <Container className="py-5"><p>{t('productDetail.loading')}</p></Container>;
+  if (!product) return <Container className="py-5"><Alert variant="danger">{t('productDetail.notFound')}</Alert></Container>;
 
   return (
     <div className="product-detail-page" style={{ backgroundColor: '#fff', color: '#333' }}>
@@ -61,8 +64,8 @@ const ProductDetailPage = () => {
             exit={{ opacity: 0, y: -50 }}
           >
             <Alert variant="success" className="mb-4">
-              Produit ajouté au panier avec succès!
-              <Button variant="link" className="text-success" onClick={() => navigate('/boutique/panier')}>Voir le panier</Button>
+              {t('productDetail.addedToCart')}
+              <Button variant="link" className="text-success" onClick={() => navigate('/boutique/panier')}>{t('productDetail.viewCart')}</Button>
             </Alert>
           </motion.div>
         )}
@@ -82,7 +85,7 @@ const ProductDetailPage = () => {
                 />
               ) : (
                 <div style={{ height: '500px', backgroundColor: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '15px' }}>
-                  <p className="text-muted">Image non disponible</p>
+                  <p className="text-muted">{t('productDetail.noImage')}</p>
                 </div>
               )}
             </motion.div>
@@ -100,7 +103,7 @@ const ProductDetailPage = () => {
               <p className="mb-4">{product.description}</p>
               
               <div className="d-flex align-items-center mb-4">
-                <Form.Label className="me-3 mb-0">Quantité:</Form.Label>
+                <Form.Label className="me-3 mb-0">{t('productDetail.quantity')}:</Form.Label>
                 <Form.Control 
                   type="number" 
                   min="1" 
@@ -122,14 +125,14 @@ const ProductDetailPage = () => {
                   onClick={handleAddToCart}
                   className="w-100"
                 >
-                  Commander (Pré-commande)
+                  {t('productDetail.orderPreorder')}
                 </Button>
               </motion.div>
               
                 <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '10px' }}>
-                <p className="mb-2"><strong>Livraison:</strong> {product.estimated_delivery_days || 14} jours ouvrables</p>
-                <p className="mb-2"><strong>Statut:</strong> {getPreorderStatus()}</p>
-                <p className="mb-0"><strong>Paiement:</strong> À la livraison</p>
+                <p className="mb-2"><strong>{t('productDetail.delivery')}:</strong> {product.estimated_delivery_days || 14} {t('productDetail.workingDays')}</p>
+                <p className="mb-2"><strong>{t('productDetail.status')}:</strong> {getPreorderStatus()}</p>
+                <p className="mb-0"><strong>{t('productDetail.payment')}:</strong> {t('productDetail.payOnDelivery')}</p>
               </div>
             </motion.div>
           </Col>
@@ -142,11 +145,11 @@ const ProductDetailPage = () => {
           viewport={{ once: true }}
           className="mt-5 pt-4 border-top"
         >
-      <h2 className="fw-bold mb-4">Détails du produit</h2>
+      <h2 className="fw-bold mb-4">{t('productDetail.details')}</h2>
           <Row>
             <Col md={8}>
-        <p><strong>Volume / Poids:</strong> {product.volume || product.weight}</p>
-        <p><strong>Ingrédients:</strong> {product.ingredients}</p>
+        <p><strong>{t('productDetail.volumeWeight')}:</strong> {product.volume || product.weight}</p>
+        <p><strong>{t('productDetail.ingredients')}:</strong> {product.ingredients}</p>
             </Col>
           </Row>
         </motion.div>

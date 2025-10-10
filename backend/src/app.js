@@ -54,7 +54,9 @@ const corsOptions = {
         const allowedOrigins = [
             process.env.FRONTEND_URL,
             'http://localhost:3000',
-            'http://127.0.0.1:3000'
+            'http://127.0.0.1:3000',
+            'http://localhost:3001',
+            'http://127.0.0.1:3001'
         ].filter(Boolean); // Remove undefined values
         
         // Allow requests with no origin (mobile apps, etc.)
@@ -66,6 +68,7 @@ const corsOptions = {
         } else {
             // Development mode - be more permissive
             if (process.env.NODE_ENV !== 'production') {
+                console.log('⚠️ Allowing non-whitelisted origin in development:', origin);
                 callback(null, true);
             } else {
                 callback(new Error('Not allowed by CORS policy'));
@@ -91,7 +94,7 @@ app.use((req, res, next) => {
 });
 
 // Servir les fichiers statiques (images, uploads)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Middleware de logging
 app.use((req, res, next) => {

@@ -12,7 +12,7 @@ async function setupTestDatabase() {
         host: process.env.DB_HOST || 'localhost',
         user: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || 'zenshespa_database_test',
+        database: process.env.DB_NAME || 'zenshespa_database',
         port: parseInt(process.env.DB_PORT) || 4306,
         charset: 'utf8mb4'
     };

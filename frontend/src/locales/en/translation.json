@@ -60,16 +60,32 @@
       "instruction": "Enter your new password below.",
       "newPassword": "New password",
       "confirmPassword": "Confirm password",
+      "passwordPlaceholder": "At least 6 characters",
+      "confirmPasswordPlaceholder": "Confirm your password",
       "resetPassword": "Reset password",
+      "resetPasswordButton": "Reset password",
+      "resetting": "Resetting...",
+      "verifying": "Verifying...",
+      "verifyingToken": "Verifying...",
       "success": "Success!",
       "successMessage": "Your password has been reset successfully.",
       "redirecting": "Redirecting to login page...",
+      "resetSuccessLogin": "Password reset successfully. You can now login.",
+      "invalidToken": "Invalid token",
+      "invalidTokenMessage": "The reset link is invalid or has expired.",
+      "requestNewLink": "Request a new link",
+      "backToLogin": "Back to login",
       "errors": {
         "missingToken": "Reset token missing",
         "invalidToken": "The reset link is invalid or has expired. Please request a new link.",
+        "verificationError": "Error verifying token.",
         "passwordRequired": "New password is required",
         "passwordMinLength": "Password must be at least 6 characters long",
+        "passwordTooShort": "Password must be at least 6 characters long",
+        "passwordMismatch": "Passwords do not match",
         "passwordsMatch": "Passwords must match",
+        "allFieldsRequired": "All fields are required",
+        "resetError": "Error during reset",
         "serverError": "An error occurred. Please try again later."
       }
     },
@@ -171,6 +187,7 @@
     "duration": "Duration",
     "price": "Price",
     "bookService": "Book this service",
+    "viewDetails": "View Details",
     "learnMore": "Learn more",
     "includes": "Includes",
     "minutes": "minutes",
@@ -250,7 +267,27 @@
     "selectDate": "Select a date",
     "selectTime": "Select a time",
     "personalInfo": "Personal information",
-    "confirmBooking": "Confirm booking"
+    "confirmBooking": "Confirm booking",
+    "easyBooking": {
+      "title": "Easy Booking",
+      "description": "Choose your schedule online, receive immediate confirmation"
+    },
+    "supportAvailable": {
+      "title": "Support Available",
+      "description": "Have a question? Contact us at 01 23 45 67 89"
+    },
+    "smartSave": {
+      "title": "Smart Save",
+      "description": "Your information is automatically saved as soon as you enter your phone - no need to worry about losing your data"
+    },
+    "autoReminder": {
+      "title": "Automatic Reminder",
+      "description": "Receive a reminder 24h before your appointment"
+    },
+    "waiver": {
+      "title": "Waiver Form - Discharge Form",
+      "close": "Close"
+    }
   },
   "contact": {
     "title": "Contact us",
@@ -258,9 +295,71 @@
     "phone": "Phone",
     "email": "Email",
     "hours": "Opening hours",
+    "schedule": "Mon - Sat: 9:00 AM - 7:00 PM",
     "getInTouch": "Get in touch",
     "sendMessage": "Send message",
-    "sendAnotherMessage": "Send another message"
+    "sendAnotherMessage": "Send another message",
+    "hero": {
+      "title": "Contact Us",
+      "description": "We're here to answer all your questions and help you plan your next beauty experience.",
+      "responseTime": "We respond within 24 hours maximum"
+    },
+    "form": {
+      "title": "Send us a message",
+      "name": "Full name *",
+      "namePlaceholder": "Your full name",
+      "email": "Email *",
+      "emailPlaceholder": "your@email.com",
+      "subject": "Subject *",
+      "selectSubject": "Choose a subject",
+      "subjects": {
+        "reservation": "Reservation",
+        "information": "Information Request",
+        "complaint": "Complaint",
+        "partnership": "Partnership",
+        "other": "Other"
+      },
+      "message": "Message *",
+      "messagePlaceholder": "Your message...",
+      "sending": "Sending...",
+      "successTitle": "Message sent successfully!",
+      "successMessage": "Thank you for your message. We will respond to you as soon as possible.",
+      "error": "An error occurred while sending the message. Please try again."
+    },
+    "map": {
+      "title": "Our Location",
+      "accessible": "Easily accessible",
+      "accessInfo": "by metro (lines 1, 6, 9) and bus. Public parking nearby."
+    },
+    "social": {
+      "title": "Follow Us",
+      "description": "Discover our latest creations and stay informed about our news",
+      "followers": "followers"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Quickly find answers to your questions",
+      "q1": {
+        "question": "How do I make an appointment?",
+        "answer": "You can book online through our booking page, call us directly, or email us."
+      },
+      "q2": {
+        "question": "Can I cancel or modify my booking?",
+        "answer": "Yes, you can modify or cancel your booking up to 4 hours before the scheduled time by contacting us."
+      },
+      "q3": {
+        "question": "What payment methods do you accept?",
+        "answer": "We accept cash, bank cards, and contactless payments."
+      },
+      "q4": {
+        "question": "Do you offer packages or loyalty cards?",
+        "answer": "Yes, we have several advantageous packages and a loyalty program for our regular clients."
+      }
+    },
+    "emergency": {
+      "title": "Need urgent help?",
+      "description": "For any emergency or last-minute questions, feel free to call us directly."
+    }
   },
   "about": {
     "hero": {
@@ -269,9 +368,12 @@
     },
     "mission": {
       "title": "Our Mission",
-      "description": "At ZenShe Spa, we create a sacred space where every woman can reconnect with her feminine essence and restore her natural balance."
+      "description": "At ZenShe Spa, we create a sacred space where every woman can reconnect with her feminine essence through specialized intimate wellness treatments. Our services blend ancient wisdom and modern techniques to offer a complete healing experience.",
+      "belief": "We believe that intimate wellness is essential to a woman's overall fulfillment. That's why we offer a safe, confidential, and caring environment where you can relax, recharge, and celebrate your femininity."
     },
     "values": {
+      "title": "Our Values",
+      "subtitle": "The principles that guide every aspect of our practice",
       "feminine_wellness": {
         "title": "Feminine Wellness",
         "description": "We specialize in treatments dedicated to intimate wellness and feminine fulfillment."
@@ -292,6 +394,16 @@
     "team": {
       "title": "Our Team",
       "description": "Trained and passionate professionals, dedicated to your wellness and comfort."
+    },
+    "testimonials": {
+      "title": "Client Testimonials",
+      "subtitle": "Discover the transformative experiences of our clients"
+    },
+    "contactSection": {
+      "title": "Contact Us",
+      "phone": "Phone",
+      "instagram": "Instagram",
+      "bookButton": "Book an Appointment"
     }
   },
   "profile": {
@@ -321,11 +433,35 @@
     "emailVerified": "Email verified"
   },
   "footer": {
-    "quickLinks": "Quick links",
+    "quickLinks": "Quick Links",
     "contactInfo": "Contact information",
     "followUs": "Follow us",
-    "bookAppointment": "Book appointment",
-    "allRightsReserved": "All rights reserved"
+    "bookAppointment": "Book Appointment",
+    "allRightsReserved": "All rights reserved",
+    "description": "Your premier destination for intimate wellness and holistic healing, creating unforgettable moments of peace and reconnection.",
+    "openingHours": "Opening Hours",
+    "contact": "Contact",
+    "madeWithLove": "Made with",
+    "forYourWellbeing": "for your wellbeing",
+    "days": {
+      "mondayWednesday": "Monday - Wednesday",
+      "thursdayFriday": "Thursday - Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "hours": {
+      "mondayWednesday": "9am - 7pm",
+      "thursdayFriday": "9am - 8pm",
+      "saturday": "9am - 6pm",
+      "closed": "Closed"
+    },
+    "links": {
+      "home": "Home",
+      "services": "Our Services",
+      "booking": "Book",
+      "about": "About",
+      "contact": "Contact"
+    }
   },
   "errors": {
     "pageNotFound": "Page not found",
@@ -337,6 +473,9 @@
   "cart": {
     "title": "Shopping Cart",
     "empty": "Your cart is empty",
+    "emptyMessage": "Add your favorite products...",
+    "discoverProducts": "Discover our products",
+    "yourSelection": "Your Selection",
     "continueShopping": "Continue Shopping",
     "addToCart": "Add to Cart",
     "addMore": "Add More",
@@ -351,6 +490,10 @@
     "decreaseQuantity": "Decrease Quantity",
     "total": "Total",
     "subtotal": "Subtotal",
+    "delivery": "Delivery",
+    "payOnDelivery": "Pay on delivery",
+    "placeOrder": "Place Order",
+    "orderSummary": "Order Summary",
     "checkout": "Checkout",
     "clear": "Clear Cart",
     "confirmClear": "Are you sure you want to clear your cart?",
@@ -468,15 +611,21 @@
     "error": "Unable to load waiver form"
   },
   "store": {
-    "title": "Store",
+    "title": "Explore Our Collection",
+    "description": "Discover Our Products...",
+    "searchPlaceholder": "Search for a product...",
     "products": "Products",
     "categories": "Categories",
-    "allCategories": "All Categories",
+    "allCategories": "All categories",
     "search": "Search products...",
     "searchResults": "Search Results",
     "noResults": "No products found",
+    "noProducts": "No products found.",
     "noResultsDescription": "Try adjusting your search or filters",
     "sortBy": "Sort by",
+    "newest": "Newest",
+    "priceAsc": "Price: Low to High",
+    "priceDesc": "Price: High to Low",
     "sortOptions": {
       "newest": "Newest",
       "oldest": "Oldest",
@@ -494,6 +643,14 @@
       "outOfStock": "Out of Stock",
       "clearAll": "Clear All"
     },
+    "preorder": "Pre-order",
+    "addedToCart": "{{name}} added to cart",
+    "details": "Details",
+    "added": "Added",
+    "orderPreorder": "Order (Pre-order)",
+    "viewCart": "View Cart",
+    "addToCart": "Add to Cart",
+    "outOfStock": "Out of Stock",
     "product": {
       "details": "Product Details",
       "description": "Description",
@@ -507,5 +664,82 @@
       "outOfStock": "Out of Stock",
       "limitedStock": "Limited Stock"
     }
+  },
+  "checkout": {
+    "summary": "Summary",
+    "subtotal": "Subtotal",
+    "delivery": "Delivery",
+    "payOnDelivery": "Pay on delivery",
+    "total": "Total",
+    "manualProcessInfo": "This order will be processed manually. We will contact you to confirm.",
+    "yourInfo": "Your Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "city": "City",
+    "postalCode": "Postal Code",
+    "deliveryNotes": "Delivery instructions (optional)",
+    "payment": "Payment",
+    "continue": "Continue",
+    "validation": {
+      "firstName": "Please enter your first name.",
+      "lastName": "Please enter your last name.",
+      "phone": "Please enter your phone number.",
+      "email": "Please enter your email.",
+      "address": "Please enter your address.",
+      "city": "Please enter your city.",
+      "postalCode": "Please enter your postal code."
+    }
+  },
+  "productDetail": {
+    "preorder": "Pre-order (Delivery: {{days}} days)",
+    "loading": "Loading...",
+    "notFound": "Product not found",
+    "addedToCart": "Product added to cart successfully!",
+    "viewCart": "View cart",
+    "noImage": "Image not available",
+    "quantity": "Quantity",
+    "orderPreorder": "Order (Pre-order)",
+    "delivery": "Delivery",
+    "workingDays": "working days",
+    "status": "Status",
+    "payment": "Payment",
+    "payOnDelivery": "Pay on delivery",
+    "details": "Product Details",
+    "volumeWeight": "Volume / Weight",
+    "ingredients": "Ingredients"
+  },
+  "confirmation": {
+    "orderVerification": "Order Verification",
+    "yourInfo": "Your Information",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "notes": "Notes",
+    "yourCart": "Your Cart",
+    "total": "Total",
+    "error": "Error placing order. Please try again.",
+    "orderSent": "Order sent! Thank you for your purchase.",
+    "backHome": "Back to home",
+    "edit": "Edit",
+    "confirmOrder": "Confirm Order",
+    "questions": "Questions?",
+    "contactUs": "Contact us"
+  },
+  "phoneContact": {
+    "title": "Phone Verification",
+    "description": "Don't worry! Our team can help you recover access to your account by phone to verify your identity.",
+    "contactHours": "Contact hours",
+    "mondayFriday": "Monday - Friday: 9:00 AM - 6:00 PM",
+    "saturday": "Saturday: 9:00 AM - 4:00 PM",
+    "sunday": "Sunday: Closed",
+    "howItWorks": "How it works",
+    "howItWorksDesc": "Call us directly at +216 24 157 715 during our business hours. Our team will verify your identity and help you recover access to your account.",
+    "backToLogin": "Back to login",
+    "emailAccessRecovered": "Recovered access to your email?",
+    "tryEmailReset": "Try email reset"
   }
 }

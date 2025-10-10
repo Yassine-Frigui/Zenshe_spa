@@ -18,15 +18,18 @@ import {
 } from 'react-icons/fa'
 import { useClientAuth } from '../context/ClientAuthContext'
 import { useTranslation } from 'react-i18next'
+import { useCart } from '../context/CartContext'
 import LanguageSwitcher from './LanguageSwitcher'
-// import CartWidget from './CartWidget'
+import { FaShoppingCart } from 'react-icons/fa'
 
 
 const ClientNavbar = () => {
   const location = useLocation()
   const [expanded, setExpanded] = useState(false)
   const { isAuthenticated, logout } = useClientAuth()
+  const { getCartItemsCount } = useCart()
   const { t } = useTranslation()
+  const cartItemsCount = getCartItemsCount()
 
   const navItems = [
     { path: '/', label: t('navigation.home'), icon: FaHome },
@@ -45,7 +48,7 @@ const ClientNavbar = () => {
       onToggle={setExpanded}
     >
       <Container>
-        <Navbar.Brand as={Link} to="/" className="fw-bold text-white fs-3">
+        <Navbar.Brand as={Link} to="/" className="fw-bold text-white" style={{ fontSize: '1.25rem' }}>
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -55,7 +58,7 @@ const ClientNavbar = () => {
               src="/images/zenshe_logo.png" 
               alt="ZenShe Spa"
               style={{ 
-                height: '32px', 
+                height: '28px', 
                 marginRight: '8px', 
                 borderRadius: '6px',
                 objectFit: 'cover'
@@ -126,6 +129,42 @@ Zen she spa
               </Dropdown.Menu>
             </Dropdown>
 
+            {/* Cart Link */}
+            <Nav.Link
+              as={Link}
+              to="/boutique/panier"
+              className="text-white position-relative mx-2"
+              onClick={() => setExpanded(false)}
+            >
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="d-flex align-items-center"
+              >
+                <FaShoppingCart size={22} />
+                {cartItemsCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="badge bg-danger position-absolute"
+                    style={{
+                      top: '-5px',
+                      right: '-10px',
+                      minWidth: '20px',
+                      height: '20px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {cartItemsCount}
+                  </motion.span>
+                )}
+              </motion.div>
+            </Nav.Link>
+
             {/* Language Switcher */}
             <LanguageSwitcher />
 
@@ -155,14 +194,55 @@ Zen she spa
       </Container>
 
       <style>{`
+        .navbar-green {
+          padding: 0.35rem 0 !important;
+          min-height: auto !important;
+        }
+        
+        .navbar-green .container {
+          padding-top: 0.25rem;
+          padding-bottom: 0.25rem;
+        }
+        
+        .navbar-green .navbar-brand {
+          padding-top: 0.25rem !important;
+          padding-bottom: 0.25rem !important;
+          margin-right: 1rem !important;
+        }
+        
+        .navbar-green .nav-link {
+          padding: 0.35rem 0.7rem !important;
+          font-size: 0.9rem !important;
+          line-height: 1.3 !important;
+        }
+        
         .navbar-green .nav-link.active {
           background: rgba(255, 255, 255, 0.2);
-          border-radius: 20px;
-          padding: 8px 16px !important;
+          border-radius: 18px;
+          padding: 0.35rem 0.9rem !important;
+        }
+        
+        .navbar-green .navbar-nav {
+          align-items: center;
+        }
+        
+        .navbar-green .btn {
+          padding: 0.35rem 1rem !important;
+          font-size: 0.9rem !important;
+        }
+        
+        .navbar-green .navbar-toggler {
+          padding: 0.25rem 0.5rem;
+          font-size: 1rem;
         }
         
         .navbar-green .navbar-toggler:focus {
           box-shadow: none;
+        }
+        
+        /* Reduce dropdown padding */
+        .navbar-green .dropdown-toggle {
+          padding: 0.35rem 0.5rem !important;
         }
         
         @media (max-width: 991.98px) {
@@ -171,7 +251,7 @@ Zen she spa
             backdrop-filter: blur(10px);
             border-radius: 15px;
             margin-top: 10px;
-            padding: 20px;
+            padding: 15px;
           }
         }
       `}</style>

@@ -16,7 +16,7 @@ describe('StoreOrder Model - Pre-order System', () => {
         jest.clearAllMocks();
     });
 
-    describe('create', () => {
+    describe('createOrder', () => {
         test('should create order without stock validation', async () => {
             const mockOrderData = {
                 client_name: 'Test Client',
@@ -32,12 +32,26 @@ describe('StoreOrder Model - Pre-order System', () => {
                 ]
             };
 
-            executeTransaction.mockResolvedValue(1);
+            const mockOrderResult = {
+                id: 1,
+                order_number: 'ZS-20251010-0001',
+                client_name: 'Test Client',
+                client_email: 'test@example.com',
+                client_phone: '123456789',
+                client_address: '123 Test St',
+                total_amount: 499.95,
+                items_count: 5,
+                status: 'pending',
+                created_at: new Date()
+            };
 
-            const orderId = await StoreOrderModel.create(mockOrderData);
+            executeTransaction.mockResolvedValue(mockOrderResult);
+
+            const order = await StoreOrderModel.createOrder(mockOrderData);
 
             expect(executeTransaction).toHaveBeenCalled();
-            expect(orderId).toBe(1);
+            expect(order).toBeDefined();
+            expect(order.id).toBe(1);
         });
 
         test('should allow high quantity orders (no stock limits)', async () => {
@@ -55,24 +69,45 @@ describe('StoreOrder Model - Pre-order System', () => {
                 ]
             };
 
-            executeTransaction.mockResolvedValue(1);
+            const mockOrderResult = {
+                id: 2,
+                order_number: 'ZS-20251010-0002',
+                total_amount: 9899.01,
+                items_count: 99
+            };
 
-            const orderId = await StoreOrderModel.create(mockOrderData);
+            executeTransaction.mockResolvedValue(mockOrderResult);
 
-            expect(orderId).toBeDefined();
+            const order = await StoreOrderModel.createOrder(mockOrderData);
+
+            expect(order).toBeDefined();
             expect(executeTransaction).toHaveBeenCalled();
         });
     });
 
-    describe('cancel', () => {
+    describe('cancelOrder', () => {
         test('should cancel order without stock restoration', async () => {
-            executeQuery.mockResolvedValueOnce([[sampleOrders[0]]])
-                        .mockResolvedValueOnce([{ affectedRows: 1 }]);
+            const mockCancelledOrder = {
+                ...sampleOrders[0],
+                status: 'cancelled'
+            };
 
-            const result = await StoreOrderModel.cancel(1);
+            // Mock the transaction flow
+            executeTransaction.mockImplementation(async (callback) => {
+                // Mock getOrderById inside transaction
+                executeQuery.mockResolvedValueOnce([[sampleOrders[0]]])
+                            .mockResolvedValueOnce([]) // items query
+                            .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE query
+                            .mockResolvedValueOnce([[mockCancelledOrder]]) // getOrderById again
+                            .mockResolvedValueOnce([]); // items query again
+                
+                return await callback(executeQuery);
+            });
 
-            expect(result.success).toBe(true);
-            expect(executeQuery).toHaveBeenCalled();
+            const result = await StoreOrderModel.cancelOrder(1);
+
+            expect(result).toBeDefined();
+            expect(executeTransaction).toHaveBeenCalled();
             
             // Verify no stock restoration query
             const queries = executeQuery.mock.calls.map(call => call[0]);
@@ -85,12 +120,32 @@ describe('StoreOrder Model - Pre-order System', () => {
 
     describe('getOrderById', () => {
         test('should retrieve order details', async () => {
-            executeQuery.mockResolvedValue([[sampleOrders[0]]]);
+            // Mock the order query - returns single order
+            executeQuery.mockResolvedValueOnce([sampleOrders[0]])
+                        // Mock the items query - returns array of items
+                        .mockResolvedValueOnce([
+                            {
+                                id: 1,
+                                product_id: 1,
+                                product_name: 'Test Product',
+                                product_description: 'Test Description',
+                                product_price: 99.99,
+                                product_image_url: '/uploads/test.jpg',
+                                quantity: 2,
+                                subtotal: 199.98,
+                                created_at: new Date(),
+                                current_product_name: 'Test Product',
+                                current_product_image: '/uploads/test.jpg',
+                                product_is_active: 1
+                            }
+                        ]);
 
             const order = await StoreOrderModel.getOrderById(1);
 
             expect(order).toBeDefined();
             expect(order.order_number).toBe('ORD-2025-001');
+            expect(order.items).toBeDefined();
+            expect(order.items.length).toBeGreaterThan(0);
         });
     });
 

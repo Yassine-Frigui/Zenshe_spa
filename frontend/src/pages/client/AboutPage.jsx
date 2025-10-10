@@ -103,7 +103,7 @@ const AboutPage = () => {
                 className="text-center"
               >
                 <img 
-                  src="/images/zenshe_logo.jpg"
+                  src="/images/zenshe_logo.png"
                   alt={salonInfo?.nom_salon || "ZenShe Spa"}
                   className="img-fluid rounded-circle"
                   style={{ maxWidth: '300px', border: '3px solid rgba(255,255,255,0.3)' }}
@@ -126,16 +126,10 @@ const AboutPage = () => {
               >
                 <h2 className="text-green fw-bold mb-4">{t('about.mission.title')}</h2>
                 <p className="lead text-muted mb-4">
-                  {t('about.mission.description')} 
-                  à son essence féminine à travers des soins spécialisés de bien-être intime. 
-                  Nos services allient sagesse ancestrale et techniques modernes pour offrir 
-                  une expérience de guérison complète.
+                  {t('about.mission.description')}
                 </p>
                 <p className="text-muted">
-                  Nous croyons que le bien-être intime est essentiel à l'épanouissement global 
-                  de la femme. C'est pourquoi nous offrons un environnement sûr, confidentiel 
-                  et bienveillant où vous pouvez vous détendre, vous ressourcer et célébrer 
-                  votre féminité.
+                  {t('about.mission.belief')}
                 </p>
               </motion.div>
             </Col>
@@ -152,9 +146,9 @@ const AboutPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-5"
           >
-            <h2 className="text-green fw-bold mb-3">Nos Valeurs</h2>
+            <h2 className="text-green fw-bold mb-3">{t('about.values.title')}</h2>
             <p className="lead text-muted">
-              Les principes qui guident chaque aspect de notre pratique
+              {t('about.values.subtitle')}
             </p>
           </motion.div>
 
@@ -195,9 +189,9 @@ const AboutPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-5"
           >
-            <h2 className="text-green fw-bold mb-3">Témoignages de Nos Clientes</h2>
+            <h2 className="text-green fw-bold mb-3">{t('about.testimonials.title')}</h2>
             <p className="lead text-muted">
-              Découvrez les expériences transformatrices de nos clientes
+              {t('about.testimonials.subtitle')}
             </p>
           </motion.div>
 
@@ -265,19 +259,19 @@ const AboutPage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <h2 className="text-green fw-bold mb-4">Nous Contacter</h2>
+                <h2 className="text-green fw-bold mb-4">{t('about.contactSection.title')}</h2>
                 <p className="lead text-muted mb-4">
                   Avenue De La Bourse, Lac 2
                 </p>
                 <p className="text-muted mb-4">
-                  <strong>Téléphone:</strong> +216 24 157 715<br />
-                  <strong>instagram:</strong> zenshe_spa
+                  <strong>{t('about.contactSection.phone')}:</strong> +216 24 157 715<br />
+                  <strong>{t('about.contactSection.instagram')}:</strong> zenshe_spa
                 </p>
                 <a 
                   href="/booking" 
                   className="btn btn-green btn-lg rounded-pill px-5"
                 >
-                  Prendre Rendez-Vous
+                  {t('about.contactSection.bookButton')}
                 </a>
               </motion.div>
             </Col>
