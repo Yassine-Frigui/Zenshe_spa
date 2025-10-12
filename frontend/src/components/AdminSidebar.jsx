@@ -14,7 +14,8 @@ import {
   FaUser,
   FaChartLine,
   FaGift,
-  FaStore
+  FaStore,
+  FaCrown
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
@@ -72,6 +73,11 @@ const AdminSidebar = () => {
       path: '/admin/store',
       icon: <FaStore />,
       label: 'Boutique'
+    },
+    {
+      path: '/admin/memberships',
+      icon: <FaCrown />,
+      label: 'Abonnements'
     },
     {
       path: '/admin/statistics',

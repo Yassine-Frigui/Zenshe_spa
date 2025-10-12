@@ -14,7 +14,8 @@ import {
   FaSignInAlt,
   FaUserPlus,
   FaSignOutAlt,
-  FaStore
+  FaStore,
+  FaCrown
 } from 'react-icons/fa'
 import { useClientAuth } from '../context/ClientAuthContext'
 import { useTranslation } from 'react-i18next'

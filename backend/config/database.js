@@ -119,5 +119,9 @@ module.exports = {
     promisePool,
     testConnection,
     executeQuery,
-    executeTransaction
+    executeTransaction,
+    // Add execute method for compatibility with existing code
+    execute: promisePool.execute.bind(promisePool),
+    // Add getConnection method for transaction support
+    getConnection: promisePool.getConnection.bind(promisePool)
 };

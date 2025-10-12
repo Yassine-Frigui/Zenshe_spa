@@ -31,6 +31,7 @@ import AdminSettings from './pages/admin/AdminSettings'
 import AdminStatistics from './pages/admin/AdminStatistics'
 import AdminReferrals from './pages/admin/AdminReferrals'
 import AdminStoreDashboard from './pages/admin/AdminStoreDashboard'
+import AdminMemberships from './pages/admin/AdminMemberships'
 
 // Import des composants
 import ClientLayout from './components/layouts/ClientLayout'
@@ -43,6 +44,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ClientAuthProvider } from './context/ClientAuthContext'
 import { LanguageProvider } from './context/LanguageContext'
 import { CartProvider } from './context/CartContext'
+import { MembershipProvider } from './contexts/MembershipContext'
 
 // Variants pour les animations de page
 const pageVariants = {
@@ -71,8 +73,9 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <ClientAuthProvider>
-          <CartProvider>
-            <Router>
+          <MembershipProvider>
+            <CartProvider>
+              <Router>
           <div className="App">
             <AnimatePresence mode='wait'>
               <Routes>
@@ -339,6 +342,17 @@ function App() {
                     <AdminStoreDashboard />
                   </motion.div>
                 } />
+                <Route path="memberships" element={
+                  <motion.div
+                    initial="initial"
+                    animate="in"
+                    exit="out"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <AdminMemberships />
+                  </motion.div>
+                } />
               </Route>
 
               {/* Route 404 */}
@@ -362,9 +376,10 @@ function App() {
           </AnimatePresence>
         </div>
       </Router>
-          </CartProvider>
-      </ClientAuthProvider>
-    </AuthProvider>
+            </CartProvider>
+          </MembershipProvider>
+        </ClientAuthProvider>
+      </AuthProvider>
     </LanguageProvider>
   )
 }

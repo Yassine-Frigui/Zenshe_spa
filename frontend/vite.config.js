@@ -17,5 +17,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true
+  },
+   test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './tests/setup.js',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      exclude: ['node_modules/', 'tests/']
+    }
   }
+  
 })

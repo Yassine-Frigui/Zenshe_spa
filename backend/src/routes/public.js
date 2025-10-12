@@ -69,41 +69,62 @@ router.get('/booking', async (req, res) => {
 // Get all service categories
 router.get('/categories', async (req, res) => {
     try {
-        const categories = await executeQuery(`
-            SELECT * FROM categories_services 
-            WHERE actif = TRUE 
-            ORDER BY ordre_affichage
-        `);
-        res.json(categories);
+        const { lang = 'fr' } = req.query;
+        const categories = await MultilingualService.getCategoriesWithTranslations(lang);
+        res.json({
+            success: true,
+            data: categories,
+            total: categories.length,
+            language: lang
+        });
     } catch (error) {
         console.error('Error fetching categories:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 });
 
-// Get all service categories (alternative route)
-router.get('/services/categories/list', async (req, res) => {
-    try {
-        const categories = await executeQuery(`
-            SELECT * FROM categories_services 
-            WHERE actif = TRUE 
-            ORDER BY ordre_affichage
-        `);
-        res.json(categories);
-    } catch (error) {
-        console.error('Error fetching categories:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+// Note: /services/categories/list is handled by publicServices.js router
+// which is mounted at /api/public/services. Removed duplicate route to avoid confusion.
 
 // Get all public services
 router.get('/services', async (req, res) => {
     try {
-        const services = await ServiceModel.getAllServices();
-        res.json(services);
+        const { lang = 'fr', limit, offset, category, service_type, popular } = req.query;
+        
+        // Build filters object
+        const filters = {};
+        if (category) filters.category_id = category;
+        if (service_type) filters.service_type = service_type;
+        if (popular === 'true') filters.popular = true;
+        
+        // Use multilingual service to get translated content
+        const services = await MultilingualService.getServicesWithTranslations(lang, filters);
+        
+        // Apply limit and offset if provided
+        let resultServices = services;
+        if (limit) {
+            const limitNum = parseInt(limit);
+            const offsetNum = parseInt(offset) || 0;
+            resultServices = services.slice(offsetNum, offsetNum + limitNum);
+        }
+        
+        res.json({
+            success: true,
+            services: resultServices,
+            total: services.length,
+            language: lang
+        });
     } catch (error) {
         console.error('Error fetching services:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 });
 
@@ -121,24 +142,50 @@ router.get('/services/grouped', async (req, res) => {
 // Get popular services
 router.get('/services/popular', async (req, res) => {
     try {
+        const { lang = 'fr' } = req.query;
         const limit = parseInt(req.query.limit) || 6;
-        const services = await ServiceModel.getPopularServices(limit);
-        res.json(services);
+        
+        // Use multilingual service with popular filter
+        const services = await MultilingualService.getServicesWithTranslations(lang, { popular: true });
+        const limitedServices = services.slice(0, limit);
+        
+        res.json({
+            success: true,
+            services: limitedServices,
+            language: lang
+        });
     } catch (error) {
         console.error('Error fetching popular services:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 });
 
 // Get featured services (alternative route)
 router.get('/services/featured/list', async (req, res) => {
     try {
+        const { lang = 'fr' } = req.query;
         const limit = parseInt(req.query.limit) || 6;
-        const services = await ServiceModel.getPopularServices(limit);
-        res.json(services);
+        
+        // Use multilingual service with popular filter
+        const services = await MultilingualService.getServicesWithTranslations(lang, { popular: true });
+        const limitedServices = services.slice(0, limit);
+        
+        res.json({
+            success: true,
+            services: limitedServices,
+            language: lang
+        });
     } catch (error) {
         console.error('Error fetching featured services:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 });
 

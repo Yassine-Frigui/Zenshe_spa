@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Nav, Alert } from 'react-bootstrap';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaCalendarAlt, FaClock, FaUser, FaPhone, FaEnvelope, FaCheck, FaStar, FaInfoCircle, FaSave, FaFileSignature } from 'react-icons/fa';
-import { publicAPI } from '../../services/api';
+import { FaCalendarAlt, FaClock, FaUser, FaPhone, FaEnvelope, FaCheck, FaStar, FaInfoCircle, FaSave, FaFileSignature, FaCrown, FaExclamationTriangle } from 'react-icons/fa';
+import { publicAPI, clientAPI } from '../../services/api';
+import { useMembership } from '../../contexts/MembershipContext';
 import ReservationConfirmation from './ReservationConfirmation';
 import CompleteJotForm from '../../components/CompleteJotForm';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
@@ -20,6 +22,10 @@ const BookingPage = () => {
   const [selectedService, setSelectedService] = useState(serviceIdFromUrl);
   const [sessionId, setSessionId] = useState(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState('');
+  
+  // Membership hook - must be called BEFORE any state that uses same name
+  const { activeMembership, hasActiveMembership, isAuthenticated } = useMembership();
+  
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
@@ -40,6 +46,19 @@ const BookingPage = () => {
   const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [waiverSubmitted, setWaiverSubmitted] = useState(false);
   const [waiverData, setWaiverData] = useState(null);
+  
+  // MEMBERSHIP: New state for membership bookings (renamed to avoid conflict with useMembership hook)
+  const [useClientMembership, setUseClientMembership] = useState(false);
+  
+  // TAB STATE: 'standard' or 'membership'
+  const [bookingTab, setBookingTab] = useState('standard');
+  
+  // MEMBERSHIP SCHEDULING: For users to pre-select membership before visiting spa
+  const [availableMemberships, setAvailableMemberships] = useState([]);
+  const [selectedMembershipPlan, setSelectedMembershipPlan] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState(1); // 1 or 3 months
+  const [showScheduleSuccess, setShowScheduleSuccess] = useState(false);
+  const [schedulingMembership, setSchedulingMembership] = useState(false);
 
   // horrairex horaires disponibles
   const timeSlots = [
@@ -50,6 +69,7 @@ const BookingPage = () => {
 
   useEffect(() => {
     fetchServices(); // This now also fetches categories
+    fetchMemberships(); // Fetch available memberships for dropdown (public endpoint - no auth required)
     
     // Generate unique session ID and store in sessionStorage (not localStorage)
     initializeSession();
@@ -102,39 +122,68 @@ const BookingPage = () => {
 
   const fetchServices = async () => {
     try {
-      console.log('🔄 Fetching services and categories...');
-      // Use the same API calls as ServicesPage
+      // Fetch services and categories in parallel
       const [servicesRes, categoriesRes] = await Promise.all([
         publicAPI.getServices(),
         publicAPI.getCategories()
       ]);
-
-      console.log('📦 Services response:', servicesRes);
-      console.log('📦 Categories response:', categoriesRes);
       
+      // Handle services response - wrapped in {success, services, ...}
       const servicesData = servicesRes.data.services || servicesRes.data || [];
+      
+      // Handle categories response - wrapped in {success, data, ...}
       const categoriesData = categoriesRes.data.data || categoriesRes.data || [];
-      
-      console.log('✅ Setting services:', servicesData.length, 'items');
-      console.log('✅ Setting categories:', categoriesData.length, 'items');
-      
-      setServices(servicesData);
-      setCategories(categoriesData);
+
+      setServices(Array.isArray(servicesData) ? servicesData : []);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
-      console.error('❌ Erreur lors du chargement des services:', error);
-      setServices([]); // Set empty array on error
-      setCategories([]); // Set empty array on error
+      console.error('Erreur lors du chargement des services:', error);
+      setServices([]);
+      setCategories([]);
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchMemberships = async () => {
     try {
-      const response = await publicAPI.getCategories();
-      const categoriesData = response.data || response;
-      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      console.log('🔍 Fetching memberships from PUBLIC API (no auth required)...');
+      const response = await publicAPI.getMemberships();
+      console.log('✅ Memberships loaded:', response.data);
+      const membershipsData = response.data.memberships || response.data || [];
+      setAvailableMemberships(Array.isArray(membershipsData) ? membershipsData : []);
     } catch (error) {
-      console.error('Erreur lors du chargement des catégories:', error);
-      setCategories([]);
+      console.error('Erreur lors du chargement des abonnements:', error);
+      setAvailableMemberships([]);
+    }
+  };
+
+  const handleScheduleMembership = async () => {
+    if (!selectedMembershipPlan) {
+      setError('Veuillez sélectionner un abonnement');
+      return;
+    }
+
+    setSchedulingMembership(true);
+    setError('');
+
+    try {
+      const response = await clientAPI.scheduleMembership({
+        membership_id: selectedMembershipPlan,
+        duree_mois: selectedDuration
+      });
+
+      setShowScheduleSuccess(true);
+      setSelectedMembershipPlan('');
+      setSelectedDuration(1);
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setShowScheduleSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Erreur lors de la planification de l\'abonnement:', error);
+      setError(error.response?.data?.message || 'Erreur lors de la planification de l\'abonnement');
+    } finally {
+      setSchedulingMembership(false);
     }
   };
 
@@ -175,6 +224,30 @@ const BookingPage = () => {
     setLoading(true);
     setError('');
 
+    // If on membership tab, automatically use membership
+    const useMembership = bookingTab === 'membership' || useClientMembership;
+
+    // Validation: service required UNLESS using membership
+    if (!useMembership && !selectedService) {
+      setError('Veuillez sélectionner un service');
+      setLoading(false);
+      return;
+    }
+
+    // Validation: must be authenticated to use membership
+    if (useMembership && !isAuthenticated) {
+      setError('Vous devez être connecté pour utiliser votre abonnement');
+      setLoading(false);
+      return;
+    }
+
+    // Validation: must have active membership with services remaining
+    if (useMembership && (!activeMembership || activeMembership.services_restants <= 0)) {
+      setError("Vous n'avez pas d'abonnement actif ou plus de services disponibles");
+      setLoading(false);
+      return;
+    }
+
     try {
       const reservationData = {
         // Client data
@@ -186,7 +259,7 @@ const BookingPage = () => {
         adresse: '', // Optional field
         
         // Reservation data
-        service_id: selectedService,
+        service_id: useMembership ? null : selectedService, // No service when using membership
         date_reservation: formData.date_reservation,
         heure_debut: formData.heure_reservation,
         notes_client: formData.notes || '',
@@ -198,7 +271,11 @@ const BookingPage = () => {
         has_healing_addon: formData.hasHealingAddon,
         
         // Session ID for draft conversion
-        session_id: sessionId
+        session_id: sessionId,
+        
+        // Membership data
+        useMembership: useMembership,
+        clientMembershipId: useMembership ? activeMembership?.id : null
       };
 
       // Secure logging for production
@@ -602,9 +679,63 @@ const BookingPage = () => {
                 transition={{ delay: 0.4, duration: 0.8 }}
               >
                 <div className="card-body p-5">
+                  {/* TAB NAVIGATION */}
+                  <Nav variant="tabs" className="mb-4 border-bottom pb-3">
+                    <Nav.Item>
+                      <Nav.Link
+                        active={bookingTab === 'standard'}
+                        onClick={() => setBookingTab('standard')}
+                        className={`px-4 py-2 fw-bold ${
+                          bookingTab === 'standard' ? 'text-green' : 'text-muted'
+                        }`}
+                        style={{
+                          borderTop: 'none',
+                          borderLeft: 'none',
+                          borderRight: 'none',
+                          borderBottom: bookingTab === 'standard' ? '3px solid var(--primary-green)' : 'none',
+                          background: 'transparent',
+                          borderRadius: 0
+                        }}
+                      >
+                        <FaCalendarAlt className="me-2" />
+                        Réservation Standard
+                      </Nav.Link>
+                    </Nav.Item>
+                    <Nav.Item>
+                      <Nav.Link
+                        active={bookingTab === 'membership'}
+                        onClick={() => {
+                          if (!isAuthenticated || !hasActiveMembership()) {
+                            // Don't switch tabs - will show alert instead
+                            setBookingTab('membership');
+                          } else {
+                            setBookingTab('membership');
+                            setUseClientMembership(true);
+                          }
+                        }}
+                        className={`px-4 py-2 fw-bold ${
+                          bookingTab === 'membership' ? 'text-warning' : 'text-muted'
+                        }`}
+                        style={{
+                          borderTop: 'none',
+                          borderLeft: 'none',
+                          borderRight: 'none',
+                          borderBottom: bookingTab === 'membership' ? '3px solid #FFD700' : 'none',
+                          background: 'transparent',
+                          borderRadius: 0
+                        }}
+                      >
+                        <FaCrown className="me-2" />
+                        Abonnement
+                      </Nav.Link>
+                    </Nav.Item>
+                  </Nav>
+
                   {/* Auto-save status indicator */}
                   <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h3 className="fw-bold text-green mb-0">{t('booking.form.title')}</h3>
+                    <h3 className="fw-bold text-green mb-0">
+                      {bookingTab === 'standard' ? t('booking.form.title') : 'Réservation avec Abonnement'}
+                    </h3>
                     <div className="d-flex flex-column align-items-end">
                       {sessionId && (
                         <small className="text-muted mb-1">
@@ -620,19 +751,194 @@ const BookingPage = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* MEMBERSHIP TAB - Alert for non-members */}
+                  {bookingTab === 'membership' && (!isAuthenticated || !hasActiveMembership()) && (
+                    <div className="mb-4">
+                      {/* Success message for scheduled membership */}
+                      {showScheduleSuccess && (
+                        <Alert variant="success" className="mb-3">
+                          <div className="d-flex align-items-center">
+                            <FaCheck className="me-3" style={{ fontSize: '1.5rem' }} />
+                            <div>
+                              <h5 className="alert-heading mb-1">Abonnement planifié avec succès! ✅</h5>
+                              <p className="mb-0">
+                                Votre demande d'abonnement a été enregistrée. Visitez-nous au spa pour activer votre abonnement.
+                                L'admin confirmera votre abonnement lors de votre visite.
+                              </p>
+                            </div>
+                          </div>
+                        </Alert>
+                      )}
+
+                      <Alert variant="warning" className="d-flex align-items-start">
+                        <FaExclamationTriangle className="me-3 mt-1" style={{ fontSize: '1.5rem' }} />
+                        <div className="w-100">
+                          <h5 className="alert-heading">Abonnement requis</h5>
+                          {!isAuthenticated ? (
+                            <div className="mb-3">
+                              <p className="mb-2">Pour réserver avec un abonnement, vous devez:</p>
+                              <ol className="mt-2 mb-2">
+                                <li>Créer un compte ou vous connecter</li>
+                                <li>Consulter nos <Link to="/services" className="alert-link">offres d'abonnement</Link></li>
+                                <li>Visiter notre spa pour souscrire à un abonnement</li>
+                              </ol>
+                            </div>
+                          ) : (
+                            <p className="mb-3">
+                              Vous n'avez pas d'abonnement actif. Mais vous pouvez <strong>pré-sélectionner</strong> un abonnement maintenant!
+                            </p>
+                          )}
+
+                          {/* SCHEDULING FORM - Only for logged-in users */}
+                          {isAuthenticated && !showScheduleSuccess && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              transition={{ duration: 0.3 }}
+                              className="border-top pt-3 mt-3"
+                            >
+                              <h6 className="mb-3">
+                                <FaCrown className="me-2 text-warning" />
+                                Planifier un abonnement
+                              </h6>
+                              <p className="small text-muted mb-3">
+                                Sélectionnez votre abonnement et la durée. Votre choix sera enregistré et activé lors de votre visite au spa.
+                              </p>
+
+                              {error && (
+                                <div className="alert alert-danger alert-sm mb-3">{error}</div>
+                              )}
+
+                              <div className="row g-3">
+                                <div className="col-md-7">
+                                  <label className="form-label small fw-bold">Type d'abonnement</label>
+                                  <select
+                                    className="form-select"
+                                    value={selectedMembershipPlan}
+                                    onChange={(e) => setSelectedMembershipPlan(e.target.value)}
+                                    disabled={schedulingMembership}
+                                  >
+                                    <option value="">Sélectionnez un abonnement</option>
+                                    {availableMemberships.map((membership) => (
+                                      <option key={membership.id} value={membership.id}>
+                                        {membership.nom} - {membership.services_par_mois} services/mois
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="col-md-5">
+                                  <label className="form-label small fw-bold">Durée</label>
+                                  <select
+                                    className="form-select"
+                                    value={selectedDuration}
+                                    onChange={(e) => setSelectedDuration(parseInt(e.target.value))}
+                                    disabled={schedulingMembership || !selectedMembershipPlan}
+                                  >
+                                    <option value={1}>
+                                      1 mois - {selectedMembershipPlan && availableMemberships.find(m => m.id == selectedMembershipPlan)?.prix_mensuel}€
+                                    </option>
+                                    <option value={3}>
+                                      3 mois - {selectedMembershipPlan && availableMemberships.find(m => m.id == selectedMembershipPlan)?.prix_3_mois}€
+                                    </option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <button
+                                className="btn btn-warning mt-3"
+                                onClick={handleScheduleMembership}
+                                disabled={!selectedMembershipPlan || schedulingMembership}
+                              >
+                                {schedulingMembership ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm me-2" />
+                                    Enregistrement...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FaCheck className="me-2" />
+                                    Planifier cet abonnement
+                                  </>
+                                )}
+                              </button>
+                            </motion.div>
+                          )}
+
+                          <div className="d-flex gap-2 mt-3 flex-wrap">
+                            {!isAuthenticated && (
+                              <Link to="/client/login" className="btn btn-sm btn-warning">
+                                <FaUser className="me-2" />
+                                Se connecter
+                              </Link>
+                            )}
+                            <Link to="/services" className="btn btn-sm btn-outline-warning">
+                              <FaCrown className="me-2" />
+                              Voir les abonnements
+                            </Link>
+                            <button 
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => setBookingTab('standard')}
+                            >
+                              Réservation standard
+                            </button>
+                          </div>
+                        </div>
+                      </Alert>
+                    </div>
+                  )}
                   
+                  {/* Only show form if on standard tab OR on membership tab with valid membership */}
+                  {(bookingTab === 'standard' || (bookingTab === 'membership' && isAuthenticated && hasActiveMembership())) && (
                   <form onSubmit={handleSubmit} className="booking-form">
-                    {/* Service Selection */}
-                    <motion.div
-                      className="mb-4"
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.6, duration: 0.6 }}
-                    >
-                      <label className="form-label fw-bold text-green">
-                        <FaStar className="me-2" />
-                        {t('booking.form.selectService')}
-                      </label>
+                    {/* MEMBERSHIP BANNER - Only show on standard tab */}
+                    {bookingTab === 'standard' && isAuthenticated && hasActiveMembership() && (
+                      <motion.div 
+                        className="alert alert-success border-2 border-success mb-4"
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.5, duration: 0.5 }}
+                      >
+                        <div className="d-flex align-items-start">
+                          <FaCrown className="text-warning me-3" style={{ fontSize: '2rem' }} />
+                          <div className="flex-grow-1">
+                            <h5 className="mb-2">
+                              🎉 Vous avez un abonnement actif!
+                            </h5>
+                            <p className="mb-2">
+                              <strong>Abonnement:</strong> {activeMembership?.membership_nom}<br/>
+                              <strong>Services restants:</strong> {activeMembership?.services_restants} / {activeMembership?.services_total}
+                            </p>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="useClientMembership"
+                                checked={useClientMembership}
+                                onChange={(e) => setUseClientMembership(e.target.checked)}
+                              />
+                              <label className="form-check-label" htmlFor="useClientMembership">
+                                <strong>Utiliser mon abonnement</strong> - Pas besoin de sélectionner un service ni de remplir le formulaire de décharge
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Service Selection - Hidden if using membership OR on membership tab */}
+                    {bookingTab === 'standard' && !useClientMembership && (
+                      <>
+                        <motion.div
+                          className="mb-4"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.6, duration: 0.6 }}
+                        >
+                          <label className="form-label fw-bold text-green">
+                            <FaStar className="me-2" />
+                            {t('booking.form.selectService')}
+                          </label>
                           
                           {servicesByCategory.length > 0 ? servicesByCategory.map((category) => (
                             <div key={category.id} className="mb-4">
@@ -701,8 +1007,10 @@ const BookingPage = () => {
                             </div>
                           )}
                         </motion.div>
+                      </>
+                    )}
 
-                        {/* Personal Information */}
+                    {/* Personal Information */}
                         <motion.div
                           className="mb-4"
                           initial={{ x: -20, opacity: 0 }}
@@ -889,27 +1197,29 @@ const BookingPage = () => {
                           />
                         </motion.div>
 
-                        {/* Waiver Button */}
-                        <motion.div
-                          className="text-center mb-3"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 1.4, duration: 0.6 }}
-                        >
-                          <button
-                            type="button"
-                            className={`btn ${waiverSubmitted ? 'btn-success' : 'btn-outline-green'} btn-lg px-4 me-3`}
-                            onClick={() => setShowWaiverModal(true)}
+                        {/* Waiver Button - Hidden if using membership OR on membership tab */}
+                        {bookingTab === 'standard' && !useClientMembership && (
+                          <motion.div
+                            className="text-center mb-3"
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 1.4, duration: 0.6 }}
                           >
-                            <FaFileSignature className="me-2" />
-                            {waiverSubmitted ? '✅ Décharge complétée' : 'Remplir la décharge'}
-                          </button>
-                          {waiverSubmitted && (
-                            <small className="text-success d-block mt-2">
-                              ✓ Votre décharge a été enregistrée avec succès
-                            </small>
-                          )}
-                        </motion.div>
+                            <button
+                              type="button"
+                              className={`btn ${waiverSubmitted ? 'btn-success' : 'btn-outline-green'} btn-lg px-4 me-3`}
+                              onClick={() => setShowWaiverModal(true)}
+                            >
+                              <FaFileSignature className="me-2" />
+                              {waiverSubmitted ? '✅ Décharge complétée' : 'Remplir la décharge'}
+                            </button>
+                            {waiverSubmitted && (
+                              <small className="text-success d-block mt-2">
+                                ✓ Votre décharge a été enregistrée avec succès
+                              </small>
+                            )}
+                          </motion.div>
+                        )}
 
                         {/* Submit Button */}
                         <motion.div
@@ -937,6 +1247,8 @@ const BookingPage = () => {
                           </button>
                         </motion.div>
                       </form>
+                  )}
+                  {/* End of conditional form rendering */}
                 </div>
               </motion.div>
             </div>

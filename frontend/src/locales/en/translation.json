@@ -192,6 +192,8 @@
     "includes": "Includes",
     "minutes": "minutes",
     "noServicesFound": "No services found",
+    "noServicesAvailable": "No services are currently available",
+    "categoryComingSoon": "We are currently working on exciting new treatments for this category. Check back soon!",
     "tryDifferentCategory": "Try selecting a different category",
     "cta": {
       "title": "Questions about our intimate wellness services?",

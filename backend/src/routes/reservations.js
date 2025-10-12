@@ -22,18 +22,24 @@ router.post('/', reservationLimiter, validateInput([
         const {
             // Données client
             nom, prenom, email, telephone, date_naissance, adresse, notes,
-            // Données réservation
+            // Données réservation - NEW: Support for services array
+            services, // NEW: Array of {service_id, item_type, prix, notes}
             service_id, service_variant_id, package_id, date_reservation, heure_debut, notes_client,
             // Referral code and add-ons
             referralCode, has_healing_addon,
             // Session ID pour conversion de brouillon
             session_id,
             // Jotform submission data
-            jotform_submission
+            jotform_submission,
+            // MEMBERSHIP: New fields for membership bookings
+            useMembership, // Boolean: whether to use membership for this booking
+            clientMembershipId // ID of the membership to use (if useMembership=true)
         } = req.body;
 
         console.log('Extracted data:', {
-            nom, prenom, email, telephone, service_id, date_reservation, heure_debut
+            nom, prenom, email, telephone, 
+            services: services || `legacy single service: ${service_id}`, 
+            date_reservation, heure_debut
         });
 
         // Check if the client exists by phone + name combination OR by email
@@ -69,34 +75,62 @@ router.post('/', reservationLimiter, validateInput([
             console.log('New client created:', client_id);
         }
 
-        // Récupérer les détails du service pour calculer le prix et la durée
-        const service = await executeQuery('SELECT prix, duree FROM services WHERE id = ?', [service_id]);
-        if (!service.length) {
-            console.error('Service not found:', service_id);
-            return res.status(404).json({ message: 'Service non trouvé' });
-        }
-
-        console.log('Service found:', service[0]);
-
-        let prix_service = service[0].prix;
-        let duree_service = service[0].duree;
-
-        // Si une variante est sélectionnée, utiliser son prix
-        if (service_variant_id) {
-            const variant = await executeQuery('SELECT prix FROM service_variants WHERE id = ?', [service_variant_id]);
-            if (variant.length) {
-                prix_service = variant[0].prix;
+        // NEW: Determine if using multi-service mode
+        const usesMultiService = services && services.length > 0;
+        
+        let prix_service;
+        let duree_service;
+        let heure_fin;
+        
+        if (usesMultiService) {
+            // NEW: Multi-service mode
+            console.log('Multi-service mode - services:', services);
+            
+            // Calculate total duration from all services
+            const serviceIds = services.map(s => s.service_id);
+            duree_service = await ReservationModel.calculateTotalDuration(serviceIds);
+            
+            // Calculate total price from services array
+            prix_service = services.reduce((sum, s) => sum + parseFloat(s.prix || 0), 0);
+            
+            // Calculate end time based on total duration
+            const [heures, minutes] = heure_debut.split(':');
+            const debutDate = new Date();
+            debutDate.setHours(parseInt(heures), parseInt(minutes), 0);
+            debutDate.setMinutes(debutDate.getMinutes() + duree_service);
+            heure_fin = debutDate.toTimeString().slice(0, 5);
+            
+            console.log('Multi-service - Total duration:', duree_service, 'Total price:', prix_service, 'End time:', heure_fin);
+        } else {
+            // Legacy: Single service mode
+            const service = await executeQuery('SELECT prix, duree FROM services WHERE id = ?', [service_id]);
+            if (!service.length) {
+                console.error('Service not found:', service_id);
+                return res.status(404).json({ message: 'Service non trouvé' });
             }
+
+            console.log('Legacy single service mode - Service found:', service[0]);
+
+            prix_service = service[0].prix;
+            duree_service = service[0].duree;
+
+            // Si une variante est sélectionnée, utiliser son prix
+            if (service_variant_id) {
+                const variant = await executeQuery('SELECT prix FROM service_variants WHERE id = ?', [service_variant_id]);
+                if (variant.length) {
+                    prix_service = variant[0].prix;
+                }
+            }
+
+            // Calculer l'heure de fin
+            const [heures, minutes] = heure_debut.split(':');
+            const debutDate = new Date();
+            debutDate.setHours(parseInt(heures), parseInt(minutes), 0);
+            debutDate.setMinutes(debutDate.getMinutes() + duree_service);
+            heure_fin = debutDate.toTimeString().slice(0, 5);
+
+            console.log('Legacy mode - Calculated end time:', heure_fin);
         }
-
-        // Calculer l'heure de fin
-        const [heures, minutes] = heure_debut.split(':');
-        const debutDate = new Date();
-        debutDate.setHours(parseInt(heures), parseInt(minutes), 0);
-        debutDate.setMinutes(debutDate.getMinutes() + duree_service);
-        const heure_fin = debutDate.toTimeString().slice(0, 5);
-
-        console.log('Calculated end time:', heure_fin);
 
         // Process referral code if provided
         let referral_code_id = null;
@@ -181,13 +215,34 @@ router.post('/', reservationLimiter, validateInput([
             }
         }
 
+        // MEMBERSHIP: Check if using membership
+        let finalUseMembership = false;
+        let finalClientMembershipId = null;
+        
+        if (useMembership && clientMembershipId) {
+            // Verify the membership is valid and belongs to this client
+            const ClientMembershipModel = require('../models/ClientMembership');
+            const membership = await ClientMembershipModel.getActiveClientMembership(client_id);
+            
+            if (membership && membership.id == clientMembershipId && membership.services_restants > 0) {
+                finalUseMembership = true;
+                finalClientMembershipId = clientMembershipId;
+                console.log('✅ Using membership:', membership.membership_nom, '- Services remaining:', membership.services_restants);
+            } else {
+                console.warn('⚠️ Invalid membership or no services remaining');
+            }
+        }
+
         // If no draft was converted, create a new reservation
         if (!reservationId) {
             console.log('Creating new reservation...');
             // Créer la réservation avec status 'reserved' (réelle réservation)
             reservationId = await ReservationModel.createReservation({
                 client_id,
-                service_id,
+                // NEW: Pass services array for multi-service bookings
+                services: usesMultiService ? services : [],
+                // Legacy fields - still used for backward compatibility
+                service_id: usesMultiService ? null : service_id,
                 service_variant_id,
                 package_id,
                 date_reservation,
@@ -195,8 +250,8 @@ router.post('/', reservationLimiter, validateInput([
                 heure_fin,
                 notes_client,
                 prix_service,
-                addon_price: addonPrice,
-                prix_final: prix_service + addonPrice,
+                addon_price: addon_price,
+                prix_final: prix_service + addon_price,
                 statut: 'en_attente',
                 reservation_status: 'reserved',
                 // Add client information
@@ -206,11 +261,14 @@ router.post('/', reservationLimiter, validateInput([
                 client_email: email,
                 session_id: null,
                 // Add referral code and healing addon
-                referral_code_id: referralCodeId,
-                has_healing_addon: hasHealingAddon,
-                addon_price: addonPrice,
+                referral_code_id: referral_code_id,
+                has_healing_addon: has_healing_addon,
+                addon_price: addon_price,
                 // Add Jotform submission
-                jotform_submission: jotform_submission
+                jotform_submission: jotform_submission,
+                // MEMBERSHIP: Add membership fields
+                uses_membership: finalUseMembership,
+                client_membership_id: finalClientMembershipId
             });
         }
 
@@ -475,7 +533,12 @@ router.get('/verify-link/:token', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const reservation = await ReservationModel.getReservationById(id);
+        const { lang = 'fr', include_items = 'true' } = req.query; // NEW: Support language and items flag
+        
+        // NEW: Use getReservationWithItems if requested (default)
+        const reservation = include_items === 'true'
+            ? await ReservationModel.getReservationWithItems(id, lang)
+            : await ReservationModel.getReservationById(id);
 
         if (!reservation) {
             return res.status(404).json({ message: 'Réservation non trouvée' });
@@ -491,25 +554,40 @@ router.get('/:id', async (req, res) => {
 // Vérifier la disponibilité d'un créneau
 router.post('/check-availability', async (req, res) => {
     try {
-        const { date_reservation, heure_debut, service_id } = req.body;
+        const { date_reservation, heure_debut, service_id, service_ids } = req.body; // NEW: Support multiple services
 
-        if (!date_reservation || !heure_debut || !service_id) {
+        if (!date_reservation || !heure_debut) {
             return res.status(400).json({ 
-                message: 'Date, heure de début et service requis' 
+                message: 'Date et heure de début requis' 
             });
         }
 
-        // Récupérer la durée du service
-        const service = await executeQuery('SELECT duree FROM services WHERE id = ?', [service_id]);
-        if (!service.length) {
-            return res.status(404).json({ message: 'Service non trouvé' });
+        let duree_totale;
+        
+        // NEW: Check if using multi-service mode
+        if (service_ids && service_ids.length > 0) {
+            // Multi-service: calculate total duration
+            duree_totale = await ReservationModel.calculateTotalDuration(service_ids);
+            console.log('Multi-service availability check - Service IDs:', service_ids, 'Total duration:', duree_totale);
+        } else if (service_id) {
+            // Legacy: single service
+            const service = await executeQuery('SELECT duree FROM services WHERE id = ?', [service_id]);
+            if (!service.length) {
+                return res.status(404).json({ message: 'Service non trouvé' });
+            }
+            duree_totale = service[0].duree;
+            console.log('Single service availability check - Service ID:', service_id, 'Duration:', duree_totale);
+        } else {
+            return res.status(400).json({ 
+                message: 'Service(s) requis - fournir service_id ou service_ids' 
+            });
         }
 
         // Calculer l'heure de fin
         const [heures, minutes] = heure_debut.split(':');
         const debutDate = new Date();
         debutDate.setHours(parseInt(heures), parseInt(minutes), 0);
-        debutDate.setMinutes(debutDate.getMinutes() + service[0].duree);
+        debutDate.setMinutes(debutDate.getMinutes() + duree_totale);
         const heure_fin = debutDate.toTimeString().slice(0, 5);
 
         // Vérifier la disponibilité
@@ -520,6 +598,7 @@ router.post('/check-availability', async (req, res) => {
         res.json({
             available: isAvailable,
             heure_fin,
+            total_duration: duree_totale,
             message: isAvailable ? 'Créneau disponible' : 'Créneau non disponible'
         });
 
@@ -941,6 +1020,142 @@ router.get('/admin/drafts', async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Erreur lors de la récupération des brouillons' 
+        });
+    }
+});
+
+// ============================================================================
+// MULTI-SERVICE MANAGEMENT ENDPOINTS
+// ============================================================================
+
+// Add a service to an existing reservation
+router.post('/:id/services', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { service_id, item_type = 'main', prix, notes } = req.body;
+        const { lang = 'fr' } = req.query;
+
+        if (!service_id) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Service ID requis' 
+            });
+        }
+
+        // Verify reservation exists
+        const reservation = await ReservationModel.getReservationById(id);
+        if (!reservation) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Réservation non trouvée' 
+            });
+        }
+
+        // Add the service
+        await ReservationModel.addServiceToReservation(id, {
+            service_id,
+            item_type,
+            prix,
+            notes
+        });
+
+        // Recalculate time slot
+        await ReservationModel.updateReservationTimeSlot(id, reservation.heure_debut);
+
+        // Fetch updated reservation with all items
+        const updatedReservation = await ReservationModel.getReservationWithItems(id, lang);
+
+        res.json({
+            success: true,
+            message: 'Service ajouté avec succès',
+            reservation: updatedReservation
+        });
+
+    } catch (error) {
+        console.error('Erreur lors de l\'ajout du service:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erreur lors de l\'ajout du service',
+            error: error.message
+        });
+    }
+});
+
+// Remove a service from an existing reservation
+router.delete('/:id/services/:serviceId', async (req, res) => {
+    try {
+        const { id, serviceId } = req.params;
+        const { item_type } = req.query; // Optional: filter by item_type (main/addon)
+        const { lang = 'fr' } = req.query;
+
+        // Verify reservation exists
+        const reservation = await ReservationModel.getReservationById(id);
+        if (!reservation) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Réservation non trouvée' 
+            });
+        }
+
+        // Remove the service
+        await ReservationModel.removeServiceFromReservation(id, serviceId, item_type);
+
+        // Recalculate time slot
+        await ReservationModel.updateReservationTimeSlot(id, reservation.heure_debut);
+
+        // Fetch updated reservation with remaining items
+        const updatedReservation = await ReservationModel.getReservationWithItems(id, lang);
+
+        res.json({
+            success: true,
+            message: 'Service supprimé avec succès',
+            reservation: updatedReservation
+        });
+
+    } catch (error) {
+        console.error('Erreur lors de la suppression du service:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erreur lors de la suppression du service',
+            error: error.message
+        });
+    }
+});
+
+// Get all reservations with items (admin view)
+router.get('/admin/with-items', async (req, res) => {
+    try {
+        const { 
+            start_date, 
+            end_date, 
+            statut, 
+            reservation_status, 
+            client_id,
+            lang = 'fr' 
+        } = req.query;
+
+        const filters = {
+            start_date,
+            end_date,
+            statut,
+            reservation_status,
+            client_id
+        };
+
+        const reservations = await ReservationModel.getAllReservationsWithItems(filters, lang);
+
+        res.json({
+            success: true,
+            reservations,
+            total: reservations.length
+        });
+
+    } catch (error) {
+        console.error('Erreur lors de la récupération des réservations:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erreur lors de la récupération des réservations',
+            error: error.message
         });
     }
 });

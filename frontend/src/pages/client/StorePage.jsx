@@ -27,8 +27,8 @@ const StorePage = () => {
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
     
-    // Fetch categories  
-    api.publicAPI.getCategories()
+    // Fetch PRODUCT categories for the store (not service categories)
+    api.publicAPI.getProductCategories()
       .then(response => {
         const categoriesData = response.data?.data || response.data || [];
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);

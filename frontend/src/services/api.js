@@ -15,16 +15,37 @@ const getCurrentLanguage = () => {
   return i18n.language || 'fr';
 };
 
-// Initialiser l'authorization header si un token existe
+// Initialiser l'authorization header si un token existe (admin ou client)
 const initializeAuth = () => {
-  const token = localStorage.getItem('adminToken');
+  // Prefer client token if present, otherwise admin token
+  const clientToken = localStorage.getItem('clientToken');
+  const adminToken = localStorage.getItem('adminToken');
+  const token = clientToken || adminToken;
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    // Ensure header is not set
+    delete axios.defaults.headers.common['Authorization'];
   }
 };
 
 // Appeler l'initialisation
 initializeAuth();
+
+// Helpers to update auth header at runtime
+export const setAuthToken = (token) => {
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    try { localStorage.setItem('clientToken', token); } catch (e) {}
+  }
+};
+
+export const clearAuthToken = () => {
+  try {
+    delete axios.defaults.headers.common['Authorization'];
+  } catch (e) {}
+  try { localStorage.removeItem('clientToken'); } catch (e) {}
+};
 
 // Services pour les API publiques
 export const publicAPI = {
@@ -72,7 +93,7 @@ export const publicAPI = {
     return axios.get('/api/public/services/categories/list', { params: { lang } });
   },
 
-  // Abonnements
+  // Abonnements (public)
   getMemberships: () => {
     const lang = getCurrentLanguage();
     return axios.get('/api/public/services/memberships/list', { params: { lang } });
@@ -118,7 +139,7 @@ export const publicAPI = {
   // Store/Boutique API
   getProducts: (params = {}) => axios.get('/api/store/products', { params }),
   getProduct: (id, params = {}) => axios.get(`/api/store/products/${id}`, { params }),
-  getCategories: () => axios.get('/api/store/categories'),
+  getProductCategories: () => axios.get('/api/store/categories'), // Renamed from getCategories to avoid collision with service categories
   createOrder: (data) => axios.post('/api/store/orders', data),
   getOrder: (id) => axios.get(`/api/store/orders/${id}`),
 
@@ -154,6 +175,18 @@ export const clientAPI = {
   getMyReservation: (id) => axios.get(`/api/client/reservations/${id}`),
   updateMyReservation: (id, data) => axios.put(`/api/client/reservations/${id}`, data),
   cancelMyReservation: (id) => axios.put(`/api/client/reservations/${id}/cancel`),
+
+  // Memberships (client authentifié)
+  getActiveMembership: () => axios.get('/api/client/memberships/active'),
+  getMembershipHistory: () => axios.get('/api/client/memberships/history'),
+  getAvailableMembershipsForPurchase: () => axios.get('/api/client/memberships/available'), // Get available memberships for authenticated purchase
+  purchaseMembership: (data) => axios.post('/api/client/memberships/purchase', data),
+  cancelMembership: (id) => axios.put(`/api/client/memberships/${id}/cancel`),
+  
+  // Schedule Membership (pre-select before visiting spa)
+  scheduleMembership: (data) => axios.post('/api/client/memberships/schedule', data),
+  getPendingMembership: () => axios.get('/api/client/memberships/pending'),
+  cancelScheduledMembership: (id) => axios.delete(`/api/client/memberships/scheduled/${id}`),
 }
 
 // Services pour les API admin
@@ -280,7 +313,17 @@ export const adminAPI = {
   // JotForm Submissions
   getJotFormSubmission: (submissionId) => axios.get(`/api/jotform/submission/${submissionId}`, {
     headers: { 'Accept': 'application/json' }
-  })
+  }),
+
+  // Client Memberships Management
+  getAllClientMemberships: () => axios.get('/api/admin/client-memberships/all'),
+  createClientMembership: (data) => axios.post('/api/admin/client-memberships', data),
+  cancelClientMembership: (id) => axios.put(`/api/admin/client-memberships/${id}/cancel`),
+  
+  // Scheduled Memberships Management
+  getPendingScheduledMemberships: () => axios.get('/api/admin/client-memberships/scheduled/pending'),
+  activateScheduledMembership: (id, data) => axios.post(`/api/admin/client-memberships/scheduled/${id}/activate`, data),
+  cancelScheduledMembership: (id) => axios.delete(`/api/admin/client-memberships/scheduled/${id}`)
 }
 
 // Intercepteur pour gérer les erreurs d'authentification

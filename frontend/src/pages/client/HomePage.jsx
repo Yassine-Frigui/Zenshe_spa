@@ -40,8 +40,12 @@ const HomePage = () => {
         publicAPI.getSpaInfo()
       ])
 
-      setPopularServices(Array.isArray(popularRes.data) ? popularRes.data : [])
-      setNewServices(Array.isArray(newRes.data.services) ? newRes.data.services : Array.isArray(newRes.data) ? newRes.data : [])
+      // Handle new response structure (wrapped in success/services)
+      const popularData = popularRes.data.services || popularRes.data || []
+      const newData = newRes.data.services || newRes.data || []
+      
+      setPopularServices(Array.isArray(popularData) ? popularData : [])
+      setNewServices(Array.isArray(newData) ? newData : [])
       setAvis(Array.isArray(avisRes.data.avis) ? avisRes.data.avis : [])
       setSpaInfo(spaRes.data || {})
     } catch (error) {

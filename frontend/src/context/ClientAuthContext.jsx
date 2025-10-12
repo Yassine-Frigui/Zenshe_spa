@@ -12,9 +12,16 @@ export const useClientAuth = () => {
 };
 
 export const ClientAuthProvider = ({ children }) => {
-    const [client, setClient] = useState(null);
+    const [client, setClient] = useState(() => {
+        try {
+            const saved = localStorage.getItem('clientData');
+            return saved ? JSON.parse(saved) : null;
+        } catch (e) {
+            return null;
+        }
+    });
     const [loading, setLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('clientToken'));
 
     // Check authentication status on mount
     useEffect(() => {
@@ -28,6 +35,14 @@ export const ClientAuthProvider = ({ children }) => {
             if (response.data.authenticated && response.data.client) {
                 setClient(response.data.client);
                 setIsAuthenticated(true);
+                // If backend returns a fresh token, ensure it's used
+                try {
+                    const token = response.data.token || response.data.client?.token;
+                    if (token) {
+                        const { setAuthToken } = require('../services/api');
+                        setAuthToken(token);
+                    }
+                } catch (e) {}
             } else {
                 setClient(null);
                 setIsAuthenticated(false);
@@ -54,8 +69,14 @@ export const ClientAuthProvider = ({ children }) => {
             const response = await clientAPI.login(loginData);
             
             if (response.data.client) {
-                setClient(response.data.client);
-                setIsAuthenticated(true);
+                    setClient(response.data.client);
+                    setIsAuthenticated(true);
+                    // Persist token and client data
+                    const token = response.data.token || response.data.client?.token;
+                    if (token) {
+                        try { const { setAuthToken } = require('../services/api'); setAuthToken(token); } catch(e){}
+                    }
+                    try { localStorage.setItem('clientData', JSON.stringify(response.data.client)); } catch(e){}
                 return { success: true, message: response.data.message };
             }
             
@@ -89,6 +110,9 @@ export const ClientAuthProvider = ({ children }) => {
         } finally {
             setClient(null);
             setIsAuthenticated(false);
+                // Clear persisted auth and axios header
+                try { const { clearAuthToken } = require('../services/api'); clearAuthToken(); } catch(e){}
+                try { localStorage.removeItem('clientData'); } catch(e){}
         }
     };
 

@@ -11,7 +11,11 @@ import {
   FaLeaf,
   FaHeart,
   FaStar,
-  FaGem
+  FaGem,
+  FaCrown,
+  FaStore,
+  FaCheck,
+  FaInfoCircle
 } from 'react-icons/fa'
 import { publicAPI } from '../../services/api'
 
@@ -19,6 +23,8 @@ const ServicesPage = () => {
   const { t, i18n } = useTranslation()
   const [services, setServices] = useState([])
   const [categories, setCategories] = useState([])
+  const [memberships, setMemberships] = useState([])
+  const [mainTab, setMainTab] = useState('services') // 'services' or 'memberships'
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [loading, setLoading] = useState(true)
 
@@ -28,17 +34,51 @@ const ServicesPage = () => {
 
   const fetchData = async () => {
     try {
-      const [servicesRes, categoriesRes] = await Promise.all([
+      const [servicesRes, categoriesRes, membershipsRes] = await Promise.all([
         publicAPI.getServices(),
-        publicAPI.getCategories()
+        publicAPI.getCategories(),
+        publicAPI.getMemberships()
       ])
+      // Handle services response - wrapped in {success, services, ...}
+      const servicesData = servicesRes.data.services || servicesRes.data || []
 
-      setServices(servicesRes.data.services || servicesRes.data || [])
-      setCategories(categoriesRes.data || [])
+      // Handle categories response - wrapped in {success, data, ...}
+      const rawCategories = categoriesRes.data.data || categoriesRes.data || []
+      
+      // Handle memberships response
+      const membershipsData = membershipsRes.data.memberships || membershipsRes.data || []
+
+      // Normalize category object shape so UI always reads `.nom`, `.description`, `.couleur_theme`, `.id`
+      const normalizeCategory = (c) => {
+        if (!c || typeof c !== 'object') return null
+        return {
+          id: c.id || c.ID || c.category_id || null,
+          nom: c.nom || c.name || c.label || '',
+          description: c.description || c.desc || c.description_text || '',
+          couleur_theme: c.couleur_theme || c.color || c.couleur || null,
+          ordre_affichage: c.ordre_affichage || c.display_order || null,
+          actif: typeof c.actif !== 'undefined' ? c.actif : (typeof c.is_active !== 'undefined' ? c.is_active : true),
+          // keep the original for debugging if needed
+          __raw: c
+        }
+      }
+
+      const categoriesData = Array.isArray(rawCategories)
+        ? rawCategories.map(normalizeCategory).filter(Boolean)
+        : []
+
+      console.log('✅ Services loaded:', servicesData.length, 'items')
+      console.log('✅ Categories loaded:', categoriesData.length, 'items')
+      console.log('✅ Memberships loaded:', membershipsData.length, 'items')
+
+      setServices(Array.isArray(servicesData) ? servicesData : [])
+      setCategories(categoriesData)
+      setMemberships(Array.isArray(membershipsData) ? membershipsData : [])
     } catch (error) {
-      console.error('Error loading services:', error)
+      console.error('❌ Error loading services:', error)
       setServices([])
       setCategories([])
+      setMemberships([])
     } finally {
       setLoading(false)
     }
@@ -46,7 +86,9 @@ const ServicesPage = () => {
 
   const filteredServices = selectedCategory === 'all' 
     ? (Array.isArray(services) ? services : [])
-    : (Array.isArray(services) ? services.filter(service => service.categorie_id === parseInt(selectedCategory)) : [])
+    : (Array.isArray(services) ? services.filter(service => 
+        service.categorie_id === parseInt(selectedCategory)
+      ) : [])
 
   const getServiceIcon = (categoryName) => {
     const icons = {
@@ -101,8 +143,8 @@ const ServicesPage = () => {
         </Container>
       </section>
 
-      {/* Category Filters */}
-      <section className="py-4 bg-light sticky-top">
+      {/* Main Tabs - Services vs Memberships */}
+      <section className="py-4 bg-light sticky-top" style={{ top: '60px', zIndex: 100 }}>
         <Container>
           <Row>
             <Col>
@@ -111,92 +153,237 @@ const ServicesPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <Nav variant="pills" className="justify-content-center flex-wrap">
-                  <Nav.Item className="mb-2">
+                {/* Main Tab Navigation */}
+                <Nav variant="tabs" className="justify-content-center mb-4 border-0">
+                  <Nav.Item>
                     <Nav.Link
-                      active={selectedCategory === 'all'}
-                      onClick={() => setSelectedCategory('all')}
-                      className={`rounded-pill mx-1 ${
-                        selectedCategory === 'all' ? 'bg-green text-white' : 'text-green'
+                      active={mainTab === 'services'}
+                      onClick={() => {
+                        setMainTab('services')
+                        setSelectedCategory('all')
+                      }}
+                      className={`px-4 py-3 fw-bold ${
+                        mainTab === 'services' ? 'text-green' : 'text-muted'
                       }`}
-                      style={{ 
-                        background: selectedCategory === 'all' ? 'var(--primary-green)' : 'transparent',
-                        border: `2px solid var(--primary-green)`
+                      style={{
+                        fontSize: '1.1rem',
+                        borderBottom: mainTab === 'services' ? '3px solid var(--primary-green)' : 'none',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: 0
                       }}
                     >
-                      <FaStar className="me-2" />
-                      {t('services.allServices')}
-                      <Badge className="ms-2" bg="light" text="dark">
-                        {Array.isArray(services) ? services.length : 0}
-                      </Badge>
+                      <FaSpa className="me-2" />
+                      Services
                     </Nav.Link>
                   </Nav.Item>
-                  
-                  {Array.isArray(categories) && categories.map((category) => {
-                    const categoryServices = Array.isArray(services) ? services.filter(s => s.categorie_id === category.id) : []
-                    return (
-                      <Nav.Item key={category.id} className="mb-2">
-                        <Nav.Link
-                          active={selectedCategory === category.id.toString()}
-                          onClick={() => setSelectedCategory(category.id.toString())}
-                          className={`rounded-pill mx-1 ${
-                            selectedCategory === category.id.toString() ? 'text-white' : ''
-                          }`}
-                          style={{ 
-                            background: selectedCategory === category.id.toString() 
-                              ? getCategoryColor(category.couleur_theme) 
-                              : 'transparent',
-                            border: `2px solid ${getCategoryColor(category.couleur_theme)}`,
-                            color: selectedCategory === category.id.toString() 
-                              ? 'white' 
-                              : getCategoryColor(category.couleur_theme)
-                          }}
-                        >
-                          <span className="me-2">{getServiceIcon(category.nom)}</span>
-                          {category.nom}
-                          <Badge className="ms-2" bg="light" text="dark">
-                            {categoryServices.length}
-                          </Badge>
-                        </Nav.Link>
-                      </Nav.Item>
-                    )
-                  })}
+                  <Nav.Item>
+                    <Nav.Link
+                      active={mainTab === 'memberships'}
+                      onClick={() => setMainTab('memberships')}
+                      className={`px-4 py-3 fw-bold ${
+                        mainTab === 'memberships' ? 'text-warning' : 'text-muted'
+                      }`}
+                      style={{
+                        fontSize: '1.1rem',
+                        borderBottom: mainTab === 'memberships' ? '3px solid #FFD700' : 'none',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: 0
+                      }}
+                    >
+                      <FaCrown className="me-2" />
+                      Abonnements
+                    </Nav.Link>
+                  </Nav.Item>
                 </Nav>
+
+                {/* Category Pills - Only show when Services tab is active */}
+                {mainTab === 'services' && (
+                  <Nav variant="pills" className="justify-content-center flex-wrap">
+                    <Nav.Item className="mb-2">
+                      <Nav.Link
+                        active={selectedCategory === 'all'}
+                        onClick={() => setSelectedCategory('all')}
+                        className={`rounded-pill mx-1 ${
+                          selectedCategory === 'all' ? 'bg-green text-white' : 'text-green'
+                        }`}
+                        style={{ 
+                          background: selectedCategory === 'all' ? 'var(--primary-green)' : 'transparent',
+                          border: `2px solid var(--primary-green)`
+                        }}
+                      >
+                        <FaStar className="me-2" />
+                        {t('services.allServices')}
+                        <Badge className="ms-2" bg="light" text="dark">
+                          {Array.isArray(services) ? services.length : 0}
+                        </Badge>
+                      </Nav.Link>
+                    </Nav.Item>
+                    
+                    {Array.isArray(categories) && categories.map((category) => {
+                      const categoryServices = Array.isArray(services) ? services.filter(s => s.categorie_id === category.id) : []
+                      return (
+                        <Nav.Item key={category.id} className="mb-2">
+                          <Nav.Link
+                            active={selectedCategory === category.id.toString()}
+                            onClick={() => setSelectedCategory(category.id.toString())}
+                            className={`rounded-pill mx-1 ${
+                              selectedCategory === category.id.toString() ? 'text-white' : ''
+                            }`}
+                            style={{ 
+                              background: selectedCategory === category.id.toString() 
+                                ? getCategoryColor(category.couleur_theme) 
+                                : 'transparent',
+                              border: `2px solid ${getCategoryColor(category.couleur_theme)}`,
+                              color: selectedCategory === category.id.toString() 
+                                ? 'white' 
+                                : getCategoryColor(category.couleur_theme)
+                            }}
+                          >
+                            <span className="me-2">{getServiceIcon(category.nom)}</span>
+                            {category.nom}
+                            <Badge className="ms-2" bg="light" text="dark">
+                              {categoryServices.length}
+                            </Badge>
+                          </Nav.Link>
+                        </Nav.Item>
+                      )
+                    })}
+                  </Nav>
+                )}
               </motion.div>
             </Col>
           </Row>
         </Container>
       </section>
 
-      {/* Services */}
+      {/* Content - Services or Memberships */}
       <section className="py-5">
         <Container>
-          {selectedCategory !== 'all' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-5"
-            >
-              {categories
-                .filter(cat => cat.id.toString() === selectedCategory)
-                .map(category => (
-                  <div key={category.id}>
-                    <h2 className="fw-bold mb-3" style={{ color: getCategoryColor(category.couleur_theme) }}>
-                      <span className="me-3" style={{ fontSize: '2rem' }}>
-                        {getServiceIcon(category.nom)}
-                      </span>
-                      {category.nom}
-                    </h2>
-                    <p className="lead text-muted mb-4">
-                      {category.description}
-                    </p>
-                  </div>
-                ))}
-            </motion.div>
-          )}
+          {/* Memberships Tab Content */}
+          {mainTab === 'memberships' ? (
+            <>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-center mb-5"
+              >
+                <h2 className="fw-bold mb-3" style={{ color: '#FFD700' }}>
+                  <FaCrown className="me-3" style={{ fontSize: '2.5rem' }} />
+                  Nos Abonnements Mensuels
+                </h2>
+                <p className="lead text-muted mb-4">
+                  Profitez de nos soins de luxe avec des abonnements exclusifs
+                </p>
+                <div className="alert alert-info d-inline-flex align-items-center">
+                  <FaStore className="me-2" />
+                  <strong>Abonnements disponibles en spa uniquement</strong> - Visitez-nous pour souscrire
+                </div>
+              </motion.div>
 
-          <Row className="g-4">
+              <Row className="g-4">
+                {memberships.map((membership, index) => (
+                  <Col key={membership.id} lg={3} md={6}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      whileHover={{ y: -10 }}
+                    >
+                      <Card className="h-100 border-0 shadow-lg" style={{ borderTop: `5px solid ${membership.nom === 'SILVER' ? '#C0C0C0' : membership.nom === 'GOLD' ? '#FFD700' : membership.nom === 'PLATINUM' ? '#E5E4E2' : '#9B59B6'}` }}>
+                        <Card.Body className="d-flex flex-column">
+                          <div className="text-center mb-3">
+                            <FaCrown style={{ fontSize: '3rem', color: membership.nom === 'SILVER' ? '#C0C0C0' : membership.nom === 'GOLD' ? '#FFD700' : membership.nom === 'PLATINUM' ? '#E5E4E2' : '#9B59B6' }} />
+                            <h3 className="fw-bold mt-3">{membership.nom}</h3>
+                            {membership.nom === 'VIP' && (
+                              <Badge bg="warning" text="dark">⭐ Most Popular</Badge>
+                            )}
+                          </div>
+
+                          <div className="text-center mb-3 py-3" style={{ borderTop: '1px solid #eee', borderBottom: '1px solid #eee' }}>
+                            <h2 className="text-green mb-0">
+                              {membership.prix_mensuel}DT
+                              <small className="text-muted" style={{ fontSize: '1rem' }}>/mois</small>
+                            </h2>
+                            {membership.prix_3_mois && (
+                              <div className="mt-2">
+                                <Badge bg="success">Économisez!</Badge>
+                                <div className="text-success fw-bold">{membership.prix_3_mois}DT/mois</div>
+                                <small className="text-muted">(engagement 3 mois)</small>
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="text-center text-muted mb-3">
+                            <FaInfoCircle className="me-2" />
+                            {membership.services_par_mois} services par mois
+                          </p>
+
+                          {membership.description && (
+                            <p className="small text-muted mb-3">{membership.description}</p>
+                          )}
+
+                          {membership.avantages && (
+                            <div className="flex-grow-1 mb-3 p-3 bg-light rounded">
+                              <h6 className="text-green mb-2">
+                                <FaCheck className="me-2" />
+                                Avantages:
+                              </h6>
+                              <ul className="list-unstyled small mb-0">
+                                {membership.avantages.split(/[+•\n]/).map((item, idx) => 
+                                  item.trim() && (
+                                    <li key={idx} className="mb-1">
+                                      <FaCheck className="text-success me-2" style={{ fontSize: '0.7rem' }} />
+                                      {item.trim()}
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          )}
+
+                          <Button variant="outline-success" disabled className="w-100 mt-auto" style={{ opacity: 0.7, cursor: 'not-allowed' }}>
+                            <FaStore className="me-2" />
+                            Disponible en spa
+                          </Button>
+                          <small className="text-center text-muted mt-2">Visitez-nous pour souscrire</small>
+                        </Card.Body>
+                      </Card>
+                    </motion.div>
+                  </Col>
+                ))}
+              </Row>
+            </>
+          ) : (
+            <>
+              {selectedCategory !== 'all' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-center mb-5"
+                >
+                  {categories
+                    .filter(cat => cat.id.toString() === selectedCategory)
+                    .map(category => (
+                      <div key={category.id}>
+                        <h2 className="fw-bold mb-3" style={{ color: getCategoryColor(category.couleur_theme) }}>
+                          <span className="me-3" style={{ fontSize: '2rem' }}>
+                            {getServiceIcon(category.nom)}
+                          </span>
+                          {category.nom}
+                        </h2>
+                        <p className="lead text-muted mb-4">
+                          {category.description}
+                        </p>
+                      </div>
+                    ))}
+                </motion.div>
+              )}
+
+              <Row className="g-4">
             {filteredServices.map((service, index) => (
               <Col lg={4} md={6} key={service.id}>
                 <motion.div
@@ -314,20 +501,36 @@ const ServicesPage = () => {
                 </motion.div>
               </Col>
             ))}
-          </Row>
+              </Row>
+            </>
+          )}
 
-          {filteredServices.length === 0 && (
+          {mainTab === 'services' && filteredServices.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
               className="text-center py-5"
             >
-              <div style={{ fontSize: '4rem' }} className="mb-3">🔍</div>
+              <div style={{ fontSize: '4rem' }} className="mb-3">
+                {selectedCategory === 'all' ? '🔍' : '🌟'}
+              </div>
               <h3 className="text-muted">{t('services.noServicesFound')}</h3>
-              <p className="text-muted">
-                {t('services.tryDifferentCategory')}
+              <p className="text-muted mb-4">
+                {selectedCategory === 'all' 
+                  ? t('services.noServicesAvailable')
+                  : t('services.categoryComingSoon')}
               </p>
+              {selectedCategory !== 'all' && (
+                <Button 
+                  variant="outline-green"
+                  onClick={() => setSelectedCategory('all')}
+                  className="mt-3"
+                >
+                  <FaStar className="me-2" />
+                  {t('services.viewAllServices')}
+                </Button>
+              )}
             </motion.div>
           )}
         </Container>

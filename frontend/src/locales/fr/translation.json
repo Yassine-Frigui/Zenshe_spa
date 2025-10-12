@@ -192,6 +192,8 @@
     "includes": "Inclus",
     "minutes": "minutes",
     "noServicesFound": "Aucun service trouvé",
+    "noServicesAvailable": "Aucun service n'est disponible pour le moment",
+    "categoryComingSoon": "Nous travaillons actuellement sur de nouveaux soins passionnants pour cette catégorie. Revenez bientôt !",
     "tryDifferentCategory": "Essayez de sélectionner une catégorie différente",
     "cta": {
       "title": "Des questions sur nos soins de bien-être intime ?",

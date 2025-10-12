@@ -72,13 +72,18 @@ router.get('/:id', async (req, res) => {
 router.get('/categories/list', async (req, res) => {
     try {
         const { lang = 'fr' } = req.query;
-        
         const categories = await MultilingualService.getCategoriesWithTranslations(lang);
         
-        res.json(categories);
+        res.json({
+            success: true,
+            data: categories,
+            total: categories.length,
+            language: lang
+        });
     } catch (error) {
-        console.error('Erreur lors de la récupération des catégories:', error);
+        console.error('Error fetching service categories:', error);
         res.status(500).json({ 
+            success: false,
             message: 'Erreur lors de la récupération des catégories',
             error: error.message 
         });
@@ -131,12 +136,32 @@ router.get('/memberships/list', async (req, res) => {
     try {
         const { lang = 'fr' } = req.query;
         
-        const memberships = await MultilingualService.getMembershipsWithTranslations(lang);
+        // Simple query - memberships table already exists
+        const query = `
+            SELECT 
+                id,
+                nom,
+                prix_mensuel,
+                prix_3_mois,
+                services_par_mois,
+                description,
+                avantages,
+                actif
+            FROM memberships
+            WHERE actif = 1
+            ORDER BY prix_mensuel ASC
+        `;
         
-        res.json(memberships);
+        const memberships = await executeQuery(query);
+        
+        res.json({ 
+            success: true, 
+            memberships: memberships || []
+        });
     } catch (error) {
         console.error('Erreur lors de la récupération des abonnements:', error);
         res.status(500).json({ 
+            success: false,
             message: 'Erreur lors de la récupération des abonnements',
             error: error.message 
         });
@@ -155,6 +180,42 @@ router.get('/promotions/list', async (req, res) => {
         console.error('Erreur lors de la récupération des promotions:', error);
         res.status(500).json({ 
             message: 'Erreur lors de la récupération des promotions',
+            error: error.message 
+        });
+    }
+});
+
+// Get all memberships (public access)
+router.get('/memberships/list', async (req, res) => {
+    try {
+        const { lang = 'fr' } = req.query;
+        
+        console.log('📥 GET /api/public/services/memberships/list called with lang:', lang);
+        
+        // Simple query for memberships (translations can be added later)
+        const [memberships] = await executeQuery(`
+            SELECT 
+                id, 
+                nom, 
+                description, 
+                prix_mensuel, 
+                prix_3_mois, 
+                services_par_mois, 
+                actif
+            FROM memberships 
+            WHERE actif = 1 
+            ORDER BY prix_mensuel ASC
+        `);
+        
+        console.log('✅ Found', memberships.length, 'memberships');
+        
+        res.json({
+            memberships: memberships
+        });
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des abonnements publics:', error);
+        res.status(500).json({ 
+            message: 'Erreur lors de la récupération des abonnements',
             error: error.message 
         });
     }
