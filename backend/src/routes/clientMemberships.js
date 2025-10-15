@@ -13,16 +13,18 @@ router.use(authenticateClient);
 
 /**
  * GET /api/client/memberships/active
- * Get client's currently active membership
+ * Get client's currently active membership with localized content
  */
 router.get('/active', async (req, res) => {
     try {
-        const membership = await ClientMembershipModel.getActiveClientMembership(req.client.id);
+        const { lang = 'fr' } = req.query;
+        const membership = await ClientMembershipModel.getActiveClientMembership(req.client.id, lang);
         
         res.json({
             success: true,
             data: membership,
-            hasActiveMembership: !!membership
+            hasActiveMembership: !!membership,
+            language: lang
         });
     } catch (error) {
         console.error('Error fetching active membership:', error);
@@ -36,16 +38,18 @@ router.get('/active', async (req, res) => {
 
 /**
  * GET /api/client/memberships/history
- * Get client's membership history
+ * Get client's membership history with localized content
  */
 router.get('/history', async (req, res) => {
     try {
-        const history = await ClientMembershipModel.getClientMembershipHistory(req.client.id);
+        const { lang = 'fr' } = req.query;
+        const history = await ClientMembershipModel.getClientMembershipHistory(req.client.id, lang);
         
         res.json({ 
             success: true, 
             data: history,
-            total: history.length
+            total: history.length,
+            language: lang
         });
     } catch (error) {
         console.error('Error fetching membership history:', error);
@@ -59,19 +63,43 @@ router.get('/history', async (req, res) => {
 
 /**
  * GET /api/client/memberships/available
- * Get all available memberships for purchase/scheduling
+ * Get all available memberships for purchase/scheduling with localized content
  */
 router.get('/available', async (req, res) => {
     try {
         const db = require('../../config/database');
+        const { lang = 'fr' } = req.query;
         
-        const [memberships] = await db.execute(
-            'SELECT id, nom, description, prix_mensuel, prix_3_mois, services_par_mois, actif FROM memberships WHERE actif = 1 ORDER BY prix_mensuel ASC'
-        );
+        console.log('📥 GET /api/client/memberships/available called with lang:', lang);
+        
+        // Query with LEFT JOIN for localized content
+        const query = `
+            SELECT 
+                m.id,
+                COALESCE(mt_lang.nom, mt_default.nom, m.nom) AS nom,
+                COALESCE(mt_lang.description, mt_default.description, m.description) AS description,
+                COALESCE(mt_lang.avantages, mt_default.avantages, m.avantages) AS avantages,
+                m.prix_mensuel,
+                m.prix_3_mois,
+                m.services_par_mois,
+                m.actif
+            FROM memberships m
+            LEFT JOIN memberships_translations mt_lang 
+                ON mt_lang.membership_id = m.id AND mt_lang.language_code = ?
+            LEFT JOIN memberships_translations mt_default 
+                ON mt_default.membership_id = m.id AND mt_default.language_code = 'fr'
+            WHERE m.actif = 1
+            ORDER BY m.prix_mensuel ASC
+        `;
+        
+        const [memberships] = await db.execute(query, [lang]);
+        
+        console.log('✅ Found', memberships.length, 'available memberships with language:', lang);
         
         res.json({
             success: true,
-            memberships: memberships
+            memberships: memberships,
+            language: lang
         });
     } catch (error) {
         console.error('Error fetching available memberships:', error);

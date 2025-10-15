@@ -181,6 +181,10 @@
   },
   "services": {
     "title": "Our Services",
+    "tab": {
+      "memberships": "Memberships",
+      "services": "Services"
+    },
     "subtitle": "Intimate wellness and holistic healing for women",
     "allServices": "All Services",
     "categories": "Categories",
@@ -199,6 +203,25 @@
       "title": "Questions about our intimate wellness services?",
       "description": "Our experienced team is here to guide you on your wellness journey"
     }
+    ,
+    "memberships": {
+      "hero": {
+        "title": "Our Monthly Memberships",
+        "subtitle": "Enjoy our luxurious treatments with exclusive memberships"
+      },
+      "available_notice": {
+        "title": "Memberships available at spa only",
+        "detail": "Visit us to subscribe"
+      }
+    }
+  },
+  "memberships": {
+    "services_per_month": "services per month",
+    "advantages": {
+      "label": "Advantages:"
+    },
+    "available_in_spa": "Available at spa",
+    "visit_to_subscribe": "Visit us to subscribe"
   },
   "booking": {
     "title": "Book an appointment",
@@ -258,6 +281,7 @@
       "submit": "Confirm booking",
       "submitting": "Processing...",
       "newBooking": "New Booking"
+      ,"title_with_membership": "Booking with Membership"
     },
     "success": {
       "title": "Booking Confirmed!",
@@ -289,6 +313,33 @@
     "waiver": {
       "title": "Waiver Form - Discharge Form",
       "close": "Close"
+    }
+    ,
+    "tab": {
+      "membership": "Membership",
+      "service": "Our Services"
+    },
+    "schedule": {
+      "success_title": "Membership scheduled successfully! ✅",
+      "success_message": "Your membership request has been recorded. Visit us at the spa to activate your membership. Admin will confirm your membership during your visit.",
+      "title": "Schedule a membership",
+      "subtitle": "Select your membership and duration. Your choice will be recorded and activated during your visit.",
+      "type_label": "Membership type",
+      "select_membership": "Select a membership",
+      "duration_label": "Duration",
+      "one_month": "1 month",
+      "three_months": "3 months",
+      "saving": "Saving...",
+      "button_label": "Schedule membership"
+    },
+    "required": {
+      "title": "Membership required",
+      "instructions_intro": "To book with a membership you must:",
+      "create_account": "Create an account or login",
+      "view_offers": "View our membership offers",
+      "offers_link_text": "membership offers",
+      "visit_spa": "Visit our spa to subscribe to a membership",
+      "no_active_membership_notice": "You don't have an active membership. But you can pre-select a membership now!"
     }
   },
   "contact": {

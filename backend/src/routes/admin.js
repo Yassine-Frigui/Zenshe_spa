@@ -12,20 +12,37 @@ router.use(authenticateAdmin);
 router.get('/dashboard', async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         const thisMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        const lastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7);
         
         const queries = [
             // Réservations du jour (excluant les brouillons)
             `SELECT COUNT(*) as rdv_aujourd_hui FROM reservations WHERE date_reservation = '${today}' AND reservation_status != 'draft'`,
             
+            // Réservations d'hier (pour comparaison)
+            `SELECT COUNT(*) as rdv_hier FROM reservations WHERE date_reservation = '${yesterday}' AND reservation_status != 'draft'`,
+            
             // Réservations du mois (excluant les brouillons)
             `SELECT COUNT(*) as rdv_ce_mois FROM reservations WHERE date_reservation LIKE '${thisMonth}%' AND reservation_status != 'draft'`,
+            
+            // Réservations du mois dernier (pour comparaison)
+            `SELECT COUNT(*) as rdv_mois_dernier FROM reservations WHERE date_reservation LIKE '${lastMonth}%' AND reservation_status != 'draft'`,
             
             // Chiffre d'affaires du mois
             `SELECT SUM(prix_final) as ca_mois FROM reservations WHERE date_reservation LIKE '${thisMonth}%' AND statut = 'terminee'`,
             
+            // Chiffre d'affaires du mois dernier
+            `SELECT SUM(prix_final) as ca_mois_dernier FROM reservations WHERE date_reservation LIKE '${lastMonth}%' AND statut = 'terminee'`,
+            
             // Total des clients
             `SELECT COUNT(*) as total_clients FROM clients WHERE actif = TRUE`,
+            
+            // Nouveaux clients ce mois
+            `SELECT COUNT(*) as nouveaux_clients_mois FROM clients WHERE actif = TRUE AND DATE_FORMAT(date_creation, '%Y-%m') = '${thisMonth}'`,
+            
+            // Note moyenne (si disponible)
+            `SELECT AVG(note) as note_moyenne FROM avis_clients WHERE visible = 1`,
             
             // Réservations par statut aujourd'hui
             `SELECT statut, COUNT(*) as nombre FROM reservations WHERE date_reservation = '${today}' AND reservation_status != 'draft' GROUP BY statut`,
@@ -64,15 +81,52 @@ router.get('/dashboard', async (req, res) => {
 
         const results = await Promise.all(queries.map(query => executeQuery(query)));
 
+        // Calculate changes
+        const rdvAujourdhui = results[0][0]?.rdv_aujourd_hui || 0;
+        const rdvHier = results[1][0]?.rdv_hier || 0;
+        const rdvCeMois = results[2][0]?.rdv_ce_mois || 0;
+        const rdvMoisDernier = results[3][0]?.rdv_mois_dernier || 0;
+        const caMois = results[4][0]?.ca_mois || 0;
+        const caMoisDernier = results[5][0]?.ca_mois_dernier || 0;
+        const totalClients = results[6][0]?.total_clients || 0;
+        const nouveauxClientsMois = results[7][0]?.nouveaux_clients_mois || 0;
+        const noteMoyenne = results[8][0]?.note_moyenne || 0;
+
+        // Calculate percentage changes
+        const rdvChange = rdvHier > 0 ? ((rdvAujourdhui - rdvHier) / rdvHier * 100) : 0;
+        const rdvMoisChange = rdvMoisDernier > 0 ? ((rdvCeMois - rdvMoisDernier) / rdvMoisDernier * 100) : 0;
+        const caChange = caMoisDernier > 0 ? ((caMois - caMoisDernier) / caMoisDernier * 100) : 0;
+        const clientsChange = nouveauxClientsMois > 0 ? (nouveauxClientsMois / totalClients * 100) : 0;
+
         res.json({
-            rdv_aujourd_hui: results[0][0]?.rdv_aujourd_hui || 0,
-            rdv_ce_mois: results[1][0]?.rdv_ce_mois || 0,
-            ca_mois: results[2][0]?.ca_mois || 0,
-            total_clients: results[3][0]?.total_clients || 0,
-            reservations_par_statut: results[4],
-            prochaines_reservations: results[5],
-            alertes_stock: results[6][0]?.alertes_stock || 0,
-            services_populaires: results[7]
+            rdv_aujourd_hui: rdvAujourdhui,
+            rdv_ce_mois: rdvCeMois,
+            ca_mois: caMois,
+            total_clients: totalClients,
+            note_moyenne: Math.round(noteMoyenne * 10) / 10 || 0,
+            // Changes data
+            changes: {
+                rdv_aujourd_hui: {
+                    value: rdvChange,
+                    trend: rdvChange >= 0 ? 'up' : 'down'
+                },
+                rdv_ce_mois: {
+                    value: rdvMoisChange,
+                    trend: rdvMoisChange >= 0 ? 'up' : 'down'
+                },
+                ca_mois: {
+                    value: caChange,
+                    trend: caChange >= 0 ? 'up' : 'down'
+                },
+                clients: {
+                    value: clientsChange,
+                    trend: clientsChange >= 0 ? 'up' : 'down'
+                }
+            },
+            reservations_par_statut: results[9],
+            prochaines_reservations: results[10],
+            alertes_stock: results[11][0]?.alertes_stock || 0,
+            services_populaires: results[12]
         });
     } catch (error) {
         console.error('Erreur lors de la récupération des statistiques:', error);
@@ -944,6 +998,63 @@ router.patch('/avis/:id/visibility', async (req, res) => {
     } catch (error) {
         console.error('Erreur lors de la mise à jour de la visibilité:', error);
         res.status(500).json({ error: 'Erreur lors de la mise à jour de la visibilité' });
+    }
+});
+
+// ===== PENDING ACTION RESERVATIONS =====
+
+// Get reservations that need admin action (reminder sent, past due, confirmed)
+router.get('/reservations/pending-actions', async (req, res) => {
+    try {
+        const ReservationReminderService = require('../services/ReservationReminderService');
+        const reminderService = new ReservationReminderService();
+        const pendingReservations = await reminderService.getPendingActionReservations();
+
+        res.json({
+            success: true,
+            data: pendingReservations,
+            count: pendingReservations.length
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des réservations en attente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur'
+        });
+    }
+});
+
+// Mark reservation as completed or no-show
+router.patch('/reservations/:id/action', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, notes_admin } = req.body;
+
+        if (!['completed', 'no_show'].includes(action)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Action invalide. Utilisez "completed" ou "no_show"'
+            });
+        }
+
+        const newStatus = action === 'completed' ? 'terminee' : 'no_show';
+
+        // Update reservation status
+        await ReservationModel.updateReservationStatus(id, newStatus, notes_admin);
+
+        const updatedReservation = await ReservationModel.getReservationById(id);
+
+        res.json({
+            success: true,
+            message: `Réservation marquée comme ${action === 'completed' ? 'terminée' : 'no-show'}`,
+            reservation: updatedReservation
+        });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'action:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur interne du serveur'
+        });
     }
 });
 

@@ -136,30 +136,40 @@ router.get('/memberships/list', async (req, res) => {
     try {
         const { lang = 'fr' } = req.query;
         
-        // Simple query - memberships table already exists
+        console.log('📥 GET /api/public/services/memberships/list called with lang:', lang);
+        
+        // Query with LEFT JOIN to memberships_translations for localized content
+        // Fallback order: requested language -> 'fr' (default) -> base memberships table
         const query = `
             SELECT 
-                id,
-                nom,
-                prix_mensuel,
-                prix_3_mois,
-                services_par_mois,
-                description,
-                avantages,
-                actif
-            FROM memberships
-            WHERE actif = 1
-            ORDER BY prix_mensuel ASC
+                m.id,
+                COALESCE(mt_lang.nom, mt_default.nom, m.nom) AS nom,
+                COALESCE(mt_lang.description, mt_default.description, m.description) AS description,
+                COALESCE(mt_lang.avantages, mt_default.avantages, m.avantages) AS avantages,
+                m.prix_mensuel,
+                m.prix_3_mois,
+                m.services_par_mois,
+                m.actif
+            FROM memberships m
+            LEFT JOIN memberships_translations mt_lang 
+                ON mt_lang.membership_id = m.id AND mt_lang.language_code = ?
+            LEFT JOIN memberships_translations mt_default 
+                ON mt_default.membership_id = m.id AND mt_default.language_code = 'fr'
+            WHERE m.actif = 1
+            ORDER BY m.prix_mensuel ASC
         `;
         
-        const memberships = await executeQuery(query);
+        const memberships = await executeQuery(query, [lang]);
+        
+        console.log('✅ Found', memberships.length, 'memberships with language:', lang);
         
         res.json({ 
             success: true, 
-            memberships: memberships || []
+            memberships: memberships || [],
+            language: lang
         });
     } catch (error) {
-        console.error('Erreur lors de la récupération des abonnements:', error);
+        console.error('❌ Erreur lors de la récupération des abonnements:', error);
         res.status(500).json({ 
             success: false,
             message: 'Erreur lors de la récupération des abonnements',
@@ -180,42 +190,6 @@ router.get('/promotions/list', async (req, res) => {
         console.error('Erreur lors de la récupération des promotions:', error);
         res.status(500).json({ 
             message: 'Erreur lors de la récupération des promotions',
-            error: error.message 
-        });
-    }
-});
-
-// Get all memberships (public access)
-router.get('/memberships/list', async (req, res) => {
-    try {
-        const { lang = 'fr' } = req.query;
-        
-        console.log('📥 GET /api/public/services/memberships/list called with lang:', lang);
-        
-        // Simple query for memberships (translations can be added later)
-        const [memberships] = await executeQuery(`
-            SELECT 
-                id, 
-                nom, 
-                description, 
-                prix_mensuel, 
-                prix_3_mois, 
-                services_par_mois, 
-                actif
-            FROM memberships 
-            WHERE actif = 1 
-            ORDER BY prix_mensuel ASC
-        `);
-        
-        console.log('✅ Found', memberships.length, 'memberships');
-        
-        res.json({
-            memberships: memberships
-        });
-    } catch (error) {
-        console.error('❌ Erreur lors de la récupération des abonnements publics:', error);
-        res.status(500).json({ 
-            message: 'Erreur lors de la récupération des abonnements',
             error: error.message 
         });
     }

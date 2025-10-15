@@ -21,7 +21,13 @@ const AdminDashboard = () => {
     reservationsAujourdhui: 0,
     clientsTotal: 0,
     chiffreAffaireMois: 0,
-    noteMoyenne: 0
+    noteMoyenne: 0,
+    changes: {
+      rdv_aujourd_hui: { value: 0, trend: 'up' },
+      rdv_ce_mois: { value: 0, trend: 'up' },
+      ca_mois: { value: 0, trend: 'up' },
+      clients: { value: 0, trend: 'up' }
+    }
   });
   const [recentReservations, setRecentReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +48,13 @@ const AdminDashboard = () => {
         reservationsAujourdhui: data.rdv_aujourd_hui || 0,
         clientsTotal: data.total_clients || 0,
         chiffreAffaireMois: data.ca_mois || 0,
-        noteMoyenne: data.note_moyenne || 0
+        noteMoyenne: data.note_moyenne || 0,
+        changes: data.changes || {
+          rdv_aujourd_hui: { value: 0, trend: 'up' },
+          rdv_ce_mois: { value: 0, trend: 'up' },
+          ca_mois: { value: 0, trend: 'up' },
+          clients: { value: 0, trend: 'up' }
+        }
       });
 
       // Transform recent reservations data
@@ -63,7 +75,13 @@ const AdminDashboard = () => {
         reservationsAujourdhui: 0,
         clientsTotal: 0,
         chiffreAffaireMois: 0,
-        noteMoyenne: 0
+        noteMoyenne: 0,
+        changes: {
+          rdv_aujourd_hui: { value: 0, trend: 'up' },
+          rdv_ce_mois: { value: 0, trend: 'up' },
+          ca_mois: { value: 0, trend: 'up' },
+          clients: { value: 0, trend: 'up' }
+        }
       });
       setRecentReservations([]);
     } finally {
@@ -77,32 +95,24 @@ const AdminDashboard = () => {
       value: stats.reservationsAujourdhui,
       icon: <FaCalendarCheck className="text-primary" />,
       color: 'primary',
-      change: '+8%',
-      trend: 'up'
+      change: `${stats.changes.rdv_aujourd_hui.value >= 0 ? '+' : ''}${stats.changes.rdv_aujourd_hui.value.toFixed(1)}%`,
+      trend: stats.changes.rdv_aujourd_hui.trend
     },
     {
       title: 'Clientes totales',
       value: stats.clientsTotal,
       icon: <FaUsers className="text-success" />,
       color: 'success',
-      change: '+12%',
-      trend: 'up'
+      change: `${stats.changes.clients.value >= 0 ? '+' : ''}${stats.changes.clients.value.toFixed(1)}%`,
+      trend: stats.changes.clients.trend
     },
     {
       title: 'CA ce mois',
       value: `${stats.chiffreAffaireMois}DT`,
       icon: <FaMoneyBill className="text-warning" />,
       color: 'warning',
-      change: '+15%',
-      trend: 'up'
-    },
-    {
-      title: 'Note moyenne',
-      value: `${stats.noteMoyenne}/5`,
-      icon: <FaStar className="text-pink-500" />,
-      color: 'pink',
-      change: '+0.2',
-      trend: 'up'
+      change: `${stats.changes.ca_mois.value >= 0 ? '+' : ''}${stats.changes.ca_mois.value.toFixed(1)}%`,
+      trend: stats.changes.ca_mois.trend
     }
   ];
 
@@ -317,37 +327,11 @@ const AdminDashboard = () => {
             </div>
             <div className="card-body">
               <div className="activity-list">
-                {[
-                  { action: 'Nouvelle réservation', client: 'Sophie Martin', time: 'Il y a 5 min', type: 'reservation' },
-                  { action: 'Paiement reçu', client: 'Marie Dubois', time: 'Il y a 12 min', type: 'payment' },
-                  { action: 'Réservation confirmée', client: 'Emma Laurent', time: 'Il y a 23 min', type: 'confirmation' },
-                  { action: 'Nouvel avis', client: 'Lisa Chen', time: 'Il y a 1h', type: 'review' }
-                ].map((activity, index) => (
-                  <motion.div
-                    key={index}
-                    className="activity-item d-flex align-items-start mb-3 pb-3 border-bottom"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 + index * 0.1, duration: 0.4 }}
-                  >
-                    <div className={`activity-icon me-3 rounded-circle d-flex align-items-center justify-content-center ${
-                      activity.type === 'reservation' ? 'bg-primary-100 text-primary' :
-                      activity.type === 'payment' ? 'bg-success-100 text-success' :
-                      activity.type === 'confirmation' ? 'bg-warning-100 text-warning' :
-                      'bg-pink-100 text-pink-500'
-                    }`} style={{ width: '32px', height: '32px', minWidth: '32px' }}>
-                      {activity.type === 'reservation' && <FaCalendarAlt size={12} />}
-                      {activity.type === 'payment' && <FaMoneyBill size={12} />}
-                      {activity.type === 'confirmation' && <FaCalendarCheck size={12} />}
-                      {activity.type === 'review' && <FaStar size={12} />}
-                    </div>
-                    <div className="activity-content flex-grow-1">
-                      <p className="mb-1 small fw-semibold text-dark">{activity.action}</p>
-                      <p className="mb-1 small text-muted">{activity.client}</p>
-                      <p className="mb-0 text-muted" style={{ fontSize: '0.75rem' }}>{activity.time}</p>
-                    </div>
-                  </motion.div>
-                ))}
+                <div className="text-center py-4">
+                  <FaChartLine className="text-muted mb-3" size={48} />
+                  <p className="text-muted mb-0">Activité récente à venir</p>
+                  <small className="text-muted">Fonctionnalité en développement</small>
+                </div>
               </div>
             </div>
           </motion.div>

@@ -73,6 +73,7 @@ const authenticateClient = async (req, res, next) => {
 
         req.client = client[0];
         req.clientId = client[0].id;
+        req.user = client[0]; // For compatibility with routes expecting req.user
         next();
     } catch (error) {
         console.error('Erreur d\'authentification client:', error);

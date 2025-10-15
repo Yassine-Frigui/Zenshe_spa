@@ -62,14 +62,26 @@ const AdminReservations = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
+  // New state for pills and pending actions
+  const [activePill, setActivePill] = useState('all');
+  const [pendingActions, setPendingActions] = useState([]);
+  const [pendingActionsLoading, setPendingActionsLoading] = useState(false);
+
   useEffect(() => {
     fetchReservations();
     fetchServices();
-  }, [dateFilter, statusFilter]);
+  }, [dateFilter, statusFilter, activePill]);
 
   useEffect(() => {
     filterReservations();
   }, [reservations, searchTerm]);
+
+  // New effect for pending actions
+  useEffect(() => {
+    if (activePill === 'admin_approval') {
+      fetchPendingActions();
+    }
+  }, [activePill]);
 
   const fetchServices = async () => {
     try {
@@ -80,20 +92,37 @@ const AdminReservations = () => {
     }
   };
 
+  const fetchPendingActions = async () => {
+    try {
+      setPendingActionsLoading(true);
+      const response = await adminAPI.getPendingActionReservations();
+      setPendingActions(response.data?.data || []);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des actions en attente:', error);
+      setPendingActions([]);
+    } finally {
+      setPendingActionsLoading(false);
+    }
+  };
+
   const fetchReservations = async () => {
     try {
       setLoading(true);
       
-      // Build query parameters based on filters
+      // Build query parameters based on filters and active pill
       const filters = {};
       
       if (dateFilter && dateFilter !== 'tous') {
         const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         const thisMonth = new Date().toISOString().slice(0, 7);
         
         switch (dateFilter) {
           case 'aujourd_hui':
             filters.date = today;
+            break;
+          case 'demain':
+            filters.date = tomorrow;
             break;
           case 'ce_mois':
             filters.date_debut = `${thisMonth}-01`;
@@ -110,7 +139,21 @@ const AdminReservations = () => {
         }
       }
       
-      if (statusFilter && statusFilter !== 'tous') {
+      // Apply pill-based filtering
+      if (activePill === 'drafts') {
+        filters.reservation_status = 'draft';
+      } else if (activePill === 'admin_approval') {
+        filters.statut = 'confirmee';
+        // For admin approval, we want past due reservations
+        const now = new Date();
+        filters.date_max = now.toISOString().split('T')[0];
+        filters.time_max = now.toTimeString().split(' ')[0];
+      } else {
+        // All reservations - exclude drafts
+        filters.exclude_drafts = true;
+      }
+      
+      if (statusFilter && statusFilter !== 'tous' && activePill !== 'drafts' && activePill !== 'admin_approval') {
         filters.statut = statusFilter;
       }
       
@@ -138,7 +181,9 @@ const AdminReservations = () => {
         is_draft: reservation.is_draft || reservation.statut === 'draft',
         session_id: reservation.session_id,
         created_at: reservation.date_creation,
-        jotform_submission_id: reservation.jotform_submission_id // ADD THIS LINE!
+        jotform_submission_id: reservation.jotform_submission_id,
+        reminder_sent: reservation.reminder_sent,
+        reminder_sent_at: reservation.reminder_sent_at
       }));
       
       setReservations(transformedReservations);
@@ -364,6 +409,39 @@ const AdminReservations = () => {
     }));
   };
 
+  const handlePillChange = (pillType) => {
+    setActivePill(pillType);
+    setStatusFilter('tous'); // Reset status filter when changing pills
+    setDateFilter('tous'); // Reset date filter when changing pills
+  };
+
+  const handleAction = async (reservationId, action) => {
+    try {
+      setIsUpdating(true);
+      await adminAPI.updateReservationAction(reservationId, action);
+      
+      // Update local state
+      setReservations(prev => prev.map(res => 
+        res.id === reservationId ? { ...res, statut: action === 'completed' ? 'terminee' : 'no_show' } : res
+      ));
+      
+      // Remove from pending actions if it was there
+      setPendingActions(prev => prev.filter(res => res.id !== reservationId));
+      
+      // Refresh data
+      await fetchReservations();
+      if (activePill === 'admin_approval') {
+        await fetchPendingActions();
+      }
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'action:', error);
+      alert('Erreur lors de la mise à jour de la réservation');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
@@ -415,6 +493,37 @@ const AdminReservations = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
       >
+        {/* Pills Navigation */}
+        <div className="d-flex gap-2 mb-3">
+          <button
+            className={`btn ${activePill === 'all' ? 'btn-primary' : 'btn-outline-primary'} rounded-pill px-4`}
+            onClick={() => handlePillChange('all')}
+          >
+            Toutes les réservations
+            {activePill === 'all' && (
+              <span className="badge bg-white text-primary ms-2">{filteredReservations.length}</span>
+            )}
+          </button>
+          <button
+            className={`btn ${activePill === 'drafts' ? 'btn-warning' : 'btn-outline-warning'} rounded-pill px-4`}
+            onClick={() => handlePillChange('drafts')}
+          >
+            Brouillons
+            {activePill === 'drafts' && (
+              <span className="badge bg-white text-warning ms-2">{filteredReservations.length}</span>
+            )}
+          </button>
+          <button
+            className={`btn ${activePill === 'admin_approval' ? 'btn-danger' : 'btn-outline-danger'} rounded-pill px-4`}
+            onClick={() => handlePillChange('admin_approval')}
+          >
+            Action requise
+            {activePill === 'admin_approval' && (
+              <span className="badge bg-white text-danger ms-2">{filteredReservations.length}</span>
+            )}
+          </button>
+        </div>
+
         <div className="card border-0 shadow-sm">
           <div className="card-body">
             <div className="row g-3">
@@ -432,22 +541,23 @@ const AdminReservations = () => {
                   />
                 </div>
               </div>
-              <div className="col-md-3">
-                <select
-                  className="form-select"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="tous">Tous les statuts</option>
-                  <option value="draft">Brouillons</option>
-                  <option value="en_attente">En attente</option>
-                  <option value="confirmee">Confirmée</option>
-                  <option value="en_cours">En cours</option>
-                  <option value="terminee">Terminée</option>
-                  <option value="annulee">Annulée</option>
-                  <option value="absent">Absent</option>
-                </select>
-              </div>
+              {activePill !== 'drafts' && activePill !== 'admin_approval' && (
+                <div className="col-md-3">
+                  <select
+                    className="form-select"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="tous">Tous les statuts</option>
+                    <option value="en_attente">En attente</option>
+                    <option value="confirmee">Confirmée</option>
+                    <option value="en_cours">En cours</option>
+                    <option value="terminee">Terminée</option>
+                    <option value="annulee">Annulée</option>
+                    <option value="absent">Absent</option>
+                  </select>
+                </div>
+              )}
               <div className="col-md-3">
                 <select
                   className="form-select"
@@ -469,6 +579,72 @@ const AdminReservations = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Pending Actions Section */}
+      {activePill === 'admin_approval' && (
+        <motion.div
+          className="pending-actions-section mb-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <div className="card border-danger shadow-sm">
+            <div className="card-header bg-danger text-white">
+              <h5 className="mb-0">
+                <FaClock className="me-2" />
+                Actions requises ({pendingActions.length})
+              </h5>
+            </div>
+            <div className="card-body">
+              {pendingActionsLoading ? (
+                <div className="text-center py-3">
+                  <div className="spinner-border text-danger" />
+                </div>
+              ) : !Array.isArray(pendingActions) || pendingActions.length === 0 ? (
+                <p className="text-muted mb-0">Aucune action requise pour le moment.</p>
+              ) : (
+                <div className="row g-3">
+                  {pendingActions.map(reservation => (
+                    <div key={reservation.id} className="col-md-6 col-lg-4">
+                      <div className="card border-warning">
+                        <div className="card-body">
+                          <h6 className="card-title text-danger">
+                            {reservation.client_nom}
+                          </h6>
+                          <p className="card-text mb-2">
+                            <strong>Service:</strong> {reservation.service_nom}<br/>
+                            <strong>Date:</strong> {new Date(reservation.date_reservation).toLocaleDateString('fr-FR')}<br/>
+                            <strong>Heure:</strong> {reservation.heure_debut}<br/>
+                            <strong>Tél:</strong> {reservation.client_telephone}
+                          </p>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleAction(reservation.id, 'completed')}
+                              disabled={isUpdating}
+                            >
+                              <FaCheck className="me-1" />
+                              Terminée
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleAction(reservation.id, 'no_show')}
+                              disabled={isUpdating}
+                            >
+                              <FaTimes className="me-1" />
+                              No-show
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Reservations Table */}
       <motion.div

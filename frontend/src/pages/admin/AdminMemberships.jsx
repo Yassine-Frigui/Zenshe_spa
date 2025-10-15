@@ -27,7 +27,9 @@ const AdminMemberships = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedMembership, setSelectedMembership] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
   const [formData, setFormData] = useState({
     client_id: '',
     membership_id: '',
@@ -68,7 +70,7 @@ const AdminMemberships = () => {
     try {
       // This endpoint needs to be created in backend
       const response = await adminAPI.getAllClientMemberships();
-      setClientMemberships(response.data.memberships || []);
+      setClientMemberships(response.data.data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des abonnements clients:', error);
       setClientMemberships([]);
@@ -122,6 +124,28 @@ const AdminMemberships = () => {
       console.error('Erreur:', error);
       alert('Erreur lors de l\'annulation');
     }
+  };
+
+  const handleStatusChange = async () => {
+    if (!selectedMembership || !newStatus) return;
+
+    try {
+      await adminAPI.updateClientMembershipStatus(selectedMembership.id, { statut: newStatus });
+      alert('Statut mis à jour avec succès!');
+      setShowStatusModal(false);
+      setSelectedMembership(null);
+      setNewStatus('');
+      fetchClientMemberships();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+      alert('Erreur lors de la mise à jour du statut');
+    }
+  };
+
+  const openStatusModal = (membership) => {
+    setSelectedMembership(membership);
+    setNewStatus(membership.statut);
+    setShowStatusModal(true);
   };
 
   const resetForm = () => {
@@ -395,6 +419,13 @@ const AdminMemberships = () => {
                               title="Voir détails"
                             >
                               <FaEye />
+                            </button>
+                            <button 
+                              className="btn btn-outline-secondary"
+                              onClick={() => openStatusModal(membership)}
+                              title="Modifier statut"
+                            >
+                              <FaInfoCircle />
                             </button>
                             {membership.statut === 'active' && (
                               <button 
@@ -695,6 +726,87 @@ const AdminMemberships = () => {
                     Annuler l'abonnement
                   </button>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Status Change Modal */}
+      <AnimatePresence>
+        {showStatusModal && selectedMembership && (
+          <motion.div
+            className="modal fade show d-block"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="modal-dialog modal-dialog-centered"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <FaInfoCircle className="text-primary me-2" />
+                    Modifier le statut
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowStatusModal(false)}
+                  />
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Client</label>
+                    <p className="mb-2">{selectedMembership.client_nom} {selectedMembership.client_prenom}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Abonnement</label>
+                    <p className="mb-2">{selectedMembership.membership_nom}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Statut actuel</label>
+                    <div className="mb-2">
+                      {getStatusBadge(selectedMembership.statut)}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Nouveau statut</label>
+                    <select
+                      className="form-select"
+                      value={newStatus}
+                      onChange={(e) => setNewStatus(e.target.value)}
+                    >
+                      <option value="active">Actif</option>
+                      <option value="expired">Expiré</option>
+                      <option value="cancelled">Annulé</option>
+                      <option value="pending">En attente</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowStatusModal(false)}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleStatusChange}
+                    disabled={newStatus === selectedMembership.statut}
+                  >
+                    <FaSave className="me-2" />
+                    Mettre à jour
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

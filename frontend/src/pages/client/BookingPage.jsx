@@ -698,8 +698,7 @@ const BookingPage = () => {
                         }}
                       >
                         <FaCalendarAlt className="me-2" />
-                        Réservation Standard
-                      </Nav.Link>
+                        {t('booking.tab.service')}                      </Nav.Link>
                     </Nav.Item>
                     <Nav.Item>
                       <Nav.Link
@@ -726,7 +725,7 @@ const BookingPage = () => {
                         }}
                       >
                         <FaCrown className="me-2" />
-                        Abonnement
+                        {t('booking.tab.membership')}
                       </Nav.Link>
                     </Nav.Item>
                   </Nav>
@@ -734,7 +733,7 @@ const BookingPage = () => {
                   {/* Auto-save status indicator */}
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <h3 className="fw-bold text-green mb-0">
-                      {bookingTab === 'standard' ? t('booking.form.title') : 'Réservation avec Abonnement'}
+                      {bookingTab === 'standard' ? t('booking.form.title') : t('booking.form.title_with_membership')}
                     </h3>
                     <div className="d-flex flex-column align-items-end">
                       {sessionId && (
@@ -761,10 +760,9 @@ const BookingPage = () => {
                           <div className="d-flex align-items-center">
                             <FaCheck className="me-3" style={{ fontSize: '1.5rem' }} />
                             <div>
-                              <h5 className="alert-heading mb-1">Abonnement planifié avec succès! ✅</h5>
+                              <h5 className="alert-heading mb-1">{t('booking.schedule.success_title')}</h5>
                               <p className="mb-0">
-                                Votre demande d'abonnement a été enregistrée. Visitez-nous au spa pour activer votre abonnement.
-                                L'admin confirmera votre abonnement lors de votre visite.
+                                {t('booking.schedule.success_message')}
                               </p>
                             </div>
                           </div>
@@ -774,19 +772,19 @@ const BookingPage = () => {
                       <Alert variant="warning" className="d-flex align-items-start">
                         <FaExclamationTriangle className="me-3 mt-1" style={{ fontSize: '1.5rem' }} />
                         <div className="w-100">
-                          <h5 className="alert-heading">Abonnement requis</h5>
+                          <h5 className="alert-heading">{t('booking.required.title')}</h5>
                           {!isAuthenticated ? (
                             <div className="mb-3">
-                              <p className="mb-2">Pour réserver avec un abonnement, vous devez:</p>
+                              <p className="mb-2">{t('booking.required.instructions_intro')}</p>
                               <ol className="mt-2 mb-2">
-                                <li>Créer un compte ou vous connecter</li>
-                                <li>Consulter nos <Link to="/services" className="alert-link">offres d'abonnement</Link></li>
-                                <li>Visiter notre spa pour souscrire à un abonnement</li>
+                                <li>{t('booking.required.create_account')}</li>
+                                <li>{t('booking.required.view_offers', { link: '<a href="/services">' + t('booking.required.offers_link_text') + '</a>' })}</li>
+                                <li>{t('booking.required.visit_spa')}</li>
                               </ol>
                             </div>
                           ) : (
                             <p className="mb-3">
-                              Vous n'avez pas d'abonnement actif. Mais vous pouvez <strong>pré-sélectionner</strong> un abonnement maintenant!
+                              {t('booking.required.no_active_membership_notice')}
                             </p>
                           )}
 
@@ -800,10 +798,10 @@ const BookingPage = () => {
                             >
                               <h6 className="mb-3">
                                 <FaCrown className="me-2 text-warning" />
-                                Planifier un abonnement
+                                {t('booking.schedule.title')}
                               </h6>
                               <p className="small text-muted mb-3">
-                                Sélectionnez votre abonnement et la durée. Votre choix sera enregistré et activé lors de votre visite au spa.
+                                {t('booking.schedule.subtitle')}
                               </p>
 
                               {error && (
@@ -812,23 +810,23 @@ const BookingPage = () => {
 
                               <div className="row g-3">
                                 <div className="col-md-7">
-                                  <label className="form-label small fw-bold">Type d'abonnement</label>
+                                  <label className="form-label small fw-bold">{t('booking.schedule.type_label')}</label>
                                   <select
                                     className="form-select"
                                     value={selectedMembershipPlan}
                                     onChange={(e) => setSelectedMembershipPlan(e.target.value)}
                                     disabled={schedulingMembership}
                                   >
-                                    <option value="">Sélectionnez un abonnement</option>
+                                    <option value="">{t('booking.schedule.select_membership')}</option>
                                     {availableMemberships.map((membership) => (
                                       <option key={membership.id} value={membership.id}>
-                                        {membership.nom} - {membership.services_par_mois} services/mois
+                                        {membership.membership_nom || membership.nom} - {membership.services_par_mois} {t('memberships.services_per_month')}
                                       </option>
                                     ))}
                                   </select>
                                 </div>
                                 <div className="col-md-5">
-                                  <label className="form-label small fw-bold">Durée</label>
+                                  <label className="form-label small fw-bold">{t('booking.schedule.duration_label')}</label>
                                   <select
                                     className="form-select"
                                     value={selectedDuration}
@@ -836,10 +834,10 @@ const BookingPage = () => {
                                     disabled={schedulingMembership || !selectedMembershipPlan}
                                   >
                                     <option value={1}>
-                                      1 mois - {selectedMembershipPlan && availableMemberships.find(m => m.id == selectedMembershipPlan)?.prix_mensuel}€
+                                      {t('booking.schedule.one_month')} - {selectedMembershipPlan && availableMemberships.find(m => m.id == selectedMembershipPlan)?.prix_mensuel}€
                                     </option>
                                     <option value={3}>
-                                      3 mois - {selectedMembershipPlan && availableMemberships.find(m => m.id == selectedMembershipPlan)?.prix_3_mois}€
+                                      {t('booking.schedule.three_months')} - {selectedMembershipPlan && availableMemberships.find(m => m.id == selectedMembershipPlan)?.prix_3_mois}€
                                     </option>
                                   </select>
                                 </div>
@@ -853,12 +851,12 @@ const BookingPage = () => {
                                 {schedulingMembership ? (
                                   <>
                                     <span className="spinner-border spinner-border-sm me-2" />
-                                    Enregistrement...
+                                    {t('booking.schedule.saving')}
                                   </>
                                 ) : (
                                   <>
                                     <FaCheck className="me-2" />
-                                    Planifier cet abonnement
+                                    {t('booking.schedule.button_label')}
                                   </>
                                 )}
                               </button>
@@ -880,7 +878,7 @@ const BookingPage = () => {
                               className="btn btn-sm btn-outline-secondary"
                               onClick={() => setBookingTab('standard')}
                             >
-                              Réservation standard
+                              {t('booking.tab.service')}
                             </button>
                           </div>
                         </div>

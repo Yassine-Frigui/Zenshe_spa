@@ -1,0 +1,55 @@
+{
+  "services": {
+    "tab": {
+      "memberships": "Abonnements"
+    },
+    "memberships": {
+      "hero": {
+        "title": "Nos Abonnements Mensuels",
+        "subtitle": "Profitez de nos soins de luxe avec des abonnements exclusifs"
+      },
+      "available_notice": {
+        "title": "Abonnements disponibles en spa uniquement",
+        "detail": "Visitez-nous pour souscrire"
+      }
+    }
+  },
+  "memberships": {
+    "services_per_month": "services par mois",
+    "advantages": {
+      "label": "Avantages:"
+    },
+    "available_in_spa": "Disponible en spa",
+    "visit_to_subscribe": "Visitez-nous pour souscrire"
+  },
+  "booking": {
+    "tab": {
+      "membership": "Abonnement"
+    },
+    "form": {
+      "title_with_membership": "Réservation avec Abonnement"
+    },
+    "schedule": {
+      "success_title": "Abonnement planifié avec succès! ✅",
+      "success_message": "Votre demande d'abonnement a été enregistrée. Visitez-nous au spa pour activer votre abonnement. L'admin confirmera votre abonnement lors de votre visite.",
+      "title": "Planifier un abonnement",
+      "subtitle": "Sélectionnez votre abonnement et la durée. Votre choix sera enregistré et activé lors de votre visite au spa.",
+      "type_label": "Type d'abonnement",
+      "select_membership": "Sélectionnez un abonnement",
+      "duration_label": "Durée",
+      "one_month": "1 mois",
+      "three_months": "3 mois",
+      "saving": "Enregistrement...",
+      "button_label": "Planifier cet abonnement"
+    },
+    "required": {
+      "title": "Abonnement requis",
+      "instructions_intro": "Pour réserver avec un abonnement, vous devez:",
+      "create_account": "Créer un compte ou vous connecter",
+      "view_offers": "Consulter nos offres d'abonnement",
+      "offers_link_text": "offres d'abonnement",
+      "visit_spa": "Visiter notre spa pour souscrire à un abonnement",
+      "no_active_membership_notice": "Vous n'avez pas d'abonnement actif. Mais vous pouvez pré-sélectionner un abonnement maintenant!"
+    }
+  }
+}

@@ -25,11 +25,11 @@ router.get('/all', authenticateAdmin, async (req, res) => {
         cm.montant_paye,
         cm.mode_paiement,
         cm.statut,
-        cm.created_at
+        cm.date_creation as created_at
       FROM client_memberships cm
       JOIN clients c ON cm.client_id = c.id
       JOIN memberships m ON cm.membership_id = m.id
-      ORDER BY cm.created_at DESC
+      ORDER BY cm.date_creation DESC
     `;
     
     const [memberships] = await db.execute(query);
@@ -280,6 +280,73 @@ router.put('/:id/cancel', authenticateAdmin, async (req, res) => {
     });
   } finally {
     connection.release();
+  }
+});
+
+/**
+ * PUT /api/admin/client-memberships/:id/status
+ * Update the status of a client membership
+ */
+router.put('/:id/status', authenticateAdmin, async (req, res) => {
+  try {
+    const membershipId = req.params.id;
+    const { statut } = req.body;
+
+    // Validate status
+    const validStatuses = ['active', 'expired', 'cancelled', 'pending'];
+    if (!validStatuses.includes(statut)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Statut invalide. Les statuts valides sont: active, expired, cancelled, pending'
+      });
+    }
+
+    // Check if membership exists
+    const [membership] = await db.execute(
+      `SELECT cm.*, c.nom AS client_nom, c.prenom AS client_prenom, m.nom AS membership_nom
+       FROM client_memberships cm
+       JOIN clients c ON cm.client_id = c.id
+       JOIN memberships m ON cm.membership_id = m.id
+       WHERE cm.id = ?`,
+      [membershipId]
+    );
+
+    if (membership.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Abonnement non trouvé'
+      });
+    }
+
+    const membershipData = membership[0];
+
+    // Update membership status
+    await db.execute(
+      `UPDATE client_memberships
+       SET statut = ?
+       WHERE id = ?`,
+      [statut, membershipId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Statut de l\'abonnement mis à jour avec succès',
+      data: {
+        id: membershipId,
+        client: `${membershipData.client_prenom} ${membershipData.client_nom}`,
+        membership: membershipData.membership_nom,
+        old_status: membershipData.statut,
+        new_status: statut
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating client membership status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour du statut de l\'abonnement',
+      error: error.message
+    });
   }
 });
 

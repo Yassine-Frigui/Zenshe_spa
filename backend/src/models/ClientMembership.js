@@ -4,17 +4,24 @@ class ClientMembershipModel {
     /**
      * Get active membership for a client
      * Returns the most recent active membership with remaining services
+     * @param {number} clientId - Client ID
+     * @param {string} lang - Language code (default: 'fr')
      */
-    static async getActiveClientMembership(clientId) {
+    static async getActiveClientMembership(clientId, lang = 'fr') {
         const query = `
             SELECT 
                 cm.*,
-                m.nom as membership_nom,
+                COALESCE(mt_lang.nom, mt_default.nom, m.nom) as membership_nom,
+                COALESCE(mt_lang.description, mt_default.description, m.description) as membership_description,
+                COALESCE(mt_lang.avantages, mt_default.avantages, m.avantages) as membership_avantages,
                 m.services_par_mois,
-                m.description as membership_description,
                 DATEDIFF(cm.date_fin, CURDATE()) as jours_restants
             FROM client_memberships cm
             JOIN memberships m ON cm.membership_id = m.id
+            LEFT JOIN memberships_translations mt_lang 
+                ON mt_lang.membership_id = m.id AND mt_lang.language_code = ?
+            LEFT JOIN memberships_translations mt_default 
+                ON mt_default.membership_id = m.id AND mt_default.language_code = 'fr'
             WHERE cm.client_id = ?
                 AND cm.statut = 'active'
                 AND cm.date_fin >= CURDATE()
@@ -22,7 +29,7 @@ class ClientMembershipModel {
             ORDER BY cm.date_fin DESC
             LIMIT 1
         `;
-        const result = await executeQuery(query, [clientId]);
+        const result = await executeQuery(query, [lang, clientId]);
         return result[0] || null;
     }
 
@@ -79,20 +86,27 @@ class ClientMembershipModel {
 
     /**
      * Get client membership history (all memberships, active or not)
+     * @param {number} clientId - Client ID
+     * @param {string} lang - Language code (default: 'fr')
      */
-    static async getClientMembershipHistory(clientId) {
+    static async getClientMembershipHistory(clientId, lang = 'fr') {
         const query = `
             SELECT 
                 cm.*,
-                m.nom as membership_nom,
-                m.prix_mensuel,
-                m.description as membership_description
+                COALESCE(mt_lang.nom, mt_default.nom, m.nom) as membership_nom,
+                COALESCE(mt_lang.description, mt_default.description, m.description) as membership_description,
+                COALESCE(mt_lang.avantages, mt_default.avantages, m.avantages) as membership_avantages,
+                m.prix_mensuel
             FROM client_memberships cm
             JOIN memberships m ON cm.membership_id = m.id
+            LEFT JOIN memberships_translations mt_lang 
+                ON mt_lang.membership_id = m.id AND mt_lang.language_code = ?
+            LEFT JOIN memberships_translations mt_default 
+                ON mt_default.membership_id = m.id AND mt_default.language_code = 'fr'
             WHERE cm.client_id = ?
             ORDER BY cm.date_creation DESC
         `;
-        return await executeQuery(query, [clientId]);
+        return await executeQuery(query, [lang, clientId]);
     }
 
     /**

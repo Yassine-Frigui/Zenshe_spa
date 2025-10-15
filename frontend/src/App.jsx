@@ -32,6 +32,7 @@ import AdminStatistics from './pages/admin/AdminStatistics'
 import AdminReferrals from './pages/admin/AdminReferrals'
 import AdminStoreDashboard from './pages/admin/AdminStoreDashboard'
 import AdminMemberships from './pages/admin/AdminMemberships'
+import AdminMembershipTypes from './pages/admin/AdminMembershipTypes'
 
 // Import des composants
 import ClientLayout from './components/layouts/ClientLayout'
@@ -351,6 +352,17 @@ function App() {
                     transition={pageTransition}
                   >
                     <AdminMemberships />
+                  </motion.div>
+                } />
+                <Route path="membership-types" element={
+                  <motion.div
+                    initial="initial"
+                    animate="in"
+                    exit="out"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <AdminMembershipTypes />
                   </motion.div>
                 } />
               </Route>

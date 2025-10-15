@@ -488,4 +488,67 @@ router.get('/check', authenticateClient, async (req, res) => {
     }
 });
 
+// ===== REFERRAL CODE ROUTES =====
+
+// Get client's referral code
+router.get('/referral-code', authenticateClient, async (req, res) => {
+    try {
+        const clientId = req.client.id;
+        
+        const ReferralCode = require('../models/ReferralCode');
+        const referralCode = await ReferralCode.getClientReferralCode(clientId);
+        
+        if (referralCode) {
+            res.json({
+                success: true,
+                referralCode
+            });
+        } else {
+            res.json({
+                success: true,
+                referralCode: null,
+                message: 'No referral code found'
+            });
+        }
+    } catch (error) {
+        console.error('Error getting referral code:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error retrieving referral code'
+        });
+    }
+});
+
+// Get referral code statistics
+router.get('/referral-code/:codeId/stats', authenticateClient, async (req, res) => {
+    try {
+        const { codeId } = req.params;
+        const clientId = req.client.id;
+        
+        // Verify the referral code belongs to the client
+        const ReferralCode = require('../models/ReferralCode');
+        const referralCode = await ReferralCode.getReferralCodeById(codeId);
+        
+        if (!referralCode || referralCode.client_id !== clientId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied'
+            });
+        }
+        
+        const stats = await ReferralCode.getReferralCodeStats(codeId);
+        
+        res.json({
+            success: true,
+            stats
+        });
+    } catch (error) {
+        console.error('Error getting referral stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error retrieving referral statistics'
+        });
+    }
+});
+
 module.exports = router;

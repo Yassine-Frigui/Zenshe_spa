@@ -174,8 +174,7 @@ const ServicesPage = () => {
                       }}
                     >
                       <FaSpa className="me-2" />
-                      Services
-                    </Nav.Link>
+                      {t('services.tab.services')}                    </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
                     <Nav.Link
@@ -193,7 +192,7 @@ const ServicesPage = () => {
                       }}
                     >
                       <FaCrown className="me-2" />
-                      Abonnements
+                      {t('services.tab.memberships')}
                     </Nav.Link>
                   </Nav.Item>
                 </Nav>
@@ -272,14 +271,14 @@ const ServicesPage = () => {
               >
                 <h2 className="fw-bold mb-3" style={{ color: '#FFD700' }}>
                   <FaCrown className="me-3" style={{ fontSize: '2.5rem' }} />
-                  Nos Abonnements Mensuels
+                  {t('services.memberships.hero.title')}
                 </h2>
                 <p className="lead text-muted mb-4">
-                  Profitez de nos soins de luxe avec des abonnements exclusifs
+                  {t('services.memberships.hero.subtitle')}
                 </p>
                 <div className="alert alert-info d-inline-flex align-items-center">
                   <FaStore className="me-2" />
-                  <strong>Abonnements disponibles en spa uniquement</strong> - Visitez-nous pour souscrire
+                  <strong>{t('services.memberships.available_notice.title')}</strong> - {t('services.memberships.available_notice.detail')}
                 </div>
               </motion.div>
 
@@ -296,7 +295,7 @@ const ServicesPage = () => {
                         <Card.Body className="d-flex flex-column">
                           <div className="text-center mb-3">
                             <FaCrown style={{ fontSize: '3rem', color: membership.nom === 'SILVER' ? '#C0C0C0' : membership.nom === 'GOLD' ? '#FFD700' : membership.nom === 'PLATINUM' ? '#E5E4E2' : '#9B59B6' }} />
-                            <h3 className="fw-bold mt-3">{membership.nom}</h3>
+                            <h3 className="fw-bold mt-3">{membership.membership_nom || membership.nom}</h3>
                             {membership.nom === 'VIP' && (
                               <Badge bg="warning" text="dark">⭐ Most Popular</Badge>
                             )}
@@ -316,23 +315,23 @@ const ServicesPage = () => {
                             )}
                           </div>
 
-                          <p className="text-center text-muted mb-3">
+                            <p className="text-center text-muted mb-3">
                             <FaInfoCircle className="me-2" />
-                            {membership.services_par_mois} services par mois
+                            {membership.services_par_mois} {t('memberships.services_per_month')}
                           </p>
 
-                          {membership.description && (
-                            <p className="small text-muted mb-3">{membership.description}</p>
-                          )}
+                          {membership.membership_description || membership.description ? (
+                            <p className="small text-muted mb-3">{membership.membership_description || membership.description}</p>
+                          ) : null}
 
-                          {membership.avantages && (
+                          {membership.membership_avantages || membership.avantages ? (
                             <div className="flex-grow-1 mb-3 p-3 bg-light rounded">
                               <h6 className="text-green mb-2">
                                 <FaCheck className="me-2" />
-                                Avantages:
+                                {t('memberships.advantages.label')}
                               </h6>
                               <ul className="list-unstyled small mb-0">
-                                {membership.avantages.split(/[+•\n]/).map((item, idx) => 
+                                {(membership.membership_avantages || membership.avantages).split(/[+•\n]/).map((item, idx) => 
                                   item.trim() && (
                                     <li key={idx} className="mb-1">
                                       <FaCheck className="text-success me-2" style={{ fontSize: '0.7rem' }} />
@@ -342,13 +341,13 @@ const ServicesPage = () => {
                                 )}
                               </ul>
                             </div>
-                          )}
+                          ) : null}
 
                           <Button variant="outline-success" disabled className="w-100 mt-auto" style={{ opacity: 0.7, cursor: 'not-allowed' }}>
                             <FaStore className="me-2" />
-                            Disponible en spa
+                            {t('memberships.available_in_spa')}
                           </Button>
-                          <small className="text-center text-muted mt-2">Visitez-nous pour souscrire</small>
+                          <small className="text-center text-muted mt-2">{t('memberships.visit_to_subscribe')}</small>
                         </Card.Body>
                       </Card>
                     </motion.div>

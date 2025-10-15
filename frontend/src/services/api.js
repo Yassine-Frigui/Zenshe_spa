@@ -177,9 +177,18 @@ export const clientAPI = {
   cancelMyReservation: (id) => axios.put(`/api/client/reservations/${id}/cancel`),
 
   // Memberships (client authentifié)
-  getActiveMembership: () => axios.get('/api/client/memberships/active'),
-  getMembershipHistory: () => axios.get('/api/client/memberships/history'),
-  getAvailableMembershipsForPurchase: () => axios.get('/api/client/memberships/available'), // Get available memberships for authenticated purchase
+  getActiveMembership: () => {
+    const lang = getCurrentLanguage();
+    return axios.get('/api/client/memberships/active', { params: { lang } });
+  },
+  getMembershipHistory: () => {
+    const lang = getCurrentLanguage();
+    return axios.get('/api/client/memberships/history', { params: { lang } });
+  },
+  getAvailableMembershipsForPurchase: () => {
+    const lang = getCurrentLanguage();
+    return axios.get('/api/client/memberships/available', { params: { lang } });
+  }, // Get available memberships for authenticated purchase
   purchaseMembership: (data) => axios.post('/api/client/memberships/purchase', data),
   cancelMembership: (id) => axios.put(`/api/client/memberships/${id}/cancel`),
   
@@ -187,6 +196,10 @@ export const clientAPI = {
   scheduleMembership: (data) => axios.post('/api/client/memberships/schedule', data),
   getPendingMembership: () => axios.get('/api/client/memberships/pending'),
   cancelScheduledMembership: (id) => axios.delete(`/api/client/memberships/scheduled/${id}`),
+
+  // Referral Codes
+  getMyReferralCode: () => axios.get('/api/referral-codes/my-codes'),
+  getReferralStats: (codeId) => axios.get(`/api/referral-codes/stats/${codeId}`),
 }
 
 // Services pour les API admin
@@ -214,6 +227,21 @@ export const adminAPI = {
   convertDraftReservation: (id) => axios.post(`/api/admin/reservations/convert-draft/${id}`),
   updateReservation: (id, data) => axios.put(`/api/admin/reservations/${id}`, data),
   deleteReservation: (id) => axios.delete(`/api/admin/reservations/${id}`),
+  getPendingActionReservations: () => axios.get('/api/admin/reservations/pending-actions'),
+  updateReservationAction: (id, action, notes) => 
+    axios.patch(`/api/admin/reservations/${id}/action`, { action, notes_admin: notes }),
+  getReservationStats: (id) => axios.get(`/api/admin/reservations/${id}/stats`),
+  exportReservations: (filters = {}) => {
+    const params = new URLSearchParams(filters).toString()
+    return axios.get(`/api/admin/reservations/export?${params}`, { responseType: 'blob' })
+  },
+  importReservations: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axios.post('/api/admin/reservations/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 
   // Clients
   getClients: (page = 1, limit = 20, search = '') => 
@@ -319,11 +347,25 @@ export const adminAPI = {
   getAllClientMemberships: () => axios.get('/api/admin/client-memberships/all'),
   createClientMembership: (data) => axios.post('/api/admin/client-memberships', data),
   cancelClientMembership: (id) => axios.put(`/api/admin/client-memberships/${id}/cancel`),
+  updateClientMembershipStatus: (id, data) => axios.put(`/api/admin/client-memberships/${id}/status`, data),
   
   // Scheduled Memberships Management
   getPendingScheduledMemberships: () => axios.get('/api/admin/client-memberships/scheduled/pending'),
   activateScheduledMembership: (id, data) => axios.post(`/api/admin/client-memberships/scheduled/${id}/activate`, data),
-  cancelScheduledMembership: (id) => axios.delete(`/api/admin/client-memberships/scheduled/${id}`)
+  cancelScheduledMembership: (id) => axios.delete(`/api/admin/client-memberships/scheduled/${id}`),
+
+  // Membership Translations Management
+  getMembershipTranslations: (membershipId) => axios.get(`/api/admin/memberships/${membershipId}/translations`),
+  createMembershipTranslation: (membershipId, data) => axios.post(`/api/admin/memberships/${membershipId}/translations`, data),
+  updateMembershipTranslation: (membershipId, languageCode, data) => axios.put(`/api/admin/memberships/${membershipId}/translations/${languageCode}`, data),
+  deleteMembershipTranslation: (membershipId, languageCode) => axios.delete(`/api/admin/memberships/${membershipId}/translations/${languageCode}`),
+
+  // Membership Types Management (CRUD for SILVER, GOLD, PLATINUM, VIP)
+  getMembershipTypes: () => axios.get('/api/memberships'),
+  getMembershipType: (id) => axios.get(`/api/memberships/${id}`),
+  createMembershipType: (data) => axios.post('/api/memberships', data),
+  updateMembershipType: (id, data) => axios.put(`/api/memberships/${id}`, data),
+  deleteMembershipType: (id) => axios.delete(`/api/memberships/${id}`)
 }
 
 // Intercepteur pour gérer les erreurs d'authentification

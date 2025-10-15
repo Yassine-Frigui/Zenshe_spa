@@ -181,6 +181,11 @@
   },
   "services": {
     "title": "Nos Soins",
+    "tab": {
+      "memberships": "Abonnements",
+      "services": "Soins"
+
+    },
     "subtitle": "Bien-être intime et guérison holistique pour femmes",
     "allServices": "Tous les services",
     "categories": "Catégories",
@@ -198,6 +203,17 @@
     "cta": {
       "title": "Des questions sur nos soins de bien-être intime ?",
       "description": "Notre équipe expérimentée est là pour vous guider dans votre parcours bien-être"
+    }
+    ,
+    "memberships": {
+      "hero": {
+        "title": "Nos Abonnements Mensuels",
+        "subtitle": "Profitez de nos soins de luxe avec des abonnements exclusifs"
+      },
+      "available_notice": {
+        "title": "Abonnements disponibles en spa uniquement",
+        "detail": "Visitez-nous pour souscrire"
+      }
     }
   },
   "booking": {
@@ -257,7 +273,8 @@
       },
       "submit": "Confirmer la réservation",
       "submitting": "Traitement en cours...",
-      "newBooking": "Nouvelle Réservation"
+      "newBooking": "Nouvelle Réservation",
+      "title_with_membership": "Réservation avec Abonnement"
     },
     "success": {
       "title": "Réservation Confirmée !",
@@ -289,6 +306,34 @@
     "waiver": {
       "title": "Formulaire de décharge - Waiver",
       "close": "Fermer"
+    }
+    ,
+    "tab": {
+      "membership": "Abonnement",
+      "service": "Soins"
+    },
+     
+    "schedule": {
+      "success_title": "Abonnement planifié avec succès! ✅",
+      "success_message": "Votre demande d'abonnement a été enregistrée. Visitez-nous au spa pour activer votre abonnement. L'admin confirmera votre abonnement lors de votre visite.",
+      "title": "Planifier un abonnement",
+      "subtitle": "Sélectionnez votre abonnement et la durée. Votre choix sera enregistré et activé lors de votre visite au spa.",
+      "type_label": "Type d'abonnement",
+      "select_membership": "Sélectionnez un abonnement",
+      "duration_label": "Durée",
+      "one_month": "1 mois",
+      "three_months": "3 mois",
+      "saving": "Enregistrement...",
+      "button_label": "Planifier cet abonnement"
+    },
+    "required": {
+      "title": "Abonnement requis",
+      "instructions_intro": "Pour réserver avec un abonnement, vous devez:",
+      "create_account": "Créer un compte ou vous connecter",
+      "view_offers": "Consulter nos offres d'abonnement",
+      "offers_link_text": "offres d'abonnement",
+      "visit_spa": "Visiter notre spa pour souscrire à un abonnement",
+      "no_active_membership_notice": "Vous n'avez pas d'abonnement actif. Mais vous pouvez pré-sélectionner un abonnement maintenant!"
     }
   },
   "contact": {

@@ -27,11 +27,15 @@ const publicRoutes = require('./routes/public');
 const membershipRoutes = require('./routes/memberships');
 const clientMembershipRoutes = require('./routes/clientMemberships');
 const adminClientMembershipRoutes = require('./routes/adminClientMemberships');
+const adminMembershipTranslationsRoutes = require('./routes/adminMembershipTranslations');
 const statisticsRoutes = require('./routes/statistics');
 const referralCodesRoutes = require('./routes/referralCodes');
 const storeRoutes = require('./routes/store');
 const adminStoreRoutes = require('./routes/adminStore');
 const jotformRoutes = require('./routes/jotform');
+
+// Import services
+const ReservationReminderService = require('./services/ReservationReminderService');
 
 // Import de la configuration de base de données
 const { testConnection } = require('../config/database');
@@ -111,6 +115,8 @@ app.use('/api/client', clientAuthRoutes);
 app.use('/api/client/memberships', clientMembershipRoutes);
 app.use('/api/admin/client-memberships', adminClientMembershipRoutes);
 console.log('👑 Admin client memberships routes mounted at /api/admin/client-memberships');
+app.use('/api/admin/memberships', adminMembershipTranslationsRoutes);
+console.log('🌐 Admin membership translations routes mounted at /api/admin/memberships');
 app.use('/api/public/services', publicServicesRoutes);
 app.use('/api/public/services-multilingual', publicServicesMultilingualRoutes);
 app.use('/api/services', serviceRoutes);
@@ -196,6 +202,33 @@ const startServer = async () => {
             const heapUsedKB = (mem.heapUsed / 1024).toFixed(2);
             const heapUsedMB = (mem.heapUsed / 1024 / 1024).toFixed(2);
             console.log(`🧠 Mémoire utilisée: ${heapUsedKB} KB (${heapUsedMB} MB)`);
+
+            // Initialize and start reservation reminder service
+            const reminderService = new ReservationReminderService();
+
+            // Start cron job to check for reminders every 5 minutes
+            const cron = require('node-cron');
+            cron.schedule('*/5 * * * *', async () => {
+                console.log('⏰ Running scheduled reminder check...');
+                await reminderService.checkAndSendReminders();
+            });
+
+            // Start cron job to expire old memberships daily at 2 AM
+            cron.schedule('0 2 * * *', async () => {
+                console.log('📅 Running membership expiration check...');
+                const ClientMembership = require('./models/ClientMembership');
+                try {
+                    const result = await ClientMembership.expireOldMemberships();
+                    if (result.affectedRows > 0) {
+                        console.log(`✅ Expired ${result.affectedRows} memberships`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error expiring memberships:', error);
+                }
+            });
+
+            console.log('✅ Reservation reminder service started (checks every 5 minutes)');
+            console.log('✅ Membership expiration service started (runs daily at 2 AM)');
         });
     } catch (error) {
         console.error('❌ Erreur lors du démarrage du serveur:', error);

@@ -15,7 +15,9 @@ import {
     FaCheckCircle,
     FaCalendarAlt,
     FaHistory,
-    FaSpinner
+    FaSpinner,
+    FaCrown,
+    FaGift
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useClientAuth } from '../../context/ClientAuthContext';
@@ -52,6 +54,11 @@ const ClientProfile = () => {
     });
 
     const [reservations, setReservations] = useState([]);
+    const [membership, setMembership] = useState(null);
+    const [membershipLoading, setMembershipLoading] = useState(false);
+    const [referralCode, setReferralCode] = useState(null);
+    const [referralStats, setReferralStats] = useState(null);
+    const [referralLoading, setReferralLoading] = useState(false);
 
     // Load client data
     useEffect(() => {
@@ -65,10 +72,14 @@ const ClientProfile = () => {
         }
     }, [client]);
 
-    // Load reservations when switching to reservations tab
+    // Load reservations and membership when switching to reservations tab
     useEffect(() => {
         if (activeTab === 'reservations' && client) {
             loadReservations();
+            loadMembership();
+        }
+        if (activeTab === 'referral' && client) {
+            loadReferralData();
         }
     }, [activeTab, client]);
 
@@ -97,6 +108,51 @@ const ClientProfile = () => {
             });
         } finally {
             setReservationsLoading(false);
+        }
+    };
+
+    const loadMembership = async () => {
+        try {
+            setMembershipLoading(true);
+            const response = await clientAPI.getActiveMembership();
+            if (response.data && response.data.data) {
+                setMembership(response.data.data);
+            } else {
+                setMembership(null);
+            }
+        } catch (error) {
+            console.error('Error loading membership:', error);
+            setMembership(null);
+        } finally {
+            setMembershipLoading(false);
+        }
+    };
+
+    const loadReferralData = async () => {
+        try {
+            setReferralLoading(true);
+            const response = await clientAPI.getMyReferralCode();
+            if (response.data && response.data.referralCodes && response.data.referralCodes.length > 0) {
+                // Take the first (most recent) referral code
+                const referralCode = response.data.referralCodes[0];
+                setReferralCode(referralCode);
+                // Load referral stats if available
+                if (referralCode.id) {
+                    const statsResponse = await clientAPI.getReferralStats(referralCode.id);
+                    if (statsResponse.data) {
+                        setReferralStats(statsResponse.data);
+                    }
+                }
+            } else {
+                setReferralCode(null);
+                setReferralStats(null);
+            }
+        } catch (error) {
+            console.error('Error loading referral data:', error);
+            setReferralCode(null);
+            setReferralStats(null);
+        } finally {
+            setReferralLoading(false);
         }
     };
 
@@ -322,10 +378,19 @@ const ClientProfile = () => {
                                                 activeTab === 'password' ? 'active bg-pink text-white' : 'text-dark'
                                             }`}
                                             onClick={() => setActiveTab('password')}
-                                            style={{ borderRadius: '0 20px 20px 0' }}
                                         >
                                             <FaLock className="me-2" />
                                             Sécurité
+                                        </button>
+                                        <button
+                                            className={`nav-link border-0 px-4 py-3 ${
+                                                activeTab === 'referral' ? 'active bg-pink text-white' : 'text-dark'
+                                            }`}
+                                            onClick={() => setActiveTab('referral')}
+                                            style={{ borderRadius: '0 20px 20px 0' }}
+                                        >
+                                            <FaGift className="me-2" />
+                                            Parrainage
                                         </button>
                                     </nav>
                                 </div>
@@ -494,6 +559,68 @@ const ClientProfile = () => {
                                         </h4>
                                     </div>
                                     <div className="card-body p-0">
+                                        {/* Membership Information */}
+                                        {membershipLoading ? (
+                                            <div className="text-center py-3 border-bottom">
+                                                <div className="spinner-border spinner-border-sm text-pink me-2" role="status"></div>
+                                                <span className="text-muted">Chargement de votre abonnement...</span>
+                                            </div>
+                                        ) : membership ? (
+                                            <div className="p-4 border-bottom bg-light">
+                                                <div className="d-flex align-items-center justify-content-between mb-3">
+                                                    <h5 className="text-dark mb-0">
+                                                        <FaCrown className="text-warning me-2" />
+                                                        Votre Abonnement {membership.nom}
+                                                    </h5>
+                                                    <span className={`badge ${membership.statut === 'active' ? 'bg-success' : 'bg-warning'}`}>
+                                                        {membership.statut === 'active' ? 'Actif' : 'En attente'}
+                                                    </span>
+                                                </div>
+                                                <div className="row">
+                                                    <div className="col-md-4">
+                                                        <div className="text-center">
+                                                            <div className="h4 text-primary mb-1">{membership.services_utilises || 0}</div>
+                                                            <small className="text-muted">Visites utilisées</small>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-4">
+                                                        <div className="text-center">
+                                                            <div className="h4 text-success mb-1">{membership.services_restants || 0}</div>
+                                                            <small className="text-muted">Visites restantes</small>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-4">
+                                                        <div className="text-center">
+                                                            <div className="h4 text-info mb-1">{membership.services_total || 0}</div>
+                                                            <small className="text-muted">Total des visites</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 pt-3 border-top">
+                                                    <div className="row text-center">
+                                                        <div className="col-6">
+                                                            <small className="text-muted">Début</small>
+                                                            <div className="fw-bold">{membership.date_debut ? new Date(membership.date_debut).toLocaleDateString('fr-FR') : '-'}</div>
+                                                        </div>
+                                                        <div className="col-6">
+                                                            <small className="text-muted">Fin</small>
+                                                            <div className="fw-bold">{membership.date_fin ? new Date(membership.date_fin).toLocaleDateString('fr-FR') : '-'}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 border-bottom bg-light">
+                                                <div className="text-center">
+                                                    <FaCrown className="text-muted mb-2" size={24} />
+                                                    <p className="text-muted mb-2">Aucun abonnement actif</p>
+                                                    <a href="/memberships" className="btn btn-outline-pink btn-sm">
+                                                        Voir les abonnements
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {reservationsLoading ? (
                                             <div className="text-center py-5">
                                                 <div className="spinner-border text-pink" role="status"></div>
@@ -672,6 +799,103 @@ const ClientProfile = () => {
                                         </form>
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Referral Code Tab */}
+                            {activeTab === 'referral' && (
+                                <motion.div
+                                    key="referral"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <div className="row">
+                                        <div className="col-lg-8 mx-auto">
+                                            <div className="card border-0 shadow-sm">
+                                                <div className="card-header bg-light">
+                                                    <h5 className="mb-0">
+                                                        <FaGift className="text-pink me-2" />
+                                                        Mon Code de Parrainage
+                                                    </h5>
+                                                </div>
+                                                <div className="card-body">
+                                                    {referralLoading ? (
+                                                        <div className="text-center py-4">
+                                                            <FaSpinner className="fa-spin text-pink mb-3" size={24} />
+                                                            <p className="text-muted">Chargement...</p>
+                                                        </div>
+                                                    ) : referralCode ? (
+                                                        <div className="text-center">
+                                                            <div className="mb-4">
+                                                                <h3 className="text-pink mb-3">Votre code de parrainage</h3>
+                                                                <div className="bg-light p-3 rounded-3 d-inline-block">
+                                                                    <code className="fs-4 fw-bold text-pink">{referralCode.code}</code>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="row text-center mb-4">
+                                                                <div className="col-md-4">
+                                                                    <div className="p-3 bg-light rounded-3">
+                                                                        <h4 className="text-pink mb-1">
+                                                                            {referralStats?.totalReferrals || 0}
+                                                                        </h4>
+                                                                        <small className="text-muted">Parrainages</small>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="col-md-4">
+                                                                    <div className="p-3 bg-light rounded-3">
+                                                                        <h4 className="text-success mb-1">
+                                                                            {referralStats?.totalEarnings || 0}DT
+                                                                        </h4>
+                                                                        <small className="text-muted">Gains totaux</small>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="col-md-4">
+                                                                    <div className="p-3 bg-light rounded-3">
+                                                                        <h4 className="text-warning mb-1">
+                                                                            {referralStats?.availableEarnings || 0}DT
+                                                                        </h4>
+                                                                        <small className="text-muted">Disponible</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="alert alert-info">
+                                                                <strong>Comment ça marche ?</strong><br/>
+                                                                Partagez votre code de parrainage avec vos amis. 
+                                                                Quand ils s'inscrivent et réservent un service, vous gagnez {referralStats?.rewardAmount || 10}DT par parrainage !
+                                                            </div>
+
+                                                            <button 
+                                                                className="btn btn-pink"
+                                                                onClick={() => navigator.share ? 
+                                                                    navigator.share({
+                                                                        title: 'Rejoignez-moi sur ZenShe Spa',
+                                                                        text: `Utilisez mon code de parrainage: ${referralCode.code}`,
+                                                                        url: window.location.origin
+                                                                    }) : 
+                                                                    navigator.clipboard.writeText(referralCode.code)
+                                                                }
+                                                            >
+                                                                <FaGift className="me-2" />
+                                                                Partager mon code
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-4">
+                                                            <FaGift className="text-muted mb-3" size={48} />
+                                                            <h5 className="text-muted">Aucun code de parrainage</h5>
+                                                            <p className="text-muted">
+                                                                Les codes de parrainage sont générés automatiquement lors de votre inscription.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
                             )}
 
                             {/* Logout Button */}

@@ -122,7 +122,7 @@ const MembershipsPage = () => {
                       <div className="text-center mb-4">
                         {getMembershipIcon(membership.nom)}
                         <h3 className="membership-title mt-3 mb-2">
-                          {membership.nom}
+                          {membership.membership_nom || membership.nom}
                         </h3>
                         {membership.nom === 'VIP' && (
                           <Badge bg="warning" text="dark" className="mb-2">
@@ -150,24 +150,24 @@ const MembershipsPage = () => {
                       </div>
 
                       {/* Description */}
-                      {membership.description && (
+                      {membership.membership_description || membership.description ? (
                         <div className="mb-3">
                           <p className="text-muted small">
                             <FaInfoCircle className="me-2" />
-                            {membership.description}
+                            {membership.membership_description || membership.description}
                           </p>
                         </div>
-                      )}
+                      ) : null}
 
                       {/* Avantages */}
-                      {membership.avantages && (
+                      {membership.membership_avantages || membership.avantages ? (
                         <div className="avantages-list flex-grow-1">
                           <h6 className="text-green mb-3">
                             <FaCheck className="me-2" />
                             Avantages inclus:
                           </h6>
                           <ul className="list-unstyled">
-                            {parseAvantages(membership.avantages).map((avantage, idx) => (
+                            {parseAvantages(membership.membership_avantages || membership.avantages).map((avantage, idx) => (
                               <li key={idx} className="mb-2">
                                 <FaCheck className="text-success me-2" style={{ fontSize: '0.8rem' }} />
                                 <small>{avantage}</small>
@@ -175,7 +175,7 @@ const MembershipsPage = () => {
                             ))}
                           </ul>
                         </div>
-                      )}
+                      ) : null}
 
                       {/* CTA */}
                       <div className="text-center mt-4">

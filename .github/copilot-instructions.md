@@ -1,0 +1,1 @@
+always assume that the server is running .both frontend and backend . so don't run terminal commands to start server.

@@ -212,7 +212,7 @@ router.get('/stats/:codeId', authenticateClient, async (req, res) => {
     const clientId = req.user.id;
 
     // Verify the code belongs to the authenticated client
-    const [codes] = await ReferralCode.getClientReferralCodes(clientId);
+    const codes = await ReferralCode.getClientReferralCodes(clientId);
     const ownedCode = codes.find(code => code.id == codeId);
 
     if (!ownedCode) {
