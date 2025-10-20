@@ -1,1 +1,0 @@
-ALTER TABLE clients ADD COLUMN client_type ENUM('spa_only', 'store_only', 'both') DEFAULT 'spa_only';

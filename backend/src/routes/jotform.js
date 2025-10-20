@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const { authenticateClient } = require('../middleware/auth');
+const ClientModel = require('../models/Client');
 
 // JotForm Configuration - MUST be set in environment variables
 const API_KEY = process.env.JOTFORM_API_KEY;
@@ -830,7 +832,17 @@ router.post('/submit-form', async (req, res) => {
   console.log('📝 Form submission received');
   
   try {
-    const formData = req.body;
+    const { sessionId, formId, submission: formData } = req.body;
+    
+    if (!formData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Submission data is required'
+      });
+    }
+    
+    console.log(`📋 Processing submission for session: ${sessionId}`);
+    console.log(`📋 Form ID: ${formId}`);
     
     // Convert form data to JotForm API format
     const submission = {};
@@ -875,6 +887,10 @@ router.post('/submit-form', async (req, res) => {
     });
     
     console.log('📤 Submitting to JotForm API...');
+    console.log('📋 Submission data keys:', Object.keys(submission));
+    console.log('📋 Sample submission data:', Object.fromEntries(
+      Object.entries(submission).slice(0, 5).map(([k, v]) => [k, typeof v === 'string' && v.length > 50 ? v.substring(0, 50) + '...' : v])
+    ));
     
     // Submit to JotForm API
     const jotformUrl = `https://api.jotform.com/form/${FORM_ID}/submissions?apiKey=${API_KEY}`;
@@ -884,6 +900,9 @@ router.post('/submit-form', async (req, res) => {
     Object.keys(submission).forEach(key => {
       urlEncodedData.append(key, submission[key]);
     });
+    
+    console.log('🔗 JotForm URL:', jotformUrl.replace(API_KEY, '***API_KEY***'));
+    console.log('📊 URL-encoded data length:', urlEncodedData.toString().length);
     
     const response = await axios.post(jotformUrl, urlEncodedData.toString(), {
       headers: {
@@ -896,6 +915,25 @@ router.post('/submit-form', async (req, res) => {
     if (response.status === 200 && result.responseCode === 200) {
       console.log('✅ Form submitted successfully to JotForm');
       console.log(`📋 Submission ID: ${result.content.submissionID}`);
+      
+      // WAIVER AUTOFILL: Save submission ID for authenticated clients
+      try {
+        // Check if client is authenticated (optional)
+        const authCheck = (req, res, next) => {
+          authenticateClient(req, res, next).catch(() => {
+            // Ignore auth errors - authentication is optional for waiver submission
+          });
+        };
+        
+        // If authenticated, save the submission ID
+        if (req.client && req.client.id) {
+          await ClientModel.updateLastJotformSubmissionId(req.client.id, result.content.submissionID);
+          console.log(`💾 Saved waiver submission ID ${result.content.submissionID} for client ${req.client.id}`);
+        }
+      } catch (saveError) {
+        console.warn('⚠️ Failed to save waiver submission ID:', saveError.message);
+        // Don't fail the submission if saving fails
+      }
       
       res.json({
         success: true,
@@ -914,6 +952,17 @@ router.post('/submit-form', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Submission error:', error);
+    
+    // Log more details about the error
+    if (error.response) {
+      console.error('❌ JotForm API response status:', error.response.status);
+      console.error('❌ JotForm API response data:', error.response.data);
+    } else if (error.request) {
+      console.error('❌ No response from JotForm API:', error.request);
+    } else {
+      console.error('❌ Error setting up request:', error.message);
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error during submission',

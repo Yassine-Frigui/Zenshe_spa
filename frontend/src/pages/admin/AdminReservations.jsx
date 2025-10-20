@@ -67,6 +67,11 @@ const AdminReservations = () => {
   const [pendingActions, setPendingActions] = useState([]);
   const [pendingActionsLoading, setPendingActionsLoading] = useState(false);
 
+  // Multi-service state
+  const [selectedServices, setSelectedServices] = useState([]); // For create modal
+  const [editSelectedServices, setEditSelectedServices] = useState([]); // For edit modal
+  const [showServiceSelector, setShowServiceSelector] = useState(false);
+
   useEffect(() => {
     fetchReservations();
     fetchServices();
@@ -267,6 +272,22 @@ const AdminReservations = () => {
       heure_debut: reservation.heure_reservation || '',
       heure_fin: reservation.heure_fin || ''
     });
+    
+    // Load existing services if using items table
+    if (reservation.uses_items_table && reservation.items) {
+      setEditSelectedServices(reservation.items.map(item => ({
+        service_id: item.service_id,
+        item_type: item.item_type,
+        prix: parseFloat(item.prix),
+        notes: item.notes || '',
+        service_nom: item.service_nom,
+        service_duree: item.service_duree,
+        id: item.id // Keep the reservation_item id for updates
+      })));
+    } else {
+      setEditSelectedServices([]);
+    }
+    
     setShowEditModal(true);
   };
 
@@ -293,7 +314,17 @@ const AdminReservations = () => {
       if (editFormData.notes_client) updateData.notes_client = editFormData.notes_client;
       if (editFormData.heure_debut) updateData.heure_debut = editFormData.heure_debut;
       if (editFormData.heure_fin) updateData.heure_fin = editFormData.heure_fin;
-      if (editFormData.service_id && editFormData.service_id !== selectedReservation.service_id) {
+      
+      // Multi-service update
+      if (editSelectedServices.length > 0) {
+        updateData.services = editSelectedServices.map(s => ({
+          service_id: s.service_id,
+          item_type: s.item_type,
+          prix: s.prix,
+          notes: s.notes || null
+        }));
+      } else if (editFormData.service_id && editFormData.service_id !== selectedReservation.service_id) {
+        // Fallback to single service update
         updateData.service_id = editFormData.service_id;
       }
       
@@ -306,6 +337,7 @@ const AdminReservations = () => {
       
       // Close modal and show success
       setShowEditModal(false);
+      setEditSelectedServices([]);
       alert('Réservation mise à jour avec succès !');
       
     } catch (error) {
@@ -362,7 +394,57 @@ const AdminReservations = () => {
       notes_client: '',
       statut: 'en_attente'
     });
+    setSelectedServices([]); // Reset selected services
     setShowCreateModal(true);
+  };
+
+  // Multi-service helper functions
+  const addServiceToList = (serviceId, isForEdit = false) => {
+    const service = services.find(s => s.id === parseInt(serviceId));
+    if (!service) return;
+
+    const serviceItem = {
+      service_id: service.id,
+      item_type: 'main',
+      prix: parseFloat(service.prix),
+      notes: '',
+      service_nom: service.nom,
+      service_duree: service.duree
+    };
+
+    if (isForEdit) {
+      setEditSelectedServices(prev => [...prev, serviceItem]);
+    } else {
+      setSelectedServices(prev => [...prev, serviceItem]);
+    }
+  };
+
+  const removeServiceFromList = (index, isForEdit = false) => {
+    if (isForEdit) {
+      setEditSelectedServices(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setSelectedServices(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateServiceNotes = (index, notes, isForEdit = false) => {
+    if (isForEdit) {
+      setEditSelectedServices(prev => prev.map((item, i) => 
+        i === index ? { ...item, notes } : item
+      ));
+    } else {
+      setSelectedServices(prev => prev.map((item, i) => 
+        i === index ? { ...item, notes } : item
+      ));
+    }
+  };
+
+  const calculateTotalPrice = (servicesList) => {
+    return servicesList.reduce((sum, item) => sum + parseFloat(item.prix || 0), 0).toFixed(2);
+  };
+
+  const calculateTotalDuration = (servicesList) => {
+    return servicesList.reduce((sum, item) => sum + parseInt(item.service_duree || 0), 0);
   };
 
   const handleCreateSubmit = async (e) => {
@@ -371,27 +453,41 @@ const AdminReservations = () => {
     try {
       setIsCreating(true);
       
-      // Create the reservation
+      // Validate that at least one service is selected
+      if (selectedServices.length === 0) {
+        alert('Veuillez sélectionner au moins un service');
+        setIsCreating(false);
+        return;
+      }
+
+      // Create the reservation with multi-service support
       const reservationData = {
-        service_id: createFormData.service_id,
+        // Multi-service data
+        services: selectedServices.map(s => ({
+          service_id: s.service_id,
+          item_type: s.item_type,
+          prix: s.prix,
+          notes: s.notes || null
+        })),
         date_reservation: createFormData.date_reservation,
         heure_debut: createFormData.heure_debut,
         heure_fin: createFormData.heure_fin,
-        client_nom: createFormData.client_nom,
-        client_prenom: createFormData.client_prenom,
-        client_telephone: createFormData.client_telephone,
-        client_email: createFormData.client_email,
+        nom: createFormData.client_nom,
+        prenom: createFormData.client_prenom,
+        telephone: createFormData.client_telephone,
+        email: createFormData.client_email,
         notes_client: createFormData.notes_client,
         statut: createFormData.statut
       };
 
-      await adminAPI.createReservationWithClient(reservationData);
+      await adminAPI.createReservation(reservationData);
 
       // Refresh reservations
       await fetchReservations();
       
       // Close modal and show success
       setShowCreateModal(false);
+      setSelectedServices([]);
       alert('Réservation créée avec succès !');
       
     } catch (error) {
@@ -719,11 +815,32 @@ const AdminReservations = () => {
                         </td>
                         <td className="py-3">
                           <div>
-                            <span className="fw-semibold">{reservation.service.nom}</span>
-                            <div className="small text-muted">
-                              <FaClock className="me-1" size={12} />
-                              {reservation.service.duree} min
-                            </div>
+                            {reservation.uses_items_table && reservation.items ? (
+                              <>
+                                <span className="fw-semibold">
+                                  {reservation.items.length} service(s)
+                                </span>
+                                <div className="small text-muted">
+                                  {reservation.items.map((item, idx) => (
+                                    <div key={idx}>• {item.service_nom}</div>
+                                  ))}
+                                </div>
+                                <div className="small text-primary mt-1">
+                                  <FaClock className="me-1" size={12} />
+                                  {reservation.total_duration || calculateTotalDuration(reservation.items)} min total
+                                </div>
+                              </>
+                            ) : reservation.service ? (
+                              <>
+                                <span className="fw-semibold">{reservation.service.nom}</span>
+                                <div className="small text-muted">
+                                  <FaClock className="me-1" size={12} />
+                                  {reservation.service.duree} min
+                                </div>
+                              </>
+                            ) : (
+                              <span className="text-muted">Service non disponible</span>
+                            )}
                           </div>
                         </td>
                         <td className="py-3">
@@ -741,7 +858,18 @@ const AdminReservations = () => {
                         </td>
                         <td className="py-3">
                           <span className="fw-bold text-success">
-                            {reservation.service.prix}DT
+                            {reservation.uses_items_table && reservation.items ? (
+                              <>
+                                {calculateTotalPrice(reservation.items)}DT
+                                <div className="small text-muted">
+                                  ({reservation.items.length} service(s))
+                                </div>
+                              </>
+                            ) : reservation.service ? (
+                              <>{reservation.service.prix}DT</>
+                            ) : (
+                              <span className="text-muted">-</span>
+                            )}
                           </span>
                         </td>
                         <td className="py-3">
@@ -874,16 +1002,58 @@ const AdminReservations = () => {
                       <strong>Téléphone:</strong> {selectedReservation.client.telephone}
                     </div>
                     
-                    <h6 className="fw-bold text-primary mb-3">Service</h6>
-                    <div className="mb-2">
-                      <strong>Service:</strong> {selectedReservation.service.nom}
-                    </div>
-                    <div className="mb-2">
-                      <strong>Durée:</strong> {selectedReservation.service.duree} minutes
-                    </div>
-                    <div className="mb-3">
-                      <strong>Prix:</strong> {selectedReservation.service.prix}DT
-                    </div>
+                    <h6 className="fw-bold text-primary mb-3">
+                      Service{selectedReservation.uses_items_table && selectedReservation.items?.length > 1 ? 's' : ''}
+                    </h6>
+                    {selectedReservation.uses_items_table && selectedReservation.items ? (
+                      <>
+                        {selectedReservation.items.map((item, idx) => (
+                          <div key={idx} className="mb-3 p-2 bg-light rounded">
+                            <div className="mb-1">
+                              <strong>{idx + 1}. {item.service_nom}</strong>
+                              {item.item_type === 'addon' && (
+                                <span className="badge bg-info ms-2">Add-on</span>
+                              )}
+                            </div>
+                            <div className="mb-1">
+                              <strong>Durée:</strong> {item.service_duree} minutes
+                            </div>
+                            <div className="mb-1">
+                              <strong>Prix:</strong> {item.prix}DT
+                            </div>
+                            {item.notes && (
+                              <div className="small text-muted">
+                                <strong>Notes:</strong> {item.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <div className="mb-3 p-2 bg-primary bg-opacity-10 rounded">
+                          <div className="d-flex justify-content-between">
+                            <strong>Durée totale:</strong>
+                            <strong>{selectedReservation.total_duration || calculateTotalDuration(selectedReservation.items)} minutes</strong>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <strong>Prix total:</strong>
+                            <strong className="text-success">{calculateTotalPrice(selectedReservation.items)}DT</strong>
+                          </div>
+                        </div>
+                      </>
+                    ) : selectedReservation.service ? (
+                      <>
+                        <div className="mb-2">
+                          <strong>Service:</strong> {selectedReservation.service.nom}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Durée:</strong> {selectedReservation.service.duree} minutes
+                        </div>
+                        <div className="mb-3">
+                          <strong>Prix:</strong> {selectedReservation.service.prix}DT
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted">Aucun service associé</div>
+                    )}
                   </div>
                   
                   <div className="col-md-6">
@@ -1038,22 +1208,84 @@ const AdminReservations = () => {
                         />
                       </div>
 
+                      {/* Multi-Service Management */}
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Service</label>
-                        <select
-                          className="form-select"
-                          value={editFormData.service_id}
-                          onChange={(e) => handleInputChange('service_id', e.target.value)}
-                        >
-                          <option value="">Sélectionner un service</option>
-                          {services.map(service => (
-                            <option key={service.id} value={service.id}>
-                              {service.nom} - {service.prix}DT ({service.duree}min)
-                            </option>
-                          ))}
-                        </select>
+                        <label className="form-label fw-semibold">
+                          Services 
+                          <small className="text-muted ms-2">({editSelectedServices.length} service(s))</small>
+                        </label>
+                        
+                        {/* Service Selector */}
+                        <div className="input-group mb-2">
+                          <select
+                            className="form-select"
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                addServiceToList(e.target.value, true);
+                                e.target.value = '';
+                              }
+                            }}
+                          >
+                            <option value="">+ Ajouter un service</option>
+                            {services.map(service => (
+                              <option key={service.id} value={service.id}>
+                                {service.nom} - {service.prix}DT ({service.duree}min)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {/* Selected Services List */}
+                        {editSelectedServices.length > 0 ? (
+                          <div className="border rounded p-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                            {editSelectedServices.map((service, index) => (
+                              <div key={index} className="d-flex align-items-center justify-content-between bg-light p-2 rounded mb-2">
+                                <div className="flex-grow-1">
+                                  <strong>{service.service_nom}</strong>
+                                  <div className="small text-muted">
+                                    {service.prix}DT • {service.service_duree}min
+                                    {service.item_type === 'addon' && <span className="badge bg-info ms-1">Add-on</span>}
+                                  </div>
+                                  <input
+                                    type="text"
+                                    className="form-control form-control-sm mt-1"
+                                    placeholder="Notes (optionnel)"
+                                    value={service.notes}
+                                    onChange={(e) => updateServiceNotes(index, e.target.value, true)}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger ms-2"
+                                  onClick={() => removeServiceFromList(index, true)}
+                                >
+                                  <FaTimes />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="alert alert-info mb-2">
+                            <small>Aucun service. Ajoutez des services ci-dessus.</small>
+                          </div>
+                        )}
+                        
+                        {/* Totals Display */}
+                        {editSelectedServices.length > 0 && (
+                          <div className="bg-primary bg-opacity-10 p-2 rounded">
+                            <div className="d-flex justify-content-between">
+                              <span className="fw-bold">Prix total:</span>
+                              <span className="text-primary fw-bold">{calculateTotalPrice(editSelectedServices)} DT</span>
+                            </div>
+                            <div className="d-flex justify-content-between">
+                              <span className="fw-bold">Durée totale:</span>
+                              <span className="text-primary fw-bold">{calculateTotalDuration(editSelectedServices)} min</span>
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="form-text">
-                          Modifier le service associé à cette réservation
+                          Modifiez la liste des services pour cette réservation
                         </div>
                       </div>
                     </div>
@@ -1200,21 +1432,80 @@ const AdminReservations = () => {
                         Détails de la réservation
                       </h6>
                       
+                      {/* Multi-Service Selection */}
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Service <span className="text-danger">*</span></label>
-                        <select
-                          className="form-select"
-                          value={createFormData.service_id}
-                          onChange={(e) => handleCreateInputChange('service_id', e.target.value)}
-                          required
-                        >
-                          <option value="">Sélectionner un service</option>
-                          {services.map(service => (
-                            <option key={service.id} value={service.id}>
-                              {service.nom} - {service.prix}DT ({service.duree}min)
-                            </option>
-                          ))}
-                        </select>
+                        <label className="form-label fw-semibold">
+                          Services <span className="text-danger">*</span>
+                          <small className="text-muted ms-2">({selectedServices.length} sélectionné(s))</small>
+                        </label>
+                        
+                        {/* Service Selector */}
+                        <div className="input-group mb-2">
+                          <select
+                            className="form-select"
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                addServiceToList(e.target.value, false);
+                                e.target.value = '';
+                              }
+                            }}
+                          >
+                            <option value="">+ Ajouter un service</option>
+                            {services.map(service => (
+                              <option key={service.id} value={service.id}>
+                                {service.nom} - {service.prix}DT ({service.duree}min)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {/* Selected Services List */}
+                        {selectedServices.length > 0 ? (
+                          <div className="border rounded p-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                            {selectedServices.map((service, index) => (
+                              <div key={index} className="d-flex align-items-center justify-content-between bg-light p-2 rounded mb-2">
+                                <div className="flex-grow-1">
+                                  <strong>{service.service_nom}</strong>
+                                  <div className="small text-muted">
+                                    {service.prix}DT • {service.service_duree}min
+                                  </div>
+                                  <input
+                                    type="text"
+                                    className="form-control form-control-sm mt-1"
+                                    placeholder="Notes (optionnel)"
+                                    value={service.notes}
+                                    onChange={(e) => updateServiceNotes(index, e.target.value, false)}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger ms-2"
+                                  onClick={() => removeServiceFromList(index, false)}
+                                >
+                                  <FaTimes />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="alert alert-warning mb-2">
+                            <small>Aucun service sélectionné. Veuillez ajouter au moins un service.</small>
+                          </div>
+                        )}
+                        
+                        {/* Totals Display */}
+                        {selectedServices.length > 0 && (
+                          <div className="bg-primary bg-opacity-10 p-2 rounded">
+                            <div className="d-flex justify-content-between">
+                              <span className="fw-bold">Prix total:</span>
+                              <span className="text-primary fw-bold">{calculateTotalPrice(selectedServices)} DT</span>
+                            </div>
+                            <div className="d-flex justify-content-between">
+                              <span className="fw-bold">Durée totale:</span>
+                              <span className="text-primary fw-bold">{calculateTotalDuration(selectedServices)} min</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="mb-3">
@@ -1241,16 +1532,15 @@ const AdminReservations = () => {
                       </div>
 
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Heure fin <span className="text-danger">*</span></label>
+                        <label className="form-label fw-semibold">Heure fin</label>
                         <input
                           type="time"
                           className="form-control"
                           value={createFormData.heure_fin}
                           onChange={(e) => handleCreateInputChange('heure_fin', e.target.value)}
-                          required
                         />
                         <div className="form-text">
-                          L'heure de fin sera calculée automatiquement selon la durée du service
+                          L'heure de fin sera calculée automatiquement selon la durée totale des services
                         </div>
                       </div>
 

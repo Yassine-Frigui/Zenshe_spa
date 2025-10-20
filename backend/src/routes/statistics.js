@@ -6,19 +6,33 @@ const { authenticateAdmin } = require('../middleware/auth');
 // Main statistics endpoint
 router.get('/', authenticateAdmin, async (req, res) => {
     try {
-        const { dateRange = '30' } = req.query;
-        const days = parseInt(dateRange);
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-        const startDateStr = startDate.toISOString().split('T')[0];
+        const { dateRange = '30', startDate: queryStartDate, endDate: queryEndDate } = req.query;
+
+        let startDateStr, endDateStr;
+
+        if (queryStartDate && queryEndDate) {
+            // Use custom date range
+            startDateStr = queryStartDate;
+            endDateStr = queryEndDate;
+        } else {
+            // Use predefined range
+            const days = parseInt(dateRange) || 30; // Default to 30 days if parsing fails
+            console.log('Using predefined range, dateRange:', dateRange, 'days:', days);
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+            startDateStr = startDate.toISOString().split('T')[0];
+            endDateStr = new Date().toISOString().split('T')[0];
+            console.log('Calculated dates - start:', startDateStr, 'end:', endDateStr);
+        }
+
         const today = new Date().toISOString().split('T')[0];
         const thisMonth = new Date().toISOString().slice(0, 7);
 
         // Overview statistics
         const overviewQueries = [
             `SELECT COUNT(*) as total_clients FROM clients WHERE actif = TRUE`,
-            `SELECT COUNT(*) as total_reservations FROM reservations WHERE date_reservation >= '${startDateStr}' AND reservation_status != 'draft'`,
-            `SELECT SUM(prix_final) as total_revenue FROM reservations WHERE date_reservation >= '${startDateStr}' AND statut IN ('terminee', 'confirmee')`,
+            `SELECT COUNT(*) as total_reservations FROM reservations WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' AND reservation_status != 'draft'`,
+            `SELECT SUM(prix_final) as total_revenue FROM reservations WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' AND statut IN ('terminee', 'confirmee')`,
             `SELECT COUNT(*) as total_services FROM services WHERE actif = TRUE`
         ];
 
@@ -49,17 +63,17 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 
                 -- Total Draft Impact (all drafts created)
                 (SELECT COUNT(*) FROM reservations 
-                 WHERE date_creation >= '${startDateStr}' 
+                 WHERE date_creation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                  AND statut = 'draft') as total_drafts_created,
                 
                 -- Draft Conversion Rate
                 (SELECT COUNT(*) FROM reservations 
-                 WHERE date_creation >= '${startDateStr}' 
+                 WHERE date_creation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                  AND statut != 'draft' AND reservation_status IN ('confirmed', 'reserved')) as drafts_converted_to_bookings
                  
             FROM reservations 
-            WHERE date_reservation >= '${startDateStr}' 
-                AND reservation_status != 'draft'
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
+                AND (reservation_status != 'draft' OR (reservation_status = 'draft' AND statut IN ('confirmee', 'terminee')))
         `;
 
         // 2. Admin Intervention Impact Analysis
@@ -76,10 +90,10 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 -- Draft system effectiveness
                 (SELECT COUNT(*) FROM reservations 
                  WHERE statut = 'draft' 
-                 AND date_creation >= '${startDateStr}') as current_drafts,
+                 AND date_creation BETWEEN '${startDateStr}' AND '${endDateStr}') as current_drafts,
                 
                 (SELECT COUNT(*) FROM reservations r1
-                 WHERE r1.date_creation >= '${startDateStr}'
+                 WHERE r1.date_creation BETWEEN '${startDateStr}' AND '${endDateStr}'
                  AND r1.statut != 'draft' 
                  AND EXISTS (
                      SELECT 1 FROM reservations r2 
@@ -92,7 +106,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 SUM(CASE WHEN reservation_status = 'confirmed' AND statut IN ('terminee', 'confirmee') THEN prix_final ELSE 0 END) as revenue_rescued_by_admin
                 
             FROM reservations 
-            WHERE date_reservation >= '${startDateStr}'
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
         `;
 
         // 3. Status Breakdown with Financial Impact
@@ -105,17 +119,17 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 -- Percentage of total bookings
                 (COUNT(*) * 100.0 / (
                     SELECT COUNT(*) FROM reservations 
-                    WHERE date_reservation >= '${startDateStr}' 
+                    WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                     AND reservation_status != 'draft'
                 )) as percentage_of_total,
                 -- Percentage of total potential revenue
                 (SUM(prix_final) * 100.0 / (
                     SELECT SUM(prix_final) FROM reservations 
-                    WHERE date_reservation >= '${startDateStr}' 
+                    WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                     AND reservation_status != 'draft'
                 )) as percentage_of_revenue
             FROM reservations 
-            WHERE date_reservation >= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND reservation_status != 'draft'
             GROUP BY statut
             ORDER BY total_value DESC
@@ -151,7 +165,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 AND converted_reservation.date_creation <= DATE_ADD(draft_res.date_creation, INTERVAL 30 DAY)
             )
             WHERE draft_res.statut = 'draft'
-                AND draft_res.date_creation >= '${startDateStr}'
+                AND draft_res.date_creation BETWEEN '${startDateStr}' AND '${endDateStr}'
         `;
 
         // Additional queries for comprehensive analytics
@@ -160,7 +174,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s')) as hour,
                 COUNT(*) as bookings
             FROM reservations 
-            WHERE date_reservation >= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND reservation_status != 'draft'
             GROUP BY HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s'))
             ORDER BY bookings DESC
@@ -170,9 +184,9 @@ router.get('/', authenticateAdmin, async (req, res) => {
             SELECT 
                 statut,
                 COUNT(*) as count,
-                (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM reservations WHERE date_reservation >= '${startDateStr}' AND reservation_status != 'draft')) as percentage
+                (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM reservations WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' AND reservation_status != 'draft')) as percentage
             FROM reservations 
-            WHERE date_reservation >= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND statut IN ('annulee', 'no_show')
             GROUP BY statut
         `;
@@ -182,7 +196,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 AVG(prix_final) as avg_spend,
                 COUNT(DISTINCT client_id) as unique_clients
             FROM reservations 
-            WHERE date_reservation >= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND statut IN ('terminee', 'confirmee')
         `;
 
@@ -196,7 +210,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
             FROM services s
             LEFT JOIN categories_services cs ON s.categorie_id = cs.id
             LEFT JOIN reservations r ON s.id = r.service_id
-            WHERE r.date_reservation >= '${startDateStr}'
+            WHERE r.date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
                 AND r.statut IN ('terminee', 'confirmee')
             GROUP BY s.id, s.nom, cs.nom
             ORDER BY revenue DESC
@@ -211,7 +225,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
                     client_id,
                     COUNT(*) as reservation_count
                 FROM reservations 
-                WHERE date_reservation >= '${startDateStr}' 
+                WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                     AND statut IN ('terminee', 'confirmee')
                 GROUP BY client_id
             ) as client_reservations
@@ -224,7 +238,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
                 SUM(r.prix_final) as revenue
             FROM services s
             LEFT JOIN reservations r ON s.id = r.service_id
-            WHERE r.date_reservation >= '${startDateStr}'
+            WHERE r.date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
                 AND r.reservation_status != 'draft'
             GROUP BY s.id, s.nom
             ORDER BY bookings DESC
@@ -588,7 +602,7 @@ router.get('/financial', authenticateAdmin, async (req, res) => {
                 SUM(CASE WHEN statut IN ('annulee', 'no_show') THEN prix_final ELSE 0 END) as lost_revenue,
                 COUNT(CASE WHEN statut IN ('annulee', 'no_show') THEN 1 END) as lost_bookings
             FROM reservations 
-            WHERE date_reservation >= '${startDateStr}'
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
                 AND reservation_status != 'draft'
         `;
 

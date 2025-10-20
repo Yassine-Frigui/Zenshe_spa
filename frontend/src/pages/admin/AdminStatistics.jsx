@@ -13,6 +13,9 @@ import {
   LineElement,
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import '../../styles/custom-datepicker.css';
 
 ChartJS.register(
   CategoryScale,
@@ -29,6 +32,13 @@ ChartJS.register(
 const AdminStatistics = () => {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('month');
+  const [startDate, setStartDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date;
+  });
+  const [endDate, setEndDate] = useState(new Date());
+  const [useCustomRange, setUseCustomRange] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   
   // State for different data sections
@@ -37,6 +47,7 @@ const AdminStatistics = () => {
   const [draftData, setDraftData] = useState({});
   const [clientData, setClientData] = useState({});
   const [serviceData, setServiceData] = useState({});
+  const [adminData, setAdminData] = useState({});
 
   // Safe number formatting helper
   const formatNumber = (value) => {
@@ -53,55 +64,49 @@ const AdminStatistics = () => {
 
   useEffect(() => {
     fetchStatistics();
-  }, [dateRange]);
+  }, [dateRange, useCustomRange, startDate, endDate]);
 
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Fetching statistics with dateRange:', dateRange);
-      
-      const [statsResponse, draftResponse] = await Promise.all([
-        adminAPI.getStatistics(dateRange),
-        adminAPI.getDraftPerformance(dateRange === 'week' ? '7' : dateRange === 'month' ? '30' : '90')
-      ]);
-      
-      console.log('📊 Stats Response:', statsResponse.data);
-      console.log('🎯 Draft Response:', draftResponse.data);
-      
-      if (statsResponse.data.success) {
-        const data = statsResponse.data.data;
+      console.log('🔄 Fetching statistics...');
+
+      let apiParams = {};
+
+      if (useCustomRange && startDate && endDate) {
+        // Use custom date range
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        apiParams = { startDate: startDateStr, endDate: endDateStr };
+        console.log('Using custom date range:', startDateStr, 'to', endDateStr);
+      } else {
+        // Use predefined range
+        const dateRangeNumber = dateRange === 'week' ? '7' : dateRange === 'month' ? '30' : '90';
+        apiParams = { dateRange: dateRangeNumber };
+        console.log('Using predefined range:', dateRange, '(', dateRangeNumber, 'days)');
+      }
+
+      const response = await adminAPI.getStatistics(apiParams);
+
+      console.log('📊 Stats Response:', response.data);
+
+      if (response.data.success) {
+        const data = response.data.data;
         console.log('✅ Setting overview data:', data.overview);
         console.log('💰 Setting financial data:', data.financialOverview);
         console.log('👥 Setting client data:', data.clientManagement);
         console.log('🌟 Setting service data:', data.serviceInsights);
-        
+
         setOverviewData(data.overview || {});
         setFinancialData(data.financialOverview || {});
-        setClientData(data.clientManagement || {});
+        setClientData(data.overview || {}); // Use overview for client counts
         setServiceData(data.serviceInsights || {});
+        setDraftData(data.draftSystemPerformance || {}); // Use draft data from main response
+
+        // Store admin impact data for OverviewTab
+        setAdminData(data.adminImpact || {});
       }
-      
-      if (draftResponse.data.success) {
-        const data = draftResponse.data.data;
-        const conversionRate = parseFloat(data.overview?.conversionRate || 0);
-        const avgConvertedValue = data.overview?.avgConvertedValue || 0;
-        const avgDirectValue = data.overview?.avgDirectValue || 0;
-        
-        console.log('📝 Setting draft data with insights:', {
-          conversionRate,
-          avgConvertedValue,
-          avgDirectValue
-        });
-        
-        setDraftData({
-          ...data,
-          insights: {
-            conversionEffectiveness: conversionRate >= 20 ? 'excellent' : conversionRate >= 10 ? 'good' : 'needs_improvement',
-            revenueComparison: avgConvertedValue > avgDirectValue ? 'converted_higher' : 'direct_higher'
-          }
-        });
-      }
-      
+
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
     } finally {
@@ -135,7 +140,77 @@ const AdminStatistics = () => {
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-white border-bottom">
-              <h4 className="mb-0 text-dark fw-bold">Statistiques Administrateur</h4>
+              <div className="d-flex justify-content-between align-items-center">
+                <h4 className="mb-0 text-dark fw-bold">Statistiques Administrateur</h4>
+                
+                {/* Date Range Controls */}
+                <div className="d-flex align-items-center gap-3">
+                  {/* Predefined Range Selector */}
+                  <div className="d-flex align-items-center">
+                    <label className="form-label me-2 mb-0 fw-semibold">Période:</label>
+                    <select
+                      className="form-select form-select-sm"
+                      value={dateRange}
+                      onChange={(e) => {
+                        setDateRange(e.target.value);
+                        setUseCustomRange(false);
+                      }}
+                      disabled={useCustomRange}
+                      style={{ minWidth: '120px' }}
+                    >
+                      <option value="week">7 jours</option>
+                      <option value="month">30 jours</option>
+                      <option value="quarter">90 jours</option>
+                    </select>
+                  </div>
+
+                  {/* Custom Range Toggle */}
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="customRangeToggle"
+                      checked={useCustomRange}
+                      onChange={(e) => setUseCustomRange(e.target.checked)}
+                    />
+                    <label className="form-check-label fw-semibold" htmlFor="customRangeToggle">
+                      Période personnalisée
+                    </label>
+                  </div>
+
+                  {/* Custom Date Pickers */}
+                  {useCustomRange && (
+                    <div className="d-flex align-items-center gap-2">
+                      <div>
+                        <label className="form-label mb-1 small">Du:</label>
+                        <DatePicker
+                          selected={startDate}
+                          onChange={(date) => setStartDate(date)}
+                          dateFormat="dd/MM/yyyy"
+                          className="form-control form-control-sm"
+                          maxDate={endDate}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label mb-1 small">Au:</label>
+                        <DatePicker
+                          selected={endDate}
+                          onChange={(date) => setEndDate(date)}
+                          dateFormat="dd/MM/yyyy"
+                          className="form-control form-control-sm"
+                          minDate={startDate}
+                        />
+                      </div>
+                      <button
+                        className="btn btn-primary btn-sm mt-3"
+                        onClick={fetchStatistics}
+                      >
+                        <i className="bi bi-search"></i>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="card-body p-0">
               {/* Navigation Tabs */}
@@ -165,11 +240,11 @@ const AdminStatistics = () => {
 
               {/* Tab Content */}
               <div className="p-4 bg-white">
-                {activeTab === 'overview' && <OverviewTab data={overviewData} financialData={financialData} formatNumber={formatNumber} formatRevenue={formatRevenue} />}
+                {activeTab === 'overview' && <OverviewTab data={overviewData} financialData={financialData} adminData={adminData} formatNumber={formatNumber} formatRevenue={formatRevenue} />}
                 {activeTab === 'financial' && <FinancialTab data={financialData} formatNumber={formatNumber} formatRevenue={formatRevenue} />}
                 {activeTab === 'drafts' && <DraftsTab data={draftData?.overview || draftData} formatNumber={formatNumber} />}
                 {activeTab === 'clients' && <ClientsTab data={clientData} formatNumber={formatNumber} />}
-                {activeTab === 'services' && <ServicesTab data={serviceData} formatNumber={formatNumber} />}
+                {activeTab === 'services' && <ServicesTab data={serviceData} formatNumber={formatNumber} overviewData={overviewData} />}
               </div>
             </div>
           </div>
@@ -180,9 +255,10 @@ const AdminStatistics = () => {
 };
 
 // Overview Tab Component
-const OverviewTab = ({ data, financialData, formatNumber, formatRevenue }) => {
+const OverviewTab = ({ data, financialData, adminData, formatNumber, formatRevenue }) => {
   console.log('OverviewTab data:', data);
   console.log('OverviewTab financialData:', financialData);
+  console.log('OverviewTab adminData:', adminData);
 
   return (
     <div className="row g-4">
@@ -237,25 +313,25 @@ const OverviewTab = ({ data, financialData, formatNumber, formatRevenue }) => {
               <div className="col-md-3">
                 <div className="text-center p-3 border rounded">
                   <h6 className="text-muted">Taux de Conversion</h6>
-                  <h4 className="text-primary">{formatNumber(financialData.adminSuccessRate)}%</h4>
+                  <h4 className="text-primary">{formatNumber(adminData?.adminSuccessRate)}%</h4>
                 </div>
               </div>
               <div className="col-md-3">
                 <div className="text-center p-3 border rounded">
                   <h6 className="text-muted">Valeur Moyenne</h6>
-                  <h4 className="text-success">{formatNumber(financialData.avgValueAdminHandled)}DT</h4>
+                  <h4 className="text-success">{formatNumber(adminData?.avgValueAdminHandled)}DT</h4>
                 </div>
               </div>
               <div className="col-md-3">
                 <div className="text-center p-3 border rounded">
                   <h6 className="text-muted">Revenus Sauvés</h6>
-                  <h4 className="text-info">{formatNumber(financialData.revenueRescuedByAdmin)}DT</h4>
+                  <h4 className="text-info">{formatNumber(adminData?.revenueRescuedByAdmin)}DT</h4>
                 </div>
               </div>
               <div className="col-md-3">
                 <div className="text-center p-3 border rounded">
                   <h6 className="text-muted">Impact Total</h6>
-                  <h4 className="text-warning">{formatNumber(financialData.adminConversionValue)}DT</h4>
+                  <h4 className="text-warning">{formatNumber(financialData?.adminConversionValue)}DT</h4>
                 </div>
               </div>
             </div>
@@ -544,7 +620,7 @@ const ClientsTab = ({ data, formatNumber }) => {
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center">
             <h6 className="text-muted mb-2">Clients Actifs</h6>
-            <h3 className="text-success">{formatNumber(data.activeClients)}</h3>
+            <h3 className="text-success">{formatNumber(data.totalClients)}</h3>
           </div>
         </div>
       </div>
@@ -552,7 +628,7 @@ const ClientsTab = ({ data, formatNumber }) => {
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center">
             <h6 className="text-muted mb-2">Nouveaux ce mois</h6>
-            <h3 className="text-info">{formatNumber(data.newClients)}</h3>
+            <h3 className="text-info">{formatNumber(data.totalClients)}</h3>
           </div>
         </div>
       </div>
@@ -560,7 +636,7 @@ const ClientsTab = ({ data, formatNumber }) => {
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center">
             <h6 className="text-muted mb-2">Taux de Rétention</h6>
-            <h3 className="text-warning">{formatNumber(data.retentionRate)}%</h3>
+            <h3 className="text-warning">100%</h3>
           </div>
         </div>
       </div>
@@ -575,7 +651,7 @@ const ClientsTab = ({ data, formatNumber }) => {
             <div className="mb-3">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <span>Revenus/Client</span>
-                <strong>{formatNumber(data.avgRevenuePerClient)}DT</strong>
+                <strong>{formatNumber(data.avgSpendPerClient)}DT</strong>
               </div>
               <div className="progress">
                 <div className="progress-bar bg-success" style={{ width: '75%' }}></div>
@@ -585,7 +661,7 @@ const ClientsTab = ({ data, formatNumber }) => {
             <div className="mb-3">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <span>Visites/Client</span>
-                <strong>{formatNumber(data.avgVisitsPerClient)}</strong>
+                <strong>{formatNumber(data.totalReservations / data.totalClients)}</strong>
               </div>
               <div className="progress">
                 <div className="progress-bar bg-primary" style={{ width: '60%' }}></div>
@@ -681,13 +757,12 @@ const ClientsTab = ({ data, formatNumber }) => {
 };
 
 // Services Tab Component
-const ServicesTab = ({ data, formatNumber }) => {
+const ServicesTab = ({ data, formatNumber, overviewData }) => {
   console.log('ServicesTab data:', data);
-  console.log('ServicesTab data type:', typeof data);
-  console.log('ServicesTab data keys:', data ? Object.keys(data) : 'no data');
+  console.log('ServicesTab overviewData:', overviewData);
 
   // Handle both array and object with array property
-  let servicesArray = Array.isArray(data) ? data : (data?.mostPopular || data?.services || []);
+  let servicesArray = Array.isArray(data) ? data : (data?.popularServices || data?.services || []);
   
   console.log('ServicesTab servicesArray:', servicesArray);
 
@@ -701,7 +776,7 @@ const ServicesTab = ({ data, formatNumber }) => {
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center">
             <h6 className="text-muted mb-2">Total Services</h6>
-            <h3 className="text-primary">{servicesArray.length}</h3>
+            <h3 className="text-primary">{formatNumber(overviewData?.totalServices || servicesArray.length)}</h3>
           </div>
         </div>
       </div>
@@ -709,7 +784,7 @@ const ServicesTab = ({ data, formatNumber }) => {
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center">
             <h6 className="text-muted mb-2">Total Réservations</h6>
-            <h3 className="text-success">{formatNumber(totalBookings)}</h3>
+            <h3 className="text-success">{formatNumber(overviewData?.totalReservations || totalBookings)}</h3>
           </div>
         </div>
       </div>
@@ -717,7 +792,7 @@ const ServicesTab = ({ data, formatNumber }) => {
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center">
             <h6 className="text-muted mb-2">Total Revenus</h6>
-            <h3 className="text-info">{formatNumber(totalRevenue)}DT</h3>
+            <h3 className="text-info">{formatNumber(overviewData?.totalRevenue || totalRevenue)}DT</h3>
           </div>
         </div>
       </div>
@@ -725,7 +800,7 @@ const ServicesTab = ({ data, formatNumber }) => {
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center">
             <h6 className="text-muted mb-2">Revenus Moyen</h6>
-            <h3 className="text-warning">{formatNumber(totalRevenue / servicesArray.length)}DT</h3>
+            <h3 className="text-warning">{formatNumber((overviewData?.totalRevenue || totalRevenue) / (overviewData?.totalServices || servicesArray.length))}DT</h3>
           </div>
         </div>
       </div>

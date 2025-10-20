@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/75</span>
+                <span class='fraction'>0/77</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/56</span>
+                <span class='fraction'>0/58</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/74</span>
+                <span class='fraction'>0/76</span>
             </div>
         
             
@@ -360,7 +360,19 @@
 <a name='L295'></a><a href='#L295'>295</a>
 <a name='L296'></a><a href='#L296'>296</a>
 <a name='L297'></a><a href='#L297'>297</a>
-<a name='L298'></a><a href='#L298'>298</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -545,15 +557,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -563,8 +568,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -750,7 +774,7 @@ class ClientModel {
             SELECT 
                 id, nom, prenom, email, telephone, date_naissance,
                 adresse, notes, email_verifie, statut, langue_preferee,
-                date_creation, actif
+                date_creation, actif, last_jotform_submission_id
             FROM clients 
             WHERE id = ? AND actif = TRUE
         `;
@@ -841,13 +865,14 @@ class ClientModel {
             telephone,
             date_naissance,
             adresse,
-            notes
+            notes,
+            last_jotform_submission_id
         } = <span class="cstat-no" title="statement not covered" >clientData;</span>
 &nbsp;
         const query = <span class="cstat-no" title="statement not covered" >`</span>
             UPDATE clients 
             SET nom = ?, prenom = ?, email = ?, telephone = ?, date_naissance = ?,
-                adresse = ?, notes = ?, date_modification = CURRENT_TIMESTAMP
+                adresse = ?, notes = ?, last_jotform_submission_id = ?, date_modification = CURRENT_TIMESTAMP
             WHERE id = ?
         `;
         
@@ -859,9 +884,20 @@ class ClientModel {
             telephone || null, 
             date_naissance || null,
             adresse || null, 
-            notes || null, 
+            notes || null,
+            last_jotform_submission_id || null,
             id
         ]);
+    }
+&nbsp;
+    // Mettre à jour le dernier ID de soumission JotForm pour un client
+<span class="fstat-no" title="function not covered" >    st</span>atic async updateLastJotformSubmissionId(clientId, jotformSubmissionId) {
+        const query = <span class="cstat-no" title="statement not covered" >`</span>
+            UPDATE clients 
+            SET last_jotform_submission_id = ?, date_modification = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `;
+<span class="cstat-no" title="statement not covered" >        return await executeQuery(query, [jotformSubmissionId, clientId]);</span>
     }
 &nbsp;
     // Supprimer un client (soft delete)
@@ -961,7 +997,7 @@ class ClientModel {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-10T12:21:00.960Z
+                at 2025-10-20T08:37:55.611Z
             </div>
         <script src="../prettify.js"></script>
         <script>

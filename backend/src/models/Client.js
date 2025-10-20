@@ -91,7 +91,7 @@ class ClientModel {
             SELECT 
                 id, nom, prenom, email, telephone, date_naissance,
                 adresse, notes, email_verifie, statut, langue_preferee,
-                date_creation, actif
+                date_creation, actif, last_jotform_submission_id
             FROM clients 
             WHERE id = ? AND actif = TRUE
         `;
@@ -182,13 +182,14 @@ class ClientModel {
             telephone,
             date_naissance,
             adresse,
-            notes
+            notes,
+            last_jotform_submission_id
         } = clientData;
 
         const query = `
             UPDATE clients 
             SET nom = ?, prenom = ?, email = ?, telephone = ?, date_naissance = ?,
-                adresse = ?, notes = ?, date_modification = CURRENT_TIMESTAMP
+                adresse = ?, notes = ?, last_jotform_submission_id = ?, date_modification = CURRENT_TIMESTAMP
             WHERE id = ?
         `;
         
@@ -200,9 +201,20 @@ class ClientModel {
             telephone || null, 
             date_naissance || null,
             adresse || null, 
-            notes || null, 
+            notes || null,
+            last_jotform_submission_id || null,
             id
         ]);
+    }
+
+    // Mettre à jour le dernier ID de soumission JotForm pour un client
+    static async updateLastJotformSubmissionId(clientId, jotformSubmissionId) {
+        const query = `
+            UPDATE clients 
+            SET last_jotform_submission_id = ?, date_modification = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `;
+        return await executeQuery(query, [jotformSubmissionId, clientId]);
     }
 
     // Supprimer un client (soft delete)

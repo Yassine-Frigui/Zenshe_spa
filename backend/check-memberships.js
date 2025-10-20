@@ -26,9 +26,10 @@ async function checkMembershipStatus() {
     if (expiredActive[0].count > 0) {
       console.log('\n📋 Examples of expired active memberships:');
       const examples = await executeQuery(`
-        SELECT cm.id, c.prenom, c.nom, cm.date_fin, cm.membership_nom
+        SELECT cm.id, c.prenom, c.nom, cm.date_fin, m.nom as membership_nom
         FROM client_memberships cm
         JOIN clients c ON cm.client_id = c.id
+        JOIN memberships m ON cm.membership_id = m.id
         WHERE cm.statut = "active" AND cm.date_fin < CURDATE()
         LIMIT 5
       `);

@@ -89,21 +89,33 @@ const executeQuery = async (query, params = [], retryCount = 0) => {
     }
 };
 
-// Fonction pour les transactions avec callback
-const executeTransaction = async (callback) => {
+// Fonction pour les transactions avec callback ou array de queries
+const executeTransaction = async (queriesOrCallback) => {
     const connection = await promisePool.getConnection();
     try {
         await connection.beginTransaction();
-        
-        // Create a connection-specific executeQuery function
-        const executeQueryWithConnection = async (query, params = []) => {
-            const [rows] = await connection.execute(query, params);
-            return rows;
-        };
-        
-        // Execute the callback with the connection-specific query function
-        const result = await callback(executeQueryWithConnection);
-        
+
+        let result;
+
+        if (Array.isArray(queriesOrCallback)) {
+            // Handle array of queries
+            const results = [];
+            for (const queryObj of queriesOrCallback) {
+                const [rows] = await connection.execute(queryObj.query, queryObj.params || []);
+                results.push(rows);
+            }
+            result = results;
+        } else if (typeof queriesOrCallback === 'function') {
+            // Handle callback function
+            const executeQueryWithConnection = async (query, params = []) => {
+                const [rows] = await connection.execute(query, params);
+                return rows;
+            };
+            result = await queriesOrCallback(executeQueryWithConnection);
+        } else {
+            throw new Error('executeTransaction expects either an array of queries or a callback function');
+        }
+
         await connection.commit();
         return result;
     } catch (error) {

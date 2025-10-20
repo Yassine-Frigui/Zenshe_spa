@@ -20,6 +20,10 @@ const BookingPage = () => {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedService, setSelectedService] = useState(serviceIdFromUrl);
+  
+  // Multi-service selection: Store one service per category
+  const [selectedServicesByCategory, setSelectedServicesByCategory] = useState({});
+  
   const [sessionId, setSessionId] = useState(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState('');
   
@@ -46,6 +50,11 @@ const BookingPage = () => {
   const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [waiverSubmitted, setWaiverSubmitted] = useState(false);
   const [waiverData, setWaiverData] = useState(null);
+  
+  // WAIVER AUTOFILL: New state for waiver reuse feature
+  const [useSavedWaiver, setUseSavedWaiver] = useState(false);
+  const [savedWaiverId, setSavedWaiverId] = useState(null);
+  const [clientProfile, setClientProfile] = useState(null);
   
   // MEMBERSHIP: New state for membership bookings (renamed to avoid conflict with useMembership hook)
   const [useClientMembership, setUseClientMembership] = useState(false);
@@ -74,6 +83,52 @@ const BookingPage = () => {
     // Generate unique session ID and store in sessionStorage (not localStorage)
     initializeSession();
   }, [i18n.language]); // Re-fetch when language changes
+
+  // Refresh available slots when selected services change
+  useEffect(() => {
+    if (formData.date_reservation) {
+      fetchAvailableSlots(formData.date_reservation);
+    }
+  }, [selectedServicesByCategory]); // Re-fetch slots when services selection changes
+
+  // WAIVER AUTOFILL: Fetch client profile when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchClientProfile();
+    }
+  }, [isAuthenticated]);
+
+  // Function to fetch available slots for a given date
+  const fetchAvailableSlots = async (date) => {
+    // Clear previous time selection
+    setFormData(prev => ({
+      ...prev,
+      heure_reservation: ''
+    }));
+
+    // Fetch real available slots from backend
+    // For multi-service: use the first selected service to check availability
+    const selectedServicesArray = getSelectedServices();
+    const serviceForAvailability = selectedService || (selectedServicesArray.length > 0 ? selectedServicesArray[0].id : null);
+    
+    if (serviceForAvailability && date) {
+      try {
+        const response = await publicAPI.getAvailableSlots(date, serviceForAvailability);
+        if (response.data.available && response.data.slots) {
+          // Convert backend slot format to frontend format
+          const availableTimes = response.data.slots.map(slot => slot.heure_debut);
+          setAvailableSlots(availableTimes);
+        } else {
+          setAvailableSlots([]);
+        }
+      } catch (error) {
+        console.error('Error fetching available slots:', error);
+        setAvailableSlots([]);
+      }
+    } else {
+      setAvailableSlots([]);
+    }
+  };
 
   // Initialize session with unique ID that persists only for this tab session
   const initializeSession = async () => {
@@ -156,6 +211,23 @@ const BookingPage = () => {
     }
   };
 
+  // WAIVER AUTOFILL: Fetch client profile for autofill
+  const fetchClientProfile = async () => {
+    try {
+      const response = await clientAPI.getProfile();
+      const profile = response.data;
+      setClientProfile(profile);
+      
+      // If client has a saved waiver, set the saved waiver ID
+      if (profile.last_jotform_submission_id) {
+        setSavedWaiverId(profile.last_jotform_submission_id);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement du profil client:', error);
+      // Don't show error to user - autofill is optional
+    }
+  };
+
   const handleScheduleMembership = async () => {
     if (!selectedMembershipPlan) {
       setError('Veuillez sélectionner un abonnement');
@@ -195,6 +267,46 @@ const BookingPage = () => {
     }));
   };
 
+  // Multi-service selection helper functions
+  const toggleServiceSelection = (categoryId, service) => {
+    setSelectedServicesByCategory(prev => {
+      const newSelection = { ...prev };
+      
+      // If this service is already selected in this category, deselect it
+      if (newSelection[categoryId]?.id === service.id) {
+        delete newSelection[categoryId];
+      } else {
+        // Otherwise, select it (replacing any previous selection in this category)
+        newSelection[categoryId] = {
+          id: service.id,
+          nom: service.nom,
+          prix: parseFloat(service.prix),
+          duree: parseInt(service.duree),
+          categorie_id: categoryId,
+          description: service.description
+        };
+      }
+      
+      return newSelection;
+    });
+  };
+
+  const isServiceSelected = (categoryId, serviceId) => {
+    return selectedServicesByCategory[categoryId]?.id === serviceId;
+  };
+
+  const getSelectedServices = () => {
+    return Object.values(selectedServicesByCategory);
+  };
+
+  const calculateTotalPrice = () => {
+    return getSelectedServices().reduce((sum, service) => sum + service.prix, 0).toFixed(2);
+  };
+
+  const calculateTotalDuration = () => {
+    return getSelectedServices().reduce((sum, service) => sum + service.duree, 0);
+  };
+
   const handleServiceChange = (serviceId) => {
     setSelectedService(serviceId);
     // Immediately update the same draft when service is selected
@@ -207,16 +319,14 @@ const BookingPage = () => {
     }
   };
 
-  const handleDateChange = (date) => {
+  const handleDateChange = async (date) => {
     setFormData(prev => ({
       ...prev,
       date_reservation: date
     }));
-    
-    // Simuler la vérification des horrairex disponibles
-    // En production, ceci ferait un appel API pour vérifier les disponibilités
-    const randomAvailable = timeSlots.filter(() => Math.random() > 0.3);
-    setAvailableSlots(randomAvailable);
+
+    // Fetch available slots for the new date
+    await fetchAvailableSlots(date);
   };
 
   const handleSubmit = async (e) => {
@@ -227,9 +337,12 @@ const BookingPage = () => {
     // If on membership tab, automatically use membership
     const useMembership = bookingTab === 'membership' || useClientMembership;
 
-    // Validation: service required UNLESS using membership
-    if (!useMembership && !selectedService) {
-      setError('Veuillez sélectionner un service');
+    // Get selected services array
+    const selectedServicesArray = getSelectedServices();
+
+    // Validation: at least one service required UNLESS using membership
+    if (!useMembership && selectedServicesArray.length === 0) {
+      setError('Veuillez sélectionner au moins un service');
       setLoading(false);
       return;
     }
@@ -249,6 +362,40 @@ const BookingPage = () => {
     }
 
     try {
+      let jotformSubmissionId = null;
+
+      // WAIVER AUTOFILL: If using saved waiver, use the saved submission ID
+      if (useSavedWaiver && savedWaiverId) {
+        jotformSubmissionId = savedWaiverId;
+        console.log('🔄 Using saved waiver submission ID:', jotformSubmissionId);
+      }
+      // Otherwise, if waiver data exists, submit it FIRST before creating reservation
+      else if (waiverData) {
+        console.log('📤 Submitting waiver data to JotForm FIRST...');
+
+        try {
+          const waiverSubmissionData = {
+            sessionId: sessionId || null,
+            formId: waiverData.form_id,
+            submission: waiverData
+          };
+
+          const waiverResponse = await publicAPI.submitJotForm(waiverSubmissionData);
+          console.log('✅ Waiver submitted successfully to JotForm:', waiverResponse.data);
+
+          // Store the submission ID to include in reservation
+          if (waiverResponse.data.submissionId) {
+            jotformSubmissionId = waiverResponse.data.submissionId;
+            console.log('📝 Got JotForm submission ID:', jotformSubmissionId);
+          }
+        } catch (waiverError) {
+          console.error('❌ Waiver submission error:', waiverError);
+          // For now, allow reservation to continue without waiver
+          // In production, you might want to block reservation if waiver fails
+          alert('⚠️ La décharge n\'a pas pu être soumise. Vous pouvez continuer avec la réservation.');
+        }
+      }
+
       const reservationData = {
         // Client data
         nom: formData.nom,
@@ -257,22 +404,34 @@ const BookingPage = () => {
         telephone: formData.telephone,
         date_naissance: null, // Optional field
         adresse: '', // Optional field
-        
-        // Reservation data
-        service_id: useMembership ? null : selectedService, // No service when using membership
+
+        // Multi-service reservation data
+        services: selectedServicesArray.map(service => ({
+          service_id: service.id,
+          item_type: 'main',
+          prix: service.prix,
+          notes: null
+        })),
+
+        // Legacy single service for backward compatibility (will be ignored if services array exists)
+        service_id: useMembership ? null : (selectedServicesArray[0]?.id || null),
+
         date_reservation: formData.date_reservation,
         heure_debut: formData.heure_reservation,
         notes_client: formData.notes || '',
-        
+
         // Referral code
         referralCode: formData.referralCode || null,
-        
+
         // Add-on data
         has_healing_addon: formData.hasHealingAddon,
-        
+
+        // JotForm submission ID (from waiver submission above)
+        jotform_submission_id: jotformSubmissionId,
+
         // Session ID for draft conversion
         session_id: sessionId,
-        
+
         // Membership data
         useMembership: useMembership,
         clientMembershipId: useMembership ? activeMembership?.id : null
@@ -444,26 +603,8 @@ const BookingPage = () => {
 
   const handleConfirmReservation = async (reservation, method = 'code') => {
     try {
-      // If waiver data exists, submit it now along with the reservation
-      if (waiverData) {
-        console.log('📤 Submitting waiver data to backend...');
-        
-        try {
-          const waiverSubmissionData = {
-            sessionId: sessionId || null,
-            formId: waiverData.form_id,
-            submission: waiverData
-          };
-          
-          const waiverResponse = await publicAPI.submitJotForm(waiverSubmissionData);
-          console.log('✅ Waiver submitted successfully:', waiverResponse.data);
-        } catch (waiverError) {
-          console.error('❌ Waiver submission error:', waiverError);
-          // Don't block reservation confirmation if waiver fails
-          alert('⚠️ La décharge n\'a pas pu être enregistrée, mais votre réservation est confirmée.');
-        }
-      }
-      
+      console.log('✅ Confirming reservation:', reservation.id);
+
       // Delete the draft after confirmation
       if (sessionId) {
         try {
@@ -473,7 +614,7 @@ const BookingPage = () => {
           console.error('Erreur lors de la suppression du brouillon:', error);
         }
       }
-      
+
       // Reset form and show success
       setFormData({
         nom: '',
@@ -482,18 +623,30 @@ const BookingPage = () => {
         telephone: '',
         date_reservation: '',
         heure_reservation: '',
-        notes: ''
+        notes: '',
+        referralCode: '',
+        hasHealingAddon: false
       });
+      setSelectedServicesByCategory({});
       setSelectedService('');
-      setAvailableSlots([]);
       setWaiverData(null);
       setWaiverSubmitted(false);
-      
+
       setShowConfirmation(false);
       setSuccess(true);
+      setError('');
+      setSessionId(null);
+
+      // Redirect to success page or show success message
+      setTimeout(() => {
+        setSuccess(false);
+        // Optionally redirect to home or dashboard
+        // navigate('/');
+      }, 5000);
+
     } catch (error) {
-      console.error('❌ Error in confirmation process:', error);
-      alert('Une erreur s\'est produite. Veuillez réessayer.');
+      console.error('❌ Error confirming reservation:', error);
+      setError('Erreur lors de la confirmation de la réservation');
     }
   };
 
@@ -936,7 +1089,35 @@ const BookingPage = () => {
                           <label className="form-label fw-bold text-green">
                             <FaStar className="me-2" />
                             {t('booking.form.selectService')}
+                            <small className="ms-2 text-muted">
+                              (Sélectionnez un service par catégorie)
+                            </small>
                           </label>
+                          
+                          {/* Multi-service totals display */}
+                          {getSelectedServices().length > 0 && (
+                            <div className="alert alert-success mb-3">
+                              <div className="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <strong>{getSelectedServices().length} service(s) sélectionné(s)</strong>
+                                </div>
+                                <div>
+                                  <span className="me-3">
+                                    <FaClock className="me-1" />
+                                    {calculateTotalDuration()} min
+                                  </span>
+                                  <span className="fw-bold text-success">
+                                    {calculateTotalPrice()} DT
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-2 small">
+                                {getSelectedServices().map((service, idx) => (
+                                  <div key={idx}>• {service.nom} ({service.prix} DT)</div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           
                           {servicesByCategory.length > 0 ? servicesByCategory.map((category) => (
                             <div key={category.id} className="mb-4">
@@ -945,17 +1126,23 @@ const BookingPage = () => {
                                 <small className="ms-2 opacity-75">
                                   ({category.services.length} {category.services.length > 1 ? t('booking.form.services_count_plural') : t('booking.form.services_count')})
                                 </small>
+                                {selectedServicesByCategory[category.id] && (
+                                  <span className="badge bg-success ms-2">
+                                    <FaCheck className="me-1" size={10} />
+                                    1 sélectionné
+                                  </span>
+                                )}
                               </div>
                               <div className="row">
                                 {category.services.map((service) => (
                                   <div key={service.id} className="col-md-6 mb-3">
                                     <motion.div
                                       className={`service-card ${
-                                        selectedService === service.id.toString() 
+                                        isServiceSelected(category.id, service.id)
                                           ? 'selected border-green' 
                                           : 'border border-light'
                                       }`}
-                                      onClick={() => handleServiceChange(service.id.toString())}
+                                      onClick={() => toggleServiceSelection(category.id, service)}
                                       whileHover={{ scale: 1.02 }}
                                       whileTap={{ scale: 0.98 }}
                                     >
@@ -989,9 +1176,9 @@ const BookingPage = () => {
                                           </div>
                                         </div>
                                         <div className={`form-check-input ms-2 ${
-                                          selectedService === service.id.toString() ? 'bg-green-500 border-green-500' : ''
+                                          isServiceSelected(category.id, service.id) ? 'bg-green-500 border-green-500' : ''
                                         }`}>
-                                          {selectedService === service.id.toString() && '✓'}
+                                          {isServiceSelected(category.id, service.id) && '✓'}
                                         </div>
                                       </div>
                                     </motion.div>
@@ -1077,6 +1264,72 @@ const BookingPage = () => {
                           </div>
                         </motion.div>
 
+                        {/* WAIVER AUTOFILL: Saved waiver toggle for authenticated users */}
+                        {isAuthenticated && savedWaiverId && (
+                          <motion.div
+                            className="mb-4"
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.9, duration: 0.6 }}
+                          >
+                            <div className="alert alert-info border-info">
+                              <div className="d-flex align-items-start">
+                                <FaFileSignature className="text-info me-3 mt-1" size={20} />
+                                <div className="flex-grow-1">
+                                  <h6 className="fw-bold text-info mb-2">
+                                    Décharge enregistrée disponible
+                                  </h6>
+                                  <p className="mb-2 small">
+                                    Vous avez une décharge enregistrée (ID: {savedWaiverId.substring(0, 8)}...).
+                                    Vous pouvez la réutiliser pour éviter de la remplir à nouveau.
+                                  </p>
+                                  <div className="form-check">
+                                    <input
+                                      type="checkbox"
+                                      className="form-check-input"
+                                      id="useSavedWaiver"
+                                      checked={useSavedWaiver}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setUseSavedWaiver(checked);
+                                        
+                                        // If enabling autofill, populate form with client profile data
+                                        if (checked && clientProfile) {
+                                          setFormData(prev => ({
+                                            ...prev,
+                                            nom: clientProfile.nom || prev.nom,
+                                            prenom: clientProfile.prenom || prev.prenom,
+                                            email: clientProfile.email || prev.email,
+                                            telephone: clientProfile.telephone || prev.telephone,
+                                            date_naissance: clientProfile.date_naissance || prev.date_naissance,
+                                            adresse: clientProfile.adresse || prev.adresse
+                                          }));
+                                        }
+                                      }}
+                                    />
+                                    <label className="form-check-label fw-bold" htmlFor="useSavedWaiver">
+                                      Réutiliser ma décharge enregistrée et remplir mes infos
+                                    </label>
+                                  </div>
+                                  {useSavedWaiver && (
+                                    <div className="mt-2 p-2 bg-light rounded small">
+                                      <FaCheck className="text-success me-1" />
+                                      Décharge attachée - 
+                                      <button 
+                                        type="button"
+                                        className="btn btn-link btn-sm p-0 ms-1 text-decoration-none"
+                                        onClick={() => setShowWaiverModal(true)}
+                                      >
+                                        Voir la décharge
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+
                         {/* Date & Time Selection */}
                         <motion.div
                           className="mb-4"
@@ -1108,7 +1361,7 @@ const BookingPage = () => {
                                 name="heure_reservation"
                                 value={formData.heure_reservation}
                                 onChange={handleInputChange}
-                                disabled={!formData.date_reservation}
+                                disabled={!formData.date_reservation || getSelectedServices().length === 0}
                               >
                                 <option value="">{t('booking.form.dateTime.selectTime')}</option>
                                 {availableSlots.map((slot) => (
@@ -1117,7 +1370,7 @@ const BookingPage = () => {
                                   </option>
                                 ))}
                               </select>
-                              {formData.date_reservation && availableSlots.length === 0 && (
+                              {formData.date_reservation && getSelectedServices().length > 0 && availableSlots.length === 0 && (
                                 <div className="text-muted small mt-1">
                                   {t('booking.form.dateTime.noAvailableSlots')}
                                 </div>
@@ -1229,7 +1482,7 @@ const BookingPage = () => {
                           <button
                             type="submit"
                             className="btn btn-green text-white btn-lg px-5"
-                            disabled={loading || !selectedService || !formData.date_reservation || !formData.heure_reservation}
+                            disabled={loading || getSelectedServices().length === 0 || !formData.date_reservation || !formData.heure_reservation}
                           >
                             {loading ? (
                               <>

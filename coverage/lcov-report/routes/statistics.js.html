@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/79</span>
+                <span class='fraction'>0/85</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/156</span>
+                <span class='fraction'>0/162</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/77</span>
+                <span class='fraction'>0/83</span>
             </div>
         
             
@@ -684,8 +684,34 @@
 <a name='L619'></a><a href='#L619'>619</a>
 <a name='L620'></a><a href='#L620'>620</a>
 <a name='L621'></a><a href='#L621'>621</a>
-<a name='L622'></a><a href='#L622'>622</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L622'></a><a href='#L622'>622</a>
+<a name='L623'></a><a href='#L623'>623</a>
+<a name='L624'></a><a href='#L624'>624</a>
+<a name='L625'></a><a href='#L625'>625</a>
+<a name='L626'></a><a href='#L626'>626</a>
+<a name='L627'></a><a href='#L627'>627</a>
+<a name='L628'></a><a href='#L628'>628</a>
+<a name='L629'></a><a href='#L629'>629</a>
+<a name='L630'></a><a href='#L630'>630</a>
+<a name='L631'></a><a href='#L631'>631</a>
+<a name='L632'></a><a href='#L632'>632</a>
+<a name='L633'></a><a href='#L633'>633</a>
+<a name='L634'></a><a href='#L634'>634</a>
+<a name='L635'></a><a href='#L635'>635</a>
+<a name='L636'></a><a href='#L636'>636</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -697,6 +723,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1313,19 +1341,33 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
 // Main statistics endpoint
 <span class="cstat-no" title="statement not covered" >router.get('/', authenticateAdmin, <span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-        const { dateRange = <span class="branch-0 cbranch-no" title="branch not covered" >'30' </span>} = <span class="cstat-no" title="statement not covered" >req.query;</span>
-        const days = <span class="cstat-no" title="statement not covered" >parseInt(dateRange);</span>
-        const startDate = <span class="cstat-no" title="statement not covered" >new Date();</span>
-<span class="cstat-no" title="statement not covered" >        startDate.setDate(startDate.getDate() - days);</span>
-        const startDateStr = <span class="cstat-no" title="statement not covered" >startDate.toISOString().split('T')[0];</span>
+        const { dateRange = <span class="branch-0 cbranch-no" title="branch not covered" >'30',</span> startDate: queryStartDate, endDate: queryEndDate } = <span class="cstat-no" title="statement not covered" >req.query;</span>
+&nbsp;
+        let startDateStr, endDateStr;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if (queryStartDate &amp;&amp; queryEndDate) {</span>
+            // Use custom date range
+<span class="cstat-no" title="statement not covered" >            startDateStr = queryStartDate;</span>
+<span class="cstat-no" title="statement not covered" >            endDateStr = queryEndDate;</span>
+        } else {
+            // Use predefined range
+            const days = <span class="cstat-no" title="statement not covered" >parseInt(dateRange) || 30;</span> // Default to 30 days if parsing fails
+<span class="cstat-no" title="statement not covered" >            console.log('Using predefined range, dateRange:', dateRange, 'days:', days);</span>
+            const startDate = <span class="cstat-no" title="statement not covered" >new Date();</span>
+<span class="cstat-no" title="statement not covered" >            startDate.setDate(startDate.getDate() - days);</span>
+<span class="cstat-no" title="statement not covered" >            startDateStr = startDate.toISOString().split('T')[0];</span>
+<span class="cstat-no" title="statement not covered" >            endDateStr = new Date().toISOString().split('T')[0];</span>
+<span class="cstat-no" title="statement not covered" >            console.log('Calculated dates - start:', startDateStr, 'end:', endDateStr);</span>
+        }
+&nbsp;
         const today = <span class="cstat-no" title="statement not covered" >new Date().toISOString().split('T')[0];</span>
         const thisMonth = <span class="cstat-no" title="statement not covered" >new Date().toISOString().slice(0, 7);</span>
 &nbsp;
         // Overview statistics
         const overviewQueries = <span class="cstat-no" title="statement not covered" >[</span>
             `SELECT COUNT(*) as total_clients FROM clients WHERE actif = TRUE`,
-            `SELECT COUNT(*) as total_reservations FROM reservations WHERE date_reservation &gt;= '${startDateStr}' AND reservation_status != 'draft'`,
-            `SELECT SUM(prix_final) as total_revenue FROM reservations WHERE date_reservation &gt;= '${startDateStr}' AND statut IN ('terminee', 'confirmee')`,
+            `SELECT COUNT(*) as total_reservations FROM reservations WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' AND reservation_status != 'draft'`,
+            `SELECT SUM(prix_final) as total_revenue FROM reservations WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' AND statut IN ('terminee', 'confirmee')`,
             `SELECT COUNT(*) as total_services FROM services WHERE actif = TRUE`
         ];
 &nbsp;
@@ -1356,17 +1398,17 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 
                 -- Total Draft Impact (all drafts created)
                 (SELECT COUNT(*) FROM reservations 
-                 WHERE date_creation &gt;= '${startDateStr}' 
+                 WHERE date_creation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                  AND statut = 'draft') as total_drafts_created,
                 
                 -- Draft Conversion Rate
                 (SELECT COUNT(*) FROM reservations 
-                 WHERE date_creation &gt;= '${startDateStr}' 
+                 WHERE date_creation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                  AND statut != 'draft' AND reservation_status IN ('confirmed', 'reserved')) as drafts_converted_to_bookings
                  
             FROM reservations 
-            WHERE date_reservation &gt;= '${startDateStr}' 
-                AND reservation_status != 'draft'
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
+                AND (reservation_status != 'draft' OR (reservation_status = 'draft' AND statut IN ('confirmee', 'terminee')))
         `;
 &nbsp;
         // 2. Admin Intervention Impact Analysis
@@ -1383,10 +1425,10 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 -- Draft system effectiveness
                 (SELECT COUNT(*) FROM reservations 
                  WHERE statut = 'draft' 
-                 AND date_creation &gt;= '${startDateStr}') as current_drafts,
+                 AND date_creation BETWEEN '${startDateStr}' AND '${endDateStr}') as current_drafts,
                 
                 (SELECT COUNT(*) FROM reservations r1
-                 WHERE r1.date_creation &gt;= '${startDateStr}'
+                 WHERE r1.date_creation BETWEEN '${startDateStr}' AND '${endDateStr}'
                  AND r1.statut != 'draft' 
                  AND EXISTS (
                      SELECT 1 FROM reservations r2 
@@ -1399,7 +1441,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 SUM(CASE WHEN reservation_status = 'confirmed' AND statut IN ('terminee', 'confirmee') THEN prix_final ELSE 0 END) as revenue_rescued_by_admin
                 
             FROM reservations 
-            WHERE date_reservation &gt;= '${startDateStr}'
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
         `;
 &nbsp;
         // 3. Status Breakdown with Financial Impact
@@ -1412,17 +1454,17 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 -- Percentage of total bookings
                 (COUNT(*) * 100.0 / (
                     SELECT COUNT(*) FROM reservations 
-                    WHERE date_reservation &gt;= '${startDateStr}' 
+                    WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                     AND reservation_status != 'draft'
                 )) as percentage_of_total,
                 -- Percentage of total potential revenue
                 (SUM(prix_final) * 100.0 / (
                     SELECT SUM(prix_final) FROM reservations 
-                    WHERE date_reservation &gt;= '${startDateStr}' 
+                    WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                     AND reservation_status != 'draft'
                 )) as percentage_of_revenue
             FROM reservations 
-            WHERE date_reservation &gt;= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND reservation_status != 'draft'
             GROUP BY statut
             ORDER BY total_value DESC
@@ -1458,7 +1500,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 AND converted_reservation.date_creation &lt;= DATE_ADD(draft_res.date_creation, INTERVAL 30 DAY)
             )
             WHERE draft_res.statut = 'draft'
-                AND draft_res.date_creation &gt;= '${startDateStr}'
+                AND draft_res.date_creation BETWEEN '${startDateStr}' AND '${endDateStr}'
         `;
 &nbsp;
         // Additional queries for comprehensive analytics
@@ -1467,7 +1509,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s')) as hour,
                 COUNT(*) as bookings
             FROM reservations 
-            WHERE date_reservation &gt;= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND reservation_status != 'draft'
             GROUP BY HOUR(STR_TO_DATE(heure_debut, '%H:%i:%s'))
             ORDER BY bookings DESC
@@ -1477,9 +1519,9 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
             SELECT 
                 statut,
                 COUNT(*) as count,
-                (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM reservations WHERE date_reservation &gt;= '${startDateStr}' AND reservation_status != 'draft')) as percentage
+                (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM reservations WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' AND reservation_status != 'draft')) as percentage
             FROM reservations 
-            WHERE date_reservation &gt;= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND statut IN ('annulee', 'no_show')
             GROUP BY statut
         `;
@@ -1489,7 +1531,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 AVG(prix_final) as avg_spend,
                 COUNT(DISTINCT client_id) as unique_clients
             FROM reservations 
-            WHERE date_reservation &gt;= '${startDateStr}' 
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                 AND statut IN ('terminee', 'confirmee')
         `;
 &nbsp;
@@ -1503,7 +1545,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
             FROM services s
             LEFT JOIN categories_services cs ON s.categorie_id = cs.id
             LEFT JOIN reservations r ON s.id = r.service_id
-            WHERE r.date_reservation &gt;= '${startDateStr}'
+            WHERE r.date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
                 AND r.statut IN ('terminee', 'confirmee')
             GROUP BY s.id, s.nom, cs.nom
             ORDER BY revenue DESC
@@ -1518,7 +1560,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                     client_id,
                     COUNT(*) as reservation_count
                 FROM reservations 
-                WHERE date_reservation &gt;= '${startDateStr}' 
+                WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}' 
                     AND statut IN ('terminee', 'confirmee')
                 GROUP BY client_id
             ) as client_reservations
@@ -1531,7 +1573,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 SUM(r.prix_final) as revenue
             FROM services s
             LEFT JOIN reservations r ON s.id = r.service_id
-            WHERE r.date_reservation &gt;= '${startDateStr}'
+            WHERE r.date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
                 AND r.reservation_status != 'draft'
             GROUP BY s.id, s.nom
             ORDER BY bookings DESC
@@ -1895,7 +1937,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
                 SUM(CASE WHEN statut IN ('annulee', 'no_show') THEN prix_final ELSE 0 END) as lost_revenue,
                 COUNT(CASE WHEN statut IN ('annulee', 'no_show') THEN 1 END) as lost_bookings
             FROM reservations 
-            WHERE date_reservation &gt;= '${startDateStr}'
+            WHERE date_reservation BETWEEN '${startDateStr}' AND '${endDateStr}'
                 AND reservation_status != 'draft'
         `;
 &nbsp;
@@ -1933,7 +1975,7 @@ const { authenticateAdmin } = <span class="cstat-no" title="statement not covere
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-10T12:21:00.960Z
+                at 2025-10-20T08:37:55.611Z
             </div>
         <script src="../prettify.js"></script>
         <script>

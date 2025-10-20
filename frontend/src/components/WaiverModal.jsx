@@ -23,6 +23,15 @@ const WaiverModal = ({ submissionId, onClose }) => {
       
       const response = await adminAPI.getJotFormSubmission(submissionId);
       console.log('📥 Waiver data received:', response.data);
+      
+      // Debug: Check additional fields
+      if (response.data.additional) {
+        console.log('🔍 Additional fields debug:');
+        Object.entries(response.data.additional).slice(0, 5).forEach(([key, value]) => {
+          console.log(`  ${key}: ${typeof value} - ${value}`);
+        });
+      }
+      
       setWaiver(response.data);
     } catch (err) {
       console.error('Error fetching waiver:', err);
@@ -33,12 +42,88 @@ const WaiverModal = ({ submissionId, onClose }) => {
   };
 
   const renderFieldValue = (value) => {
-    if (!value) return <span className="text-muted">{t('waiver.noData')}</span>;
-    // Check if value contains HTML tags
-    if (typeof value === 'string' && (value.includes('<') || value.includes('<br>'))) {
-      return <div dangerouslySetInnerHTML={{ __html: value }} />;
+    // Debug logging for problematic values
+    if (typeof value === 'object' && value !== null) {
+      console.log('🔍 renderFieldValue received object:', value);
     }
-    return value;
+    
+    if (!value || (typeof value === 'string' && value.trim() === '')) {
+      return <span className="text-muted">Aucune donnée</span>;
+    }
+    
+    // Handle objects (like date objects {month, day, year})
+    if (typeof value === 'object' && value !== null) {
+      // Handle arrays
+      if (Array.isArray(value)) {
+        if (value.length === 0) return <span className="text-muted">{t('waiver.noData')}</span>;
+        return value.join(', ');
+      }
+      
+      // Handle date objects
+      if (value.month !== undefined || value.day !== undefined || value.year !== undefined) {
+        const month = value.month || '';
+        const day = value.day || '';
+        const year = value.year || '';
+        if (month && day && year) {
+          return `${day}/${month}/${year}`;
+        } else {
+          return `${month}/${day}/${year}`.replace(/\/+/g, '/').replace(/^\/|\/$/g, '');
+        }
+      }
+      
+      // Handle name objects
+      if (value.first !== undefined || value.last !== undefined) {
+        return `${value.first || ''} ${value.last || ''}`.trim();
+      }
+      
+      // Handle address objects
+      if (value.addr_line1 !== undefined || value.city !== undefined) {
+        const parts = [];
+        if (value.addr_line1) parts.push(value.addr_line1);
+        if (value.addr_line2) parts.push(value.addr_line2);
+        if (value.city) parts.push(value.city);
+        if (value.state) parts.push(value.state);
+        if (value.postal) parts.push(value.postal);
+        return parts.join(', ');
+      }
+      
+      // Handle phone objects
+      if (value.full !== undefined) {
+        return value.full;
+      }
+      
+      // For other objects, try to extract meaningful values
+      const keys = Object.keys(value);
+      if (keys.length === 1 && typeof value[keys[0]] === 'string') {
+        return value[keys[0]];
+      }
+      
+      // If it's a simple object with few properties, show them
+      if (keys.length <= 3) {
+        return keys.map(key => `${key}: ${value[key]}`).join(', ');
+      }
+      
+      // For complex objects, stringify them
+      return JSON.stringify(value);
+    }
+    
+    // Handle strings
+    if (typeof value === 'string') {
+      // Check if value contains HTML tags or is HTML content
+      if (value.includes('<') || value.includes('<br>') || value.includes('span') || value.includes('class=')) {
+        return <div dangerouslySetInnerHTML={{ __html: value }} />;
+      }
+      
+      // Handle empty or whitespace-only strings
+      if (value.trim() === '') {
+        return <span className="text-muted">Aucune donnée</span>;
+      }
+      
+      return value;
+    }
+    
+    // Handle other primitive types
+    return String(value);
   };
 
   return (

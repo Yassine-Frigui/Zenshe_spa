@@ -29,16 +29,85 @@ router.post('/register', validateClientRegistration, async (req, res) => {
 
         // Check if client already exists
         const existingClient = await executeQuery(
-            'SELECT id FROM clients WHERE email = ?',
+            'SELECT id, nom, prenom, telephone, mot_de_passe, email_verifie FROM clients WHERE email = ?',
             [email]
         );
 
         if (existingClient.length > 0) {
-            return res.status(400).json({
-                message: 'Un compte avec cette adresse email existe déjà'
+            const client = existingClient[0];
+
+            // Check if client has a password (was created through normal signup)
+            if (client.mot_de_passe) {
+                return res.status(400).json({
+                    message: 'Un compte avec cette adresse email existe déjà'
+                });
+            }
+
+            // Client exists but has no password (created through reservation)
+            // Allow them to complete registration by setting password
+            console.log(`Completing registration for existing client (created via reservation): ${email}`);
+
+            // Hash password
+            const hashedPassword = await bcrypt.hash(mot_de_passe, 12);
+
+            // Format phone number for Tunisia (add +216 prefix if not present)
+            let formattedPhone = telephone;
+            if (telephone && !telephone.startsWith('+216')) {
+                // If it's exactly 8 digits, add +216 prefix
+                if (/^[0-9]{8}$/.test(telephone)) {
+                    formattedPhone = `+216${telephone}`;
+                }
+            }
+
+            // Update existing client with password and additional info
+            await executeQuery(
+                `UPDATE clients SET
+                 mot_de_passe = ?,
+                 email_verifie = true,
+                 statut = 'actif',
+                 telephone = COALESCE(?, telephone),
+                 nom = COALESCE(?, nom),
+                 prenom = COALESCE(?, prenom)
+                 WHERE id = ?`,
+                [hashedPassword, formattedPhone, nom, prenom, client.id]
+            );
+
+            // Handle referral code if provided
+            let referralMessage = '';
+            if (referralCode && referralCode.trim()) {
+                try {
+                    const ReferralCode = require('../models/ReferralCode');
+
+                    // Validate the referral code
+                    const validation = await ReferralCode.validateCode(referralCode.trim(), client.id);
+
+                    if (validation.valid) {
+                        // Update client record to include referral code
+                        await executeQuery(
+                            'UPDATE clients SET referred_by_code_id = ? WHERE id = ?',
+                            [validation.referralCode.id, client.id]
+                        );
+
+                        referralMessage = ` Code de parrainage appliqué! Vous bénéficierez d'une réduction de ${validation.discountPercentage}% sur votre première réservation.`;
+                    }
+                } catch (error) {
+                    console.error('Error processing referral code during registration completion:', error);
+                    // Don't fail registration if referral code processing fails
+                }
+            }
+
+            console.log(`Client registration completed: ${email}`);
+
+            res.status(200).json({
+                message: `Votre compte a été complété avec succès. Vous pouvez maintenant vous connecter.${referralMessage}`,
+                clientId: client.id,
+                hasReferralCode: !!referralCode
             });
+
+            return;
         }
 
+        // Client doesn't exist, create new one
         // Hash password
         const hashedPassword = await bcrypt.hash(mot_de_passe, 12);
 
@@ -70,17 +139,17 @@ router.post('/register', validateClientRegistration, async (req, res) => {
         if (referralCode && referralCode.trim()) {
             try {
                 const ReferralCode = require('../models/ReferralCode');
-                
+
                 // Validate the referral code
                 const validation = await ReferralCode.validateCode(referralCode.trim(), clientId);
-                
+
                 if (validation.valid) {
                     // Update client record to include referral code
                     await executeQuery(
                         'UPDATE clients SET referred_by_code_id = ? WHERE id = ?',
                         [validation.referralCode.id, clientId]
                     );
-                    
+
                     referralMessage = ` Code de parrainage appliqué! Vous bénéficierez d'une réduction de ${validation.discountPercentage}% sur votre première réservation.`;
                 }
             } catch (error) {

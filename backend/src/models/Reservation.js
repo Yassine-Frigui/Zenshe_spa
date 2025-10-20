@@ -27,7 +27,7 @@ class ReservationModel {
             client_email,
             session_id,
             // Jotform submission data
-            jotform_submission
+            jotform_submission_id
         } = reservationData;
 
         // Determine if using new multi-service system
@@ -49,7 +49,7 @@ class ReservationModel {
             (client_id, service_id, date_reservation, heure_debut, heure_fin, 
              statut, reservation_status, prix_service, prix_final, notes_client,
              client_nom, client_prenom, client_telephone, client_email, session_id,
-             referral_code_id, has_healing_addon, addon_price, jotform_submission, uses_items_table)
+             referral_code_id, has_healing_addon, addon_price, jotform_submission_id, uses_items_table)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
@@ -57,7 +57,7 @@ class ReservationModel {
             query: reservationQuery,
             params: [
                 client_id, 
-                usesItemsTable ? null : service_id,  // NULL if using items table
+                usesItemsTable ? servicesList[0]?.service_id || service_id : service_id,  // Use first service ID if using items table
                 date_reservation, 
                 heure_debut, 
                 heure_fin,
@@ -74,7 +74,7 @@ class ReservationModel {
                 reservationData.referral_code_id || null,
                 reservationData.has_healing_addon || false,
                 reservationData.addon_price || 0.00,
-                jotform_submission ? JSON.stringify(jotform_submission) : null,
+                jotform_submission_id || null,
                 usesItemsTable
             ]
         });
@@ -157,9 +157,7 @@ class ReservationModel {
             const updateQuery = `
                 UPDATE reservations 
                 SET client_id = ?, 
-                    statut = 'confirmee',
-                    reservation_status = 'confirmed',
-                    prix_service = ?,
+                    statut = 'confirmee',                    prix_service = ?,
                     prix_final = ?,
                     client_nom = NULL,
                     client_prenom = NULL,

@@ -285,7 +285,7 @@ router.post('/verify-email', async (req, res) => {
 router.get('/profile', authenticateClient, async (req, res) => {
     try {
         const clients = await executeQuery(
-            'SELECT id, nom, prenom, email, telephone, date_naissance, adresse, notes, email_verifie, statut, langue_preferee, actif, date_creation FROM clients WHERE id = ?',
+            'SELECT id, nom, prenom, email, telephone, date_naissance, adresse, notes, email_verifie, statut, langue_preferee, actif, date_creation, last_jotform_submission_id FROM clients WHERE id = ?',
             [req.clientId]
         );
         
@@ -356,6 +356,28 @@ router.put('/profile', authenticateClient, async (req, res) => {
         console.error('Erreur lors de la mise à jour du profil:', error);
         res.status(500).json({
             message: 'Erreur lors de la mise à jour du profil',
+            error: error.message
+        });
+    }
+});
+
+// Clear saved waiver for privacy/GDPR compliance
+router.delete('/profile/saved-waiver', authenticateClient, async (req, res) => {
+    try {
+        const clientId = req.clientId;
+
+        await executeQuery(
+            'UPDATE clients SET last_jotform_submission_id = NULL, date_modification = NOW() WHERE id = ?',
+            [clientId]
+        );
+
+        res.json({
+            message: 'Décharge enregistrée supprimée avec succès'
+        });
+    } catch (error) {
+        console.error('Erreur lors de la suppression de la décharge enregistrée:', error);
+        res.status(500).json({
+            message: 'Erreur lors de la suppression de la décharge enregistrée',
             error: error.message
         });
     }

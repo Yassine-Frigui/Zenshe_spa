@@ -1,7 +1,7 @@
 const express = require('express');
 const ReservationModel = require('../models/Reservation');
 const ClientModel = require('../models/Client');
-const { validateReservationData, validateClientData } = require('../middleware/auth');
+const { validateReservationData, validateClientData, authenticateClient } = require('../middleware/auth');
 const { executeQuery } = require('../../config/database');
 const TelegramService = require('../services/TelegramService');
 const EmailService = require('../services/EmailService');
@@ -30,7 +30,7 @@ router.post('/', reservationLimiter, validateInput([
             // Session ID pour conversion de brouillon
             session_id,
             // Jotform submission data
-            jotform_submission,
+            jotform_submission_id,
             // MEMBERSHIP: New fields for membership bookings
             useMembership, // Boolean: whether to use membership for this booking
             clientMembershipId // ID of the membership to use (if useMembership=true)
@@ -73,6 +73,38 @@ router.post('/', reservationLimiter, validateInput([
                 nom, prenom, email, telephone, date_naissance, adresse, notes
             });
             console.log('New client created:', client_id);
+        }
+
+        // WAIVER AUTOFILL: Verify waiver ownership for authenticated clients
+        let isAuthenticatedClient = false;
+        try {
+            // Check if client is authenticated (optional authentication)
+            await new Promise((resolve) => {
+                authenticateClient(req, res, () => {
+                    isAuthenticatedClient = true;
+                    resolve();
+                }).catch(() => resolve()); // Ignore auth errors - authentication is optional
+            });
+        } catch (error) {
+            // Authentication is optional, continue without it
+        }
+
+        // If client is authenticated and providing a jotform_submission_id, verify ownership
+        if (isAuthenticatedClient && jotform_submission_id && req.clientId === client_id) {
+            const clientData = await ClientModel.getClientById(req.clientId);
+            if (clientData && clientData.last_jotform_submission_id) {
+                // Verify that the provided submission ID matches the client's saved waiver
+                if (clientData.last_jotform_submission_id !== jotform_submission_id) {
+                    console.warn(`Waiver ownership verification failed for client ${req.clientId}: provided ${jotform_submission_id}, saved ${clientData.last_jotform_submission_id}`);
+                    return res.status(403).json({ 
+                        message: 'Vous n\'êtes pas autorisé à utiliser cette décharge. Veuillez soumettre une nouvelle décharge.' 
+                    });
+                }
+                console.log(`Waiver ownership verified for authenticated client ${req.clientId}`);
+            } else if (clientData && !clientData.last_jotform_submission_id) {
+                // Client is authenticated but has no saved waiver - this is fine, they'll create a new one
+                console.log(`Authenticated client ${req.clientId} has no saved waiver, proceeding with new submission`);
+            }
         }
 
         // NEW: Determine if using multi-service mode
@@ -205,9 +237,10 @@ router.post('/', reservationLimiter, validateInput([
                         referral_code_id = ?,
                         has_healing_addon = ?,
                         addon_price = ?,
+                        jotform_submission_id = ?,
                         date_modification = NOW()
                     WHERE id = ?
-                `, [client_id, prix_service, addon_price, prix_service + addon_price, referral_code_id, has_healing_addon, addon_price, existingDraft[0].id]);
+                `, [client_id, prix_service, addon_price, prix_service + addon_price, referral_code_id, has_healing_addon, addon_price, jotform_submission_id, existingDraft[0].id]);
                 
                 reservationId = existingDraft[0].id;
                 convertedFromDraft = true;
@@ -265,7 +298,7 @@ router.post('/', reservationLimiter, validateInput([
                 has_healing_addon: has_healing_addon,
                 addon_price: addon_price,
                 // Add Jotform submission
-                jotform_submission: jotform_submission,
+                jotform_submission_id: jotform_submission_id,
                 // MEMBERSHIP: Add membership fields
                 uses_membership: finalUseMembership,
                 client_membership_id: finalClientMembershipId
@@ -1155,6 +1188,45 @@ router.get('/admin/with-items', async (req, res) => {
         res.status(500).json({ 
             success: false,
             message: 'Erreur lors de la récupération des réservations',
+            error: error.message
+        });
+    }
+});
+
+// Mettre à jour l'ID de soumission JotForm d'une réservation
+router.put('/:id/jotform-id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { jotformSubmissionId } = req.body;
+
+        if (!jotformSubmissionId) {
+            return res.status(400).json({ message: 'JotForm submission ID requis' });
+        }
+
+        // Vérifier que la réservation existe
+        const reservation = await ReservationModel.getReservationById(id);
+        
+        if (!reservation) {
+            return res.status(404).json({ message: 'Réservation non trouvée' });
+        }
+
+        // Mettre à jour l'ID de soumission JotForm
+        await executeQuery(
+            'UPDATE reservations SET jotform_submission_id = ? WHERE id = ?',
+            [jotformSubmissionId, id]
+        );
+
+        console.log(`✅ Updated reservation ${id} with JotForm submission ID: ${jotformSubmissionId}`);
+
+        res.json({
+            success: true,
+            message: 'ID de soumission JotForm mis à jour avec succès'
+        });
+
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'ID JotForm:', error);
+        res.status(500).json({ 
+            message: 'Erreur lors de la mise à jour de l\'ID JotForm',
             error: error.message
         });
     }

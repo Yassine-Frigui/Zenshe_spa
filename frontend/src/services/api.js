@@ -119,6 +119,7 @@ export const publicAPI = {
   // Réservations (côté client)
   createReservation: (data) => axios.post('/api/reservations', data),
   getReservation: (id) => axios.get(`/api/reservations/${id}`),
+  updateReservationJotformId: (id, jotformSubmissionId) => axios.put(`/api/reservations/${id}/jotform-id`, { jotformSubmissionId }),
   checkAvailability: (data) => axios.post('/api/reservations/check-availability', data),
   getAvailableSlots: (date, serviceId) => axios.get(`/api/reservations/available-slots/${date}/${serviceId}`),
   cancelReservation: (id, email) => axios.put(`/api/reservations/${id}/cancel`, { email }),
@@ -134,7 +135,7 @@ export const publicAPI = {
   deleteDraft: (sessionId) => axios.delete(`/api/reservations/delete-draft/${sessionId}`),
 
   // JotForm submission (waiver forms)
-  submitJotForm: (data) => axios.post('/api/jotform/submit-local', data),
+  submitJotForm: (data) => axios.post('/api/jotform/submit-form', data),
 
   // Store/Boutique API
   getProducts: (params = {}) => axios.get('/api/store/products', { params }),
@@ -168,6 +169,7 @@ export const clientAPI = {
   getProfile: () => axios.get('/api/client/profile'),
   updateProfile: (data) => axios.put('/api/client/profile', data),
   changePassword: (data) => axios.put('/api/client/change-password', data),
+  clearSavedWaiver: () => axios.delete('/api/client/profile/saved-waiver'),
 
   // Reservations (client authentifié)
   getMyReservations: (page = 1, limit = 10) => 
@@ -279,9 +281,14 @@ export const adminAPI = {
   getInventaireStats: () => axios.get('/api/inventaire/stats/general'),
 
   // Statistiques
-  getStatistics: (dateRange = 'month') => axios.get(`/api/admin/statistics?range=${dateRange}`),
+  getStatistics: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.dateRange) queryParams.append('dateRange', params.dateRange);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    return axios.get(`/api/admin/statistics?${queryParams.toString()}`);
+  },
   getDraftPerformance: (period = '30') => axios.get(`/api/admin/statistics/draft-performance?period=${period}`),
-
   // Paramètres spa
   getSalonParams: () => axios.get('/api/admin/salon/parametres'),
   updateSalonParams: (data) => axios.put('/api/admin/salon/parametres', data),
